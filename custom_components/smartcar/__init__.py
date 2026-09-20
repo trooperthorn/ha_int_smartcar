@@ -540,6 +540,7 @@ async def _store_all_vehicles(
     _LOGGER.info("Fetching Smartcar vehicle IDs...")
 
     data["vehicles"] = {}
+    known_details: dict[str, dict] = {}
 
     try:
         if auth.version == "v2":
@@ -582,6 +583,22 @@ async def _store_all_vehicles(
 
             auth.user_id = data["user_id"] = next(iter(user_ids))
 
+            # the connection already describes the car. taking make, model and
+            # year from here rather than from a signal response means setup
+            # does not depend on the signal store holding anything, and saves
+            # a billed request per vehicle.
+            known_details = {
+                vehicle_id: vehicle
+                for connection in connections
+                if (
+                    vehicle_id := connection.get("relationships", {})
+                    .get("vehicle", {})
+                    .get("data", {})
+                    .get("id", None)
+                )
+                and (vehicle := connection.get("attributes", {}).get("vehicle"))
+            }
+
     except ClientResponseError as err:
         if err.status == HTTPStatus.UNAUTHORIZED:
             msg = f"Auth error fetching vehicle list: {err.status}"
@@ -594,14 +611,73 @@ async def _store_all_vehicles(
         raise EmptyVehicleListError
 
     await asyncio.gather(
-        *[_store_vehicle_details(data, auth, vid) for vid in vehicle_ids]
+        *[
+            _store_vehicle_details(data, auth, vid, known_details.get(vid))
+            for vid in vehicle_ids
+        ]
     )
+
+
+async def _fetch_vin(auth: AbstractAuth, vehicle_id: str) -> tuple[str | None, dict]:
+    """Read the VIN signal, tolerating a vehicle that has no stored signals.
+
+    A vehicle whose signal store is empty answers `404 SIGNAL_NOT_FOUND` here,
+    and that is not a reason to refuse to set the vehicle up: the VIN is used
+    to notice the same car configured twice, which is worth having and worth
+    doing without. Observed on a live account, so it is the ordinary case for
+    a vehicle that has never been collected from rather than an edge case.
+
+    Returns:
+        The VIN if there is one, and whatever the response said about the
+        vehicle itself.
+    """
+    _LOGGER.debug("Fetching VIN for vehicle ID: %s", vehicle_id)
+
+    response = await auth.request_v3(
+        "get", f"vehicles/{vehicle_id}/signals/vehicleidentification-vin"
+    )
+
+    if response.status == HTTPStatus.NOT_FOUND:
+        _LOGGER.info(
+            "Vehicle %s has no stored VIN signal; continuing without it",
+            vehicle_id,
+        )
+        return None, {}
+
+    response.raise_for_status()
+    body = await response.json()
+
+    return (
+        body.get("data", {}).get("attributes", {}).get("body", {}).get("value"),
+        body.get("included", {}).get("vehicle", {}).get("attributes", {}),
+    )
+
+
+async def _fetch_vehicle_attributes(auth: AbstractAuth, vehicle_id: str) -> dict:
+    """Read make, model, year and powertrain from the vehicle endpoint.
+
+    The last resort, for a vehicle that neither the connection nor the VIN
+    signal described. Unlike the signal endpoints this one answers for a
+    vehicle with nothing collected yet.
+
+    Returns:
+        The vehicle attributes, empty if the request did not carry any.
+    """
+    _LOGGER.debug("Fetching attributes for vehicle ID: %s", vehicle_id)
+
+    response = await auth.request_v3("get", f"vehicles/{vehicle_id}")
+    response.raise_for_status()
+    body = await response.json()
+    attributes: dict = body.get("data", {}).get("attributes", {})
+
+    return attributes
 
 
 async def _store_vehicle_details(
     data: dict,
     auth: AbstractAuth,
     vehicle_id: str,
+    known_details: dict | None = None,
 ) -> None:
     """Fetch and store data for a single vehicle.
 
@@ -609,34 +685,23 @@ async def _store_vehicle_details(
         InvalidAuthError: If the request cannot be authorized.
         ClientResponseError: If there is a request error.
     """
+    vehicle_info: dict = {}
+    vin = None
 
     try:
-        _LOGGER.debug("Fetching VIN for vehicle ID: %s", vehicle_id)
         if auth.version == "v2":
+            _LOGGER.debug("Fetching VIN for vehicle ID: %s", vehicle_id)
             vin_resp = await auth.request_v2("get", f"vehicles/{vehicle_id}/vin")
             vin_resp.raise_for_status()
             vin_data = await vin_resp.json()
             vin = vin_data.get("vin")
         else:
             assert auth.version == "v3"
-            signals_resp = await auth.request_v3(
-                "get",
-                f"vehicles/{vehicle_id}/signals/vehicleidentification-vin",
-            )
-            signals_resp.raise_for_status()
-            signals_data = await signals_resp.json()
-            vehicle_info = (
-                signals_data.get("included", {})
-                .get("vehicle", {})
-                .get("attributes", {})
-            )
+            vin, from_signal = await _fetch_vin(auth, vehicle_id)
+            vehicle_info = dict(known_details or {}) or from_signal
 
-            vin = (
-                signals_data.get("data", {})
-                .get("attributes", {})
-                .get("body", {})
-                .get("value", None)
-            )
+            if not vehicle_info:
+                vehicle_info = await _fetch_vehicle_attributes(auth, vehicle_id)
 
         if auth.version == "v2":
             _LOGGER.debug("Fetching attributes for vehicle ID: %s", vehicle_id)

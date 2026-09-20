@@ -79,11 +79,13 @@ A live run showed `GET /connections` already carries
 `attributes.permissions`: the scopes Smartcar actually granted. The integration
 makes that call at setup and reads only the ids out of it.
 
-Two things follow. Identifying a vehicle needs no
-`signals/vehicleidentification-vin` request, which matters because that request
-404s when the signal store is empty and it is the first thing setup does. And
-entity gating could use the granted scopes rather than the requested ones,
-which are not the same list.
+Half of this is now done: setup identifies a vehicle from the connection and
+tolerates a missing VIN signal, so an empty signal store no longer stops it.
+
+What remains is `permissions`. Entity gating still uses the scopes the config
+flow asked for rather than the ones Smartcar granted, and they are not the same
+list. `powertrainType` is read but not yet used to keep combustion entities off
+a BEV.
 
 ### 7. `resolution.type` in error bodies is ignored
 

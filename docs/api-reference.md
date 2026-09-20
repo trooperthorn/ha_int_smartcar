@@ -176,9 +176,9 @@ config entry leaves the Smartcar side connected.
 
 | Method | Path | Purpose | Used here |
 | --- | --- | --- | --- |
-| GET | `/vehicles/{vehicleId}` | make, model, year, powertrainType, mode | no |
+| GET | `/vehicles/{vehicleId}` | make, model, year, powertrainType, mode | yes, last resort at setup |
 | GET | `/vehicles/{vehicleId}/signals` | every signal for the vehicle | yes, the poll |
-| GET | `/vehicles/{vehicleId}/signals/{signalCode}` | one signal | yes, VIN only at setup |
+| GET | `/vehicles/{vehicleId}/signals/{signalCode}` | one signal | yes, VIN only at setup, and a 404 is tolerated |
 
 93 single signal paths exist, one per code. The catalogue is at the end.
 
@@ -205,11 +205,13 @@ says the code does not exist, not that the vehicle lacks the signal, and it is
 easy to read as evidence of an empty store when it is evidence of a typo.
 
 
-Setup reads make, model and year out of the `included.vehicle.attributes`
-block on the VIN signal response rather than calling `GET /vehicles/{id}`
-`C-code`. That works and saves a request. It also means `powertrainType` and
-`mode` are never read, and `powertrainType` is the field that would let the
-integration stop creating EV entities on a combustion vehicle.
+Setup identifies a vehicle from the connection it already read, falling back
+to the `included.vehicle.attributes` block on the VIN signal response and then
+to `GET /vehicles/{id}` `C-code`. It used to read only the signal response and
+raise on failure, which meant a vehicle with an empty signal store could not be
+set up at all: the VIN request 404s, and that reached the config flow as
+`cannot_connect`. The VIN is now optional, since it only serves to notice the
+same car configured twice.
 
 ### Commands
 
