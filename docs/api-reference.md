@@ -14,6 +14,7 @@ and the disagreements matter:
 | `D-docs` | The prose reference at `smartcar.com/docs`, mirrored in `llms-full.txt` | Good, but lags the spec. One place below contradicts it. |
 | `C-code` | Observed in this integration or its test fixtures | Says what we send, not what the service accepts. |
 | `M-matrix` | The per-vehicle compatibility matrix exported from the Smartcar dashboard, 2026-09-20 | Authoritative for what a given make, model, year and region supports. |
+| `L-live` | Observed against a live Smartcar account by `script/smartcar_doctor.py`, 2026-09-20 | Highest for behaviour. Says what the service actually did, on one account with one vehicle. |
 | `U-unver` | Believed but confirmed by none of the above | Do not build on it without a probe. |
 
 The matrix is not committed here. It is a 646 KB export that goes stale, and
@@ -56,7 +57,7 @@ make-specific endpoints and security patches for every backend SDK.
 | --- | --- | --- | --- |
 | `iam.smartcar.com` | v3 token issue, client credentials only | none on the call itself | yes `S-spec` |
 | `vehicle.api.smartcar.com/v3` | signals, commands, connections | `Authorization: Bearer` plus `sc-user-id` | yes `S-spec` |
-| `management.api.smartcar.com/v3` | webhooks, subscriptions, applications | `Authorization: Bearer`, same token | **no** `S-spec` |
+| `management.api.smartcar.com/v3` | webhooks, subscriptions, applications | `Authorization: Bearer`, same token | **no** `L-live` |
 | `connect.smartcar.com` | the Connect consent flow | n/a | yes `C-code` |
 | `auth.smartcar.com` | v2 token issue and refresh | HTTP Basic | legacy path only `D-docs` |
 | `api.smartcar.com/v2.0` | v2 vehicle API | per vehicle bearer | legacy path only `D-docs` |
@@ -64,9 +65,11 @@ make-specific endpoints and security patches for every backend SDK.
 
 The prose page for the Management API still names the `v2.0` host and a
 management token, while `management.yaml` declares
-`management.api.smartcar.com/v3` with `bearerAuth`. The spec is newer. Neither
-has been exercised from here, so treat the v3 management host as `S-spec` and
-probe before depending on it.
+`management.api.smartcar.com/v3` with `bearerAuth`. **The spec is right** and
+the prose is stale `L-live`: the v3 host answers `GET /webhooks` with `200` and
+the ordinary application bearer token, while
+`api.smartcar.com/management/v2.0` answers `404 version_not_found_error`. Build
+on the v3 host.
 
 ## Authentication
 
@@ -97,7 +100,8 @@ sc-user-id: {userId}
 ```
 
 `sc-user-id` is declared **required** on `GET /vehicles/{id}/signals` and on
-all command endpoints. It is optional on `GET /connections`, where it acts as
+all command endpoints, and it is enforced: omitting it answers
+`400 VALIDATION / MISSING_PARAMETER`, detail `missing userId` `L-live`. It is optional on `GET /connections`, where it acts as
 a filter, and it is absent from `GET /vehicles/{id}` `S-spec`.
 
 The `userId` comes from the Connect redirect. There is no endpoint that
@@ -144,6 +148,26 @@ would also make the "exactly one user" check in `_store_all_vehicles` decide on
 a partial set, reporting a multi-user application for an account that simply
 has more than ten connections.
 
+**What a connection actually carries** `L-live`. Each resource embeds more
+than the ids the integration reads out of it:
+
+```
+data[].attributes.permissions      the scopes actually granted, as a list
+data[].attributes.vehicle.make     "VOLKSWAGEN"
+data[].attributes.vehicle.model    "ID. Buzz"
+data[].attributes.vehicle.year     2025
+data[].attributes.vehicle.mode     "live"
+data[].attributes.vehicle.powertrainType  "BEV"
+data[].meta.createdAt / updatedAt  when the connection was made and refreshed
+```
+
+Two consequences. Make, model, year and `powertrainType` are all here, in a
+call that is free and already made at setup, so neither the VIN signal request
+nor `GET /vehicles/{id}` is needed to identify a vehicle. And
+`attributes.permissions` is the authoritative list of granted scopes, which is
+not the same as the list the user asked for in the config flow: gating entities
+on what was actually granted is possible without spending anything.
+
 The two DELETE endpoints are the clean teardown this integration does not do.
 `async_remove_entry` deletes the cloudhook and nothing else, so removing the
 config entry leaves the Smartcar side connected.
@@ -152,17 +176,42 @@ config entry leaves the Smartcar side connected.
 
 | Method | Path | Purpose | Used here |
 | --- | --- | --- | --- |
-| GET | `/vehicles/{vehicleId}` | make, model, year, powertrainType, mode | no |
+| GET | `/vehicles/{vehicleId}` | make, model, year, powertrainType, mode | yes, last resort at setup |
 | GET | `/vehicles/{vehicleId}/signals` | every signal for the vehicle | yes, the poll |
-| GET | `/vehicles/{vehicleId}/signals/{signalCode}` | one signal | yes, VIN only at setup |
+| GET | `/vehicles/{vehicleId}/signals/{signalCode}` | one signal | yes, VIN only at setup, and a 404 is tolerated |
 
 93 single signal paths exist, one per code. The catalogue is at the end.
 
-Setup reads make, model and year out of the `included.vehicle.attributes`
-block on the VIN signal response rather than calling `GET /vehicles/{id}`
-`C-code`. That works and saves a request. It also means `powertrainType` and
-`mode` are never read, and `powertrainType` is the field that would let the
-integration stop creating EV entities on a combustion vehicle.
+**The signals collection can be empty, and an empty one is a 200** `L-live`.
+On a live account whose vehicle had never been subscribed to a webhook, both
+`GET /vehicles/{id}/signals` and the same call with an explicit `signals`
+filter answered `200` with `data: []` and `meta.totalCount: 0`, while
+`GET /vehicles/{id}` answered normally with make, model, year and powertrain.
+So the endpoint works, the connection is live, and the store behind it simply
+holds nothing.
+
+This is the worst shape of failure for the integration, because polling makes
+exactly this request: every entity is created, none ever gets a value, and
+nothing raises. Whether a webhook subscription is what fills the store is not
+yet established; it is the obvious candidate and the way to test it is to
+subscribe a vehicle and read again.
+
+**Signal codes are prefixed by domain, and the bare name is not a code.** The
+VIN is `vehicleidentification-vin`, the charging flag is `charge-ischarging`,
+the state of charge is `tractionbattery-stateofcharge`. Requesting
+`/signals/vin` answers `404 RESOURCE_NOT_FOUND / SIGNAL_NOT_FOUND`, detail
+"Signal with code vin not found for vehicle with ID ..." `L-live`. That error
+says the code does not exist, not that the vehicle lacks the signal, and it is
+easy to read as evidence of an empty store when it is evidence of a typo.
+
+
+Setup identifies a vehicle from the connection it already read, falling back
+to the `included.vehicle.attributes` block on the VIN signal response and then
+to `GET /vehicles/{id}` `C-code`. It used to read only the signal response and
+raise on failure, which meant a vehicle with an empty signal store could not be
+set up at all: the VIN request 404s, and that reached the config flow as
+`cannot_connect`. The VIN is now optional, since it only serves to notice the
+same car configured twice.
 
 ### Commands
 
@@ -223,6 +272,32 @@ probe ever shows the path working undocumented, add a `U-unver` row here with
 what was observed before putting the entity back.
 
 ## Management API
+
+### What a webhook carries
+
+`L-live`, from `GET https://management.api.smartcar.com/v3/webhooks`:
+
+```
+data[].attributes.name           the label from the dashboard
+data[].attributes.isEnabled      false means it never fires, however it is configured
+data[].attributes.autoSubscribe  whether new vehicles are subscribed automatically
+data[].attributes.triggers       list of signal codes that trigger a delivery
+data[].attributes.data           list of signal codes included in a delivery
+data[].attributes.callbackUri    where deliveries are sent
+```
+
+**`triggers` and `data` decide what the signal store ever holds.** A webhook
+with both lists empty collects nothing, so `GET /vehicles/{id}/signals` answers
+`200` with `data: []` and every single signal path answers
+`404 SIGNAL_NOT_FOUND`, even for signals the vehicle supports and the user has
+granted. Observed exactly that way on a live account: an enabled connection, a
+subscribed vehicle, a webhook named and subscribed but `isEnabled: false` with
+two empty lists, and no readable data anywhere.
+
+This is worth stating plainly because every symptom points somewhere else. The
+integration's own requests are correct, the credentials are correct, and the
+failure looks like a broken API rather than an unconfigured webhook.
+
 
 Base `https://management.api.smartcar.com/v3`, same bearer token. **None of
 this is called by the integration.** All rows `S-spec`.

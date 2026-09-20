@@ -149,6 +149,14 @@ combine-as-imports = true
 split-on-trailing-comma = false
 
 [tool.ruff.lint.per-file-ignores]
+"script/*.py" = [
+  # standalone command line tools: they print to a terminal by design, and
+  # they walk JSON that has no type to annotate.
+  "ANN401",   # dynamically typed expressions (typing.Any) are disallowed in {name}
+  "INP001",   # file {filename} is part of an implicit namespace package. Add an __init__.py
+  "PLR0914",  # too many local variables
+  "T201",     # `print` found
+  ]
 ".github/*.py" = [
   "ANN",      # flake8-annotations
   "INP001",   # file {filename} is part of an implicit namespace package. Add an __init__.py

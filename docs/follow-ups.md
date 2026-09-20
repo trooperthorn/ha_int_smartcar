@@ -72,12 +72,20 @@ this is cheap to run.
 
 ## Smaller, non-blocking
 
-### 6. `powertrainType` is never read
+### 6. `powertrainType` and the granted scopes are never read, from a free call
 
-`GET /vehicles/{id}` returns it and the integration never calls that endpoint,
-taking make, model and year from the VIN signal response instead. Capability
-gating now removes most combustion entities from a BEV anyway, so this is
-belt-and-braces rather than a fix.
+A live run showed `GET /connections` already carries
+`attributes.vehicle.powertrainType`, make, model, year and mode, plus
+`attributes.permissions`: the scopes Smartcar actually granted. The integration
+makes that call at setup and reads only the ids out of it.
+
+Half of this is now done: setup identifies a vehicle from the connection and
+tolerates a missing VIN signal, so an empty signal store no longer stops it.
+
+What remains is `permissions`. Entity gating still uses the scopes the config
+flow asked for rather than the ones Smartcar granted, and they are not the same
+list. `powertrainType` is read but not yet used to keep combustion entities off
+a BEV.
 
 ### 7. `resolution.type` in error bodies is ignored
 
@@ -100,3 +108,46 @@ reconciled. If anything else uses the same Smartcar application, this
 undercounts. A `430 VEHICLE_REQUEST_LIMIT` response could at least be used to
 snap the local count to the ceiling when it arrives, which would self-correct
 the drift.
+
+## Found on a live account
+
+The first run of `script/smartcar_doctor.py` against a real Smartcar account,
+2026-09-20. These are not theoretical.
+
+### 10. An empty signal store is silent
+
+A live account returned `200` with `data: []` and `totalCount: 0` from
+`GET /vehicles/{id}/signals`, the request the poll makes. Every entity is
+created, none ever gets a value, and nothing raises: no `UpdateFailed`, no
+repair issue, no log above debug. The coordinator's capability read reports
+"cannot answer 0 of 0 signals" and carries on.
+
+The cause is now known, and it is visible for free. The webhook that feeds the
+store carries `isEnabled`, `triggers` and `data`; a disabled webhook, or one
+with both lists empty, collects nothing and produces exactly this. The
+integration already lists webhooks during auto-subscribe, so it has the answer
+in hand at setup and says nothing about it.
+
+**Action:** raise a repair issue when the webhook this instance subscribes to
+is disabled or has no triggers and no data signals, naming what to enable.
+Treat an empty signal collection as a condition of its own rather than creating
+a full set of permanently unavailable entities.
+
+### 11. Auto-subscribe cannot create the webhook it needs
+
+`async_subscribe` subscribes a vehicle to an existing webhook, found by matching
+its callback URL. An application with no webhook at all, which is what a new
+Smartcar account has, matches nothing, so setup completes and subscribes
+nothing. The first live run against a real account listed zero webhooks, so this
+is the normal case rather than an edge one.
+
+Creating the webhook is a dashboard step today: a name, the callback URL, the
+triggers and data signals to send, and a verification challenge that Home
+Assistant has to answer with the Application Management Token. The Management
+API declares a create endpoint, so most of that could move into setup, but the
+signal selection is a real choice (the free tier carries about nine of each) and
+would need a form rather than a default.
+
+**Action:** at minimum, say so. Setup should report that no webhook points at
+this instance and that scheduled polling is therefore the only source of data,
+instead of leaving it silent.
