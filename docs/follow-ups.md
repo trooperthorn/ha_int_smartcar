@@ -72,12 +72,18 @@ this is cheap to run.
 
 ## Smaller, non-blocking
 
-### 6. `powertrainType` is never read
+### 6. `powertrainType` and the granted scopes are never read, from a free call
 
-`GET /vehicles/{id}` returns it and the integration never calls that endpoint,
-taking make, model and year from the VIN signal response instead. Capability
-gating now removes most combustion entities from a BEV anyway, so this is
-belt-and-braces rather than a fix.
+A live run showed `GET /connections` already carries
+`attributes.vehicle.powertrainType`, make, model, year and mode, plus
+`attributes.permissions`: the scopes Smartcar actually granted. The integration
+makes that call at setup and reads only the ids out of it.
+
+Two things follow. Identifying a vehicle needs no
+`signals/vehicleidentification-vin` request, which matters because that request
+404s when the signal store is empty and it is the first thing setup does. And
+entity gating could use the granted scopes rather than the requested ones,
+which are not the same list.
 
 ### 7. `resolution.type` in error bodies is ignored
 
@@ -93,7 +99,32 @@ Removing the config entry leaves the vehicle connected on the Smartcar side.
 Now that the Management API client exists, unsubscribing and disconnecting on
 `async_remove_entry` is a short addition.
 
-### 10. Auto-subscribe cannot create the webhook it needs
+### 9. The budget is Home Assistant's tally, not Smartcar's
+
+Smartcar publishes no remaining-calls endpoint, so the count cannot be
+reconciled. If anything else uses the same Smartcar application, this
+undercounts. A `430 VEHICLE_REQUEST_LIMIT` response could at least be used to
+snap the local count to the ceiling when it arrives, which would self-correct
+the drift.
+
+## Found on a live account
+
+The first run of `script/smartcar_doctor.py` against a real Smartcar account,
+2026-09-20. These are not theoretical.
+
+### 10. An empty signal store is silent
+
+A live account returned `200` with `data: []` and `totalCount: 0` from
+`GET /vehicles/{id}/signals`, the request the poll makes. Every entity is
+created, none ever gets a value, and nothing raises: no `UpdateFailed`, no
+repair issue, no log above debug. The coordinator's capability read reports
+"cannot answer 0 of 0 signals" and carries on.
+
+**Action:** treat an empty collection as a condition of its own. Setup should
+say that the vehicle has no stored signals, name the likely cause once it is
+known, and not create a full set of permanently unavailable entities.
+
+### 11. Auto-subscribe cannot create the webhook it needs
 
 `async_subscribe` subscribes a vehicle to an existing webhook, found by matching
 its callback URL. An application with no webhook at all, which is what a new
@@ -111,11 +142,3 @@ would need a form rather than a default.
 **Action:** at minimum, say so. Setup should report that no webhook points at
 this instance and that scheduled polling is therefore the only source of data,
 instead of leaving it silent.
-
-### 9. The budget is Home Assistant's tally, not Smartcar's
-
-Smartcar publishes no remaining-calls endpoint, so the count cannot be
-reconciled. If anything else uses the same Smartcar application, this
-undercounts. A `430 VEHICLE_REQUEST_LIMIT` response could at least be used to
-snap the local count to the ceiling when it arrives, which would self-correct
-the drift.

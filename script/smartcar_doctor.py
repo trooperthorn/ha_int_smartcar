@@ -64,6 +64,12 @@ MANAGEMENT_HOSTS = {
     "v2.0 (prose)": "https://api.smartcar.com/management/v2.0",
 }
 
+# real signal codes, from the catalogue in docs/api-reference.md. They are
+# prefixed by domain, and a bare `vin` is not a code: asking for one earns a
+# SIGNAL_NOT_FOUND that reads exactly like an empty store.
+VIN_CODE = "vehicleidentification-vin"
+CHARGE_CODE = "charge-ischarging"
+
 CONNECTIONS_PAGE_SIZE = 100
 CONNECTIONS_PAGE_LIMIT = 50
 TIMEOUT = 30
@@ -511,7 +517,11 @@ def check_signals(
 
 
 def probe_empty_signals(
-    token: str, user_id: str, vehicle_id: str, redact: Redactor
+    token: str,
+    user_id: str,
+    vehicle_id: str,
+    redact: Redactor,
+    selected: set[str] | None = None,
 ) -> tuple[list[Result], dict[str, Any]]:
     """Work out why the signal set came back empty. Costs one call per probe.
 
@@ -522,18 +532,20 @@ def probe_empty_signals(
     only one of these that is not a signals request, so an answer here with an
     empty signals list separates a dead connection from a dead endpoint.
 
-    A single signal path answers whether signals work one at a time. If `vin`
-    returns a value while the collection returns nothing, the bug is in the
-    collection endpoint or in how it is being called, which is the integration's
-    only polling request.
+    Two single signal paths answer whether signals work one at a time. The codes
+    are the real ones from the catalogue, which are prefixed by domain: asking
+    for `vin` rather than `vehicleidentification-vin` earns a `SIGNAL_NOT_FOUND`
+    that looks exactly like an empty store and is nothing of the kind. The VIN
+    code is the one setup itself requests, so a failure there is a failure of
+    setup. The charge code is a second opinion from another domain.
 
     The same collection with an explicit `signals` filter tests whether the
     endpoint wants to be told what to ask for. Nothing published says it does,
     and the integration sends a bare GET.
 
-    The same collection without `sc-user-id` tests whether that header is
-    filtering everything out. The spec calls it required, so this is expected to
-    fail; it failing differently would be informative.
+    Not probed any more: the same request without `sc-user-id`. That is settled
+    and recorded in the reference. The header is required and its absence earns
+    `400 MISSING_PARAMETER`, so spending a call to see it again buys nothing.
 
     Returns:
         The results, and the raw bodies keyed by probe.
@@ -542,10 +554,14 @@ def probe_empty_signals(
     headers = {"sc-user-id": user_id}
     probes: list[tuple[str, str, dict[str, str] | None]] = [
         ("vehicle", base, headers),
-        ("single signal (vin)", f"{base}/signals/vin", headers),
-        ("signals?signals=vin", f"{base}/signals?signals=vin", headers),
-        ("signals without sc-user-id", f"{base}/signals", None),
+        (f"single signal ({VIN_CODE})", f"{base}/signals/{VIN_CODE}", headers),
+        (f"single signal ({CHARGE_CODE})", f"{base}/signals/{CHARGE_CODE}", headers),
+        (f"signals?signals={VIN_CODE}", f"{base}/signals?signals={VIN_CODE}", headers),
     ]
+
+    if selected:
+        probes = [probe for probe in probes if probe[0] in selected]
+
     results = []
     bodies: dict[str, Any] = {}
 
@@ -802,6 +818,14 @@ def main() -> int:
         help="keep real identifiers and coordinates in the report",
     )
     parser.add_argument(
+        "--probe",
+        default="",
+        help=(
+            "comma separated probe names to run when the signal set is empty, "
+            "instead of all of them. Each costs one call."
+        ),
+    )
+    parser.add_argument(
         "--out",
         type=Path,
         default=Path.home() / "workspace",
@@ -904,7 +928,7 @@ def main() -> int:
 
                 print(
                     "The signal set came back empty, which is what the "
-                    "integration would see. Four more requests narrow down "
+                    "integration would see. A few more requests narrow down "
                     "why, at one call each."
                 )
 
@@ -912,7 +936,12 @@ def main() -> int:
                     print("Skipped.")
                     continue
 
-                probes, bodies = probe_empty_signals(token, user_id, vehicle_id, redact)
+                selected = {
+                    name.strip() for name in args.probe.split(",") if name.strip()
+                }
+                probes, bodies = probe_empty_signals(
+                    token, user_id, vehicle_id, redact, selected or None
+                )
 
                 for probe in probes:
                     record(probe)
