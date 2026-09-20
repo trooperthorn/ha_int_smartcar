@@ -29,6 +29,23 @@ addopts = [
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 
+# The quality scale's strict-typing rule is satisfied by the flags Home
+# Assistant core turns on for an integration listed in its .strict-typing file.
+# They are applied here to the integration package only, exactly as core does:
+# core does not hold an integration's tests to them, and blanket `strict` adds
+# disallow_any_generics, which fights Home Assistant's own untyped generics
+# rather than finding bugs in this code.
+[[tool.mypy.overrides]]
+module = "custom_components.smartcar.*"
+check_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_decorators = true
+disallow_untyped_defs = true
+warn_return_any = true
+warn_unreachable = true
+
 [tool.ruff]
 required-version = ">=0.11.0"
 
@@ -167,7 +184,7 @@ split-on-trailing-comma = false
   ]
 
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.14"
 follow_imports = "normal"
 local_partial_types = true
 strict_equality = true

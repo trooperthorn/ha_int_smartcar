@@ -25,7 +25,15 @@ from homeassistant.util import dt as dt_util
 
 from . import util
 from .auth import AbstractAuth
-from .const import CONF_APPLICATION_MANAGEMENT_TOKEN, DOMAIN, EntityDescriptionKey
+from .budget import DEFAULT_MONTHLY_BUDGET, DEFAULT_RESERVE, ApiBudget
+from .const import (
+    CONF_APPLICATION_MANAGEMENT_TOKEN,
+    CONF_BUDGET_RESERVE,
+    CONF_MONTHLY_BUDGET,
+    DOMAIN,
+    EntityDescriptionKey,
+)
+from .polling import resolve_settings
 from .types import APIVersion
 from .util import key_path_get, key_path_update
 
@@ -573,6 +581,7 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
         vin: str,
         entry: ConfigEntry,
         version: APIVersion,
+        budget: ApiBudget | None = None,
     ) -> None:
         """Initialize coordinator."""
         self.auth = auth
@@ -585,20 +594,131 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
         # signal codes the vehicle has positively reported it cannot answer.
         # empty means unknown, which is treated as capable.
         self.incapable_codes: frozenset[str] = frozenset()
+        self.budget = budget
+        self.settings = resolve_settings(dict(entry.options))
+        self._event_polls_today = 0
+        self._event_poll_day: dt.date | None = None
 
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=entry,
             name=f"{DOMAIN}_{vehicle_id}",
-            update_interval=UPDATE_INTERVAL
-            if CONF_APPLICATION_MANAGEMENT_TOKEN not in entry.data
-            else None,
+            update_interval=self._resolve_update_interval(),
         )
 
+    def _resolve_update_interval(self) -> timedelta | None:
+        """Decide the scheduled cadence for this vehicle.
+
+        A webhook makes scheduled polling redundant, so a configured management
+        token still wins: that is the cheapest and freshest source there is.
+        Otherwise the user's chosen profile decides.
+
+        Returns:
+            The interval, or None when nothing should be scheduled.
+        """
+        if CONF_APPLICATION_MANAGEMENT_TOKEN in self.entry.data:
+            return None
+
+        return self.settings.scheduled_interval
+
+    @property
+    def monthly_budget(self) -> int:
+        """The per-vehicle monthly call allowance.
+
+        Returns:
+            The configured allowance.
+        """
+        return int(self.entry.options.get(CONF_MONTHLY_BUDGET, DEFAULT_MONTHLY_BUDGET))
+
+    @property
+    def budget_reserve(self) -> int:
+        """Calls kept back from polling so commands can always be sent.
+
+        Returns:
+            The configured reserve.
+        """
+        return int(self.entry.options.get(CONF_BUDGET_RESERVE, DEFAULT_RESERVE))
+
+    def budget_allows_poll(self) -> bool:
+        """Whether a scheduled or event driven poll may spend a call.
+
+        Returns:
+            True when there is allowance left above the reserve.
+        """
+        if self.budget is None:
+            return True
+
+        return self.budget.can_poll(
+            self.vehicle_id, self.monthly_budget, self.budget_reserve
+        )
+
+    async def async_record_call(self, calls: int = 1) -> None:
+        """Count calls made to this vehicle against its allowance."""
+        if self.budget is not None:
+            await self.budget.async_record(self.vehicle_id, calls)
+
+    def _claim_event_poll(self) -> bool:
+        """Take one of today's event driven polls, if any are left.
+
+        A phone that flaps between home and away would otherwise drain a month
+        of allowance in an afternoon, so the cap is enforced here rather than
+        trusted to the trigger.
+
+        Returns:
+            True when the caller may poll.
+        """
+        today = dt_util.now().date()
+
+        if self._event_poll_day != today:
+            self._event_poll_day = today
+            self._event_polls_today = 0
+
+        if self._event_polls_today >= self.settings.daily_event_cap:
+            _LOGGER.debug(
+                "Coordinator %s: daily event poll cap of %s already reached",
+                self.name,
+                self.settings.daily_event_cap,
+            )
+            return False
+
+        self._event_polls_today += 1
+
+        return True
+
+    async def async_request_event_poll(self, reason: str) -> bool:
+        """Poll because something happened, rather than because time passed.
+
+        Returns:
+            True when a refresh was actually made.
+        """
+        if not self._claim_event_poll():
+            return False
+
+        if not self.budget_allows_poll():
+            _LOGGER.warning(
+                "Coordinator %s: skipping %s poll, only %s of %s calls left this "
+                "period and %s are reserved for commands",
+                self.name,
+                reason,
+                self.budget.remaining(self.vehicle_id, self.monthly_budget)
+                if self.budget
+                else "?",
+                self.monthly_budget,
+                self.budget_reserve,
+            )
+            return False
+
+        _LOGGER.info("Coordinator %s: polling because %s", self.name, reason)
+        await self.async_request_refresh()
+
+        return True
+
     def is_scope_enabled(
-        self, sensor_key: EntityDescriptionKey, *, verbose: bool = False
+        self, sensor_key: EntityDescriptionKey | str, *, verbose: bool = False
     ) -> bool:
-        token_scopes = self.config_entry.data.get("token", {}).get("scopes", [])
+        sensor_key = EntityDescriptionKey(sensor_key)
+        token_scopes = self.entry.data.get("token", {}).get("scopes", [])
         required_scopes = DATAPOINT_ENTITY_KEY_MAP[sensor_key].required_scopes
         missing = [scope for scope in required_scopes if scope not in token_scopes]
         enabled = len(missing) == 0
@@ -616,7 +736,7 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
         return enabled
 
     def is_entity_supported(
-        self, sensor_key: EntityDescriptionKey, *, verbose: bool = False
+        self, sensor_key: EntityDescriptionKey | str, *, verbose: bool = False
     ) -> bool:
         """Whether an entity should exist for this vehicle at all.
 
@@ -635,7 +755,7 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
         ) and self.is_datapoint_capable(sensor_key, verbose=verbose)
 
     def is_datapoint_capable(
-        self, sensor_key: EntityDescriptionKey, *, verbose: bool = False
+        self, sensor_key: EntityDescriptionKey | str, *, verbose: bool = False
     ) -> bool:
         """Whether the vehicle can answer the signal behind an entity.
 
@@ -651,7 +771,7 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
         Returns:
             True unless the vehicle has positively reported it is not capable.
         """
-        code = DATAPOINT_ENTITY_KEY_MAP[sensor_key].code
+        code = DATAPOINT_ENTITY_KEY_MAP[EntityDescriptionKey(sensor_key)].code
 
         if code is None or code not in self.incapable_codes:
             return True
@@ -689,7 +809,7 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
         # "disable polling" is the user saying not to make requests to this
         # service on our own initiative. a capability read is exactly that, so
         # it is skipped, and every entity the scopes allow gets created.
-        if self.config_entry.pref_disable_polling:
+        if self.entry.pref_disable_polling:
             _LOGGER.debug(
                 "Coordinator %s: polling is disabled, skipping the capability "
                 "read; entities are created from the granted scopes alone",
@@ -715,6 +835,8 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
             )
             return False
 
+        await self.async_record_call()
+
         self.incapable_codes = _incapable_codes(signal_data)
 
         _LOGGER.info(
@@ -730,12 +852,13 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
 
         return True
 
-    def batch_sensor(self, sensor: CoordinatorEntity) -> None:
+    def batch_sensor(self, sensor: CoordinatorEntity[Any]) -> None:
         """Mark a sensor to be included in the next update batch."""
         self._batch_add(sensor.entity_description.key)
 
-    def _batch_add(self, key: EntityDescriptionKey) -> None:
+    def _batch_add(self, key: EntityDescriptionKey | str) -> None:
         """Mark data as needing to be fetched in the next update batch."""
+        key = EntityDescriptionKey(key)
 
         assert self.is_scope_enabled(key)
 
@@ -763,20 +886,20 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
         if self.batch_requests:
             return
         if (
-            self.config_entry.pref_disable_polling
-            or CONF_APPLICATION_MANAGEMENT_TOKEN in self.config_entry.data
+            self.entry.pref_disable_polling
+            or CONF_APPLICATION_MANAGEMENT_TOKEN in self.entry.data
         ):
             return
 
         entities: list[er.RegistryEntry] = er.async_entries_for_config_entry(
-            er.async_get(self.hass), self.config_entry.entry_id
+            er.async_get(self.hass), self.entry.entry_id
         )
 
         for entity in entities:
             _, key = entity.unique_id.split("_", 1)
             if key not in DATAPOINT_ENTITY_KEY_MAP:
                 continue
-            config = DATAPOINT_ENTITY_KEY_MAP[key]
+            config = DATAPOINT_ENTITY_KEY_MAP[EntityDescriptionKey(key)]
 
             if entity.disabled:
                 continue
@@ -852,6 +975,22 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
             )
             return self.data
 
+        # the allowance is per vehicle per month and is shared with commands.
+        # stopping short of the ceiling keeps the reserve available for a lock
+        # or a charge stop, which matter more than one more reading.
+        if not self.budget_allows_poll():
+            _LOGGER.warning(
+                "Coordinator %s: skipping scheduled poll, the vehicle has used "
+                "%s of its %s calls this period and %s are reserved for "
+                "commands. Subscribe the vehicle to a webhook for updates that "
+                "do not spend the allowance",
+                self.name,
+                self.budget.used(self.vehicle_id) if self.budget else "?",
+                self.monthly_budget,
+                self.budget_reserve,
+            )
+            return self.data
+
         _LOGGER.debug(
             "Coordinator %s: Requesting batch update (Interval: %s) for paths: %s",
             self.name,
@@ -901,6 +1040,8 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
 
         response.raise_for_status()
         response_data = await response.json()
+
+        await self.async_record_call()
 
         return self._merge_response_data(response_data)
 

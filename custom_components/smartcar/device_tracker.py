@@ -16,6 +16,9 @@ from .entity import SmartcarEntity, SmartcarEntityDescription
 
 _LOGGER = logging.getLogger(__name__)
 
+# read only platform; the coordinator owns all fetching.
+PARALLEL_UPDATES = 0
+
 
 @dataclass(frozen=True, kw_only=True)
 class SmartcarTrackerDescription(TrackerEntityDescription, SmartcarEntityDescription):

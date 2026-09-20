@@ -33,7 +33,7 @@ async def webhook_url_from_id(hass: HomeAssistant, webhook_id: str) -> tuple[str
 
 def update_meta_coordinator_data[F: Callable[..., Any], ReturnT](fn: F) -> F:
     @wraps(fn)
-    async def wrapper(*args, **kwargs) -> ReturnT:  # noqa: ANN002, ANN003
+    async def wrapper(*args: Any, **kwargs: Any) -> ReturnT:  # noqa: ANN401
         response = await fn(*args, **kwargs)
         config_entry = kwargs["config_entry"]
         request = args[2]
@@ -100,7 +100,9 @@ async def handle_webhook(
     # the verify message is not signed, so that's done before this check. all
     # other messages must be signed & validated before we process the data from
     # them.
-    if not hmac.compare_digest(util.hmac_sha256_hexdigest(app_token, body), signature):
+    if signature is None or not hmac.compare_digest(
+        util.hmac_sha256_hexdigest(app_token, body), signature
+    ):
         _LOGGER.error("ignoring message with invalid signature")
         return web.json_response(
             {
@@ -142,7 +144,7 @@ async def handle_webhook(
             vin
             for coordinator in coordinators.values()
             if (
-                vin := coordinator.config_entry.data.get("vehicles", {})
+                vin := coordinator.entry.data.get("vehicles", {})
                 .get(vehicle_id, {})
                 .get("vin")
             )
@@ -180,7 +182,7 @@ def _handle_webhook_errors(
     errors: list[dict],
 ) -> None:
     hass = coordinator.hass
-    config_entry = coordinator.config_entry
+    config_entry = coordinator.entry
 
     for error in errors:
         error_type = error.get("type")

@@ -1,0 +1,132 @@
+blueprint:
+  name: Smartcar + Emporia - taper the charging current as the battery fills
+  description: >-
+    Uses the Smartcar battery level to step the Emporia charger's current down
+    as the vehicle approaches its target, and stops at the target.
+
+
+    This exists because of a real gap. Smartcar publishes charge-amperage
+    signals, but they are not supported on every vehicle: a 2025 US ID. Buzz
+    reports none of them, so the car can be asked for its state of charge but
+    never for its current. Emporia owns the current. Pairing the two gives amp
+    control keyed to state of charge on vehicles where Smartcar alone cannot.
+
+
+    Important: if Emporia's own cloud features are active, Excess Solar or Peak
+    Demand rewrite the same current field continuously and a value set here
+    will not stick. The Emporia integration exposes a Cloud Managed binary
+    sensor for exactly this; wire it in below and this automation will stand
+    down rather than fight it.
+  domain: automation
+  homeassistant:
+    min_version: 2026.9.0
+  input:
+    battery:
+      name: Smartcar battery level
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              integration: smartcar
+              device_class: battery
+    charger_current:
+      name: Emporia charging current
+      selector:
+        entity:
+          filter:
+            - domain: number
+              integration: emporia_vue
+    charger_switch:
+      name: Emporia charger switch
+      selector:
+        entity:
+          filter:
+            - domain: switch
+              integration: emporia_vue
+    cloud_managed:
+      name: Emporia cloud managed binary sensor
+      description: >-
+        Optional but recommended. While this is on, Emporia's cloud is
+        rewriting the current and this automation will not fight it.
+      default: []
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - domain: binary_sensor
+              integration: emporia_vue
+    target:
+      name: Target charge level
+      default: 80
+      selector:
+        number:
+          min: 50
+          max: 100
+          step: 5
+          unit_of_measurement: "%"
+    full_current:
+      name: Current below the taper point
+      default: 32
+      selector:
+        number:
+          min: 6
+          max: 48
+          step: 1
+          unit_of_measurement: A
+    taper_current:
+      name: Current within 10 percent of target
+      default: 12
+      selector:
+        number:
+          min: 6
+          max: 48
+          step: 1
+          unit_of_measurement: A
+
+mode: single
+
+triggers:
+  - trigger: state
+    entity_id: !input battery
+
+variables:
+  target_level: !input target
+  cloud_managed_entities: !input cloud_managed
+
+conditions:
+  - condition: template
+    value_template: >-
+      {{ trigger.to_state.state not in ['unknown', 'unavailable'] }}
+  - condition: template
+    value_template: >-
+      {{ cloud_managed_entities | select('is_state', 'on') | list | count == 0 }}
+
+actions:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: >-
+              {{ trigger.to_state.state | float(0) >= target_level | float }}
+        sequence:
+          - action: switch.turn_off
+            target:
+              entity_id: !input charger_switch
+            continue_on_error: true
+      - conditions:
+          - condition: template
+            value_template: >-
+              {{ trigger.to_state.state | float(0) >= (target_level | float - 10) }}
+        sequence:
+          - action: number.set_value
+            target:
+              entity_id: !input charger_current
+            data:
+              value: !input taper_current
+            continue_on_error: true
+    default:
+      - action: number.set_value
+        target:
+          entity_id: !input charger_current
+        data:
+          value: !input full_current
+        continue_on_error: true

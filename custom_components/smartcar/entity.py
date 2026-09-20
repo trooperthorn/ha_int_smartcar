@@ -3,7 +3,7 @@ import datetime as dt
 from enum import Enum
 from http import HTTPStatus
 import logging
-from typing import Any, Literal, Self
+from typing import Any, Literal, Self, cast
 
 from aiohttp import ClientError, ClientResponse, ClientResponseError
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
@@ -18,7 +18,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
 from . import const as smartcar_const, util
-from .const import DOMAIN
+from .const import DOMAIN, EntityDescriptionKey
 from .coordinator import DATAPOINT_ENTITY_KEY_MAP, SmartcarVehicleCoordinator
 from .types import SmartcarAPIError
 from .util import key_path_get
@@ -54,6 +54,19 @@ class SmartcarEntity[ValueT, RawValueT](
         self._attr_device_info = {"identifiers": {(DOMAIN, device_id)}}
 
     @property
+    def _description(self) -> "SmartcarEntityDescription":
+        """The description, narrowed to this integration's own type.
+
+        Every platform redeclares entity_description as its own subclass, so
+        the base class cannot; this keeps the Smartcar fields reachable without
+        fighting those declarations.
+
+        Returns:
+            The entity description.
+        """
+        return cast("SmartcarEntityDescription", self.entity_description)
+
+    @property
     def available(self) -> bool:
         return (
             super().available
@@ -82,7 +95,9 @@ class SmartcarEntity[ValueT, RawValueT](
         # the 36 datapoints that have no v2 equivalent.
         if (
             self.coordinator.version == "v2"
-            and DATAPOINT_ENTITY_KEY_MAP[self.entity_description.key].endpoint_v2
+            and DATAPOINT_ENTITY_KEY_MAP[
+                EntityDescriptionKey(self.entity_description.key)
+            ].endpoint_v2
             is None
         ):
             msg = f"Unsupported update requests for: {self.entity_description.key}"
@@ -124,48 +139,45 @@ class SmartcarEntity[ValueT, RawValueT](
 
     def _extract_unit_system(self) -> str | None:
         data = self.coordinator.data or {}
-        description = self.entity_description
-        key_path = description.value_key_path.split(".")
+        key_path = self._description.value_key_path.split(".")
         return data.get(f"{key_path[0]}:unit_system")
 
     def _extract_data_age(self) -> dt.datetime | None:
         data = self.coordinator.data or {}
-        description = self.entity_description
-        key_path = description.value_key_path.split(".")
+        key_path = self._description.value_key_path.split(".")
         return data.get(f"{key_path[0]}:data_age")
 
     def _extract_fetched_at(self) -> dt.datetime | None:
         data = self.coordinator.data or {}
-        description = self.entity_description
-        key_path = description.value_key_path.split(".")
+        key_path = self._description.value_key_path.split(".")
         return data.get(f"{key_path[0]}:fetched_at")
 
     def _extract_raw_value(self) -> RawValueT | None:
         data = self.coordinator.data or {}
-        description = self.entity_description
-        value: RawValueT | None = key_path_get(data, description.value_key_path, None)
+        value: RawValueT | None = key_path_get(
+            data, self._description.value_key_path, None
+        )
         return value
 
     def _extract_value(self) -> ValueT:
-        description = self.entity_description
         unit_system = self._extract_unit_system()
         raw_value: RawValueT | None = self._extract_raw_value()
-        value_cast: Callable[[RawValueT | None], ValueT] = description.value_cast
+        value_cast: Callable[[RawValueT | None], ValueT] = self._description.value_cast
         value: ValueT = value_cast(raw_value)
 
         if (
             value is not None
             and (unit_system == "imperial")
-            and (imperial_conversion := self.entity_description.imperial_conversion)
+            and (imperial_conversion := self._description.imperial_conversion)
         ):
-            value = imperial_conversion(value)
+            value = cast("ValueT", imperial_conversion(cast("float", value)))
 
         return value
 
     def _inject_raw_value(
         self, value: RawValueT, extra_data: dict | None = None
     ) -> None:
-        inject_raw_value(self.coordinator, self.entity_description, value, extra_data)
+        inject_raw_value(self.coordinator, self._description, value, extra_data)
 
     async def _async_send_command(
         self,
@@ -173,7 +185,7 @@ class SmartcarEntity[ValueT, RawValueT](
         payload: dict[str, Any] | None,
         *,
         method: str = "post",
-        **kwargs,  # noqa: ARG002, ANN003
+        **kwargs: object,  # noqa: ARG002
     ) -> None:
         try:
             success = await async_send_command(
@@ -244,7 +256,7 @@ class SmartcarEntityDescription(EntityDescription):
     value_key_path: str
     value_cast: Callable[[Any], Any] = lambda x: x
     imperial_conversion: Callable[[float], float] | None = None
-    entity_registry_enabled_default = IndirectDescriptor(
+    entity_registry_enabled_default = IndirectDescriptor(  # type: ignore[assignment]
         "DEFAULT_ENABLED_ENTITY_DESCRIPTION_KEYS"
     )
 
@@ -258,7 +270,7 @@ class SmartcarMetaEntityDescription(EntityDescription):
 
 def inject_raw_value[RawValueT](
     coordinator: SmartcarVehicleCoordinator,
-    description: EntityDescription,
+    description: SmartcarEntityDescription,
     value: RawValueT,
     extra_data: dict | None = None,
 ) -> None:
@@ -275,7 +287,7 @@ def inject_raw_value[RawValueT](
 
     with coordinator.create_updated_data() as (add, updated_data):
         add.from_storage_raw_value(
-            description.key,
+            EntityDescriptionKey(description.key),
             description.value_key_path,
             value=value,
             unit_system=unit_system,
@@ -369,6 +381,12 @@ async def async_send_command(
             context=f"Command {subpath} for {coordinator.vehicle_id} (VIN : {coordinator.vin}",
         )
         resp.raise_for_status()
+
+        # commands are billed from the same per-vehicle monthly allowance as
+        # reads, so they are counted whatever the outcome: Smartcar charges for
+        # the call, not for the result.
+        await coordinator.async_record_call()
+
         await _async_raise_for_streamed_error(resp, subpath, coordinator)
         success = True
     except ClientResponseError as err:
@@ -380,7 +398,7 @@ async def async_send_command(
                 coordinator.vehicle_id,
                 coordinator.vin,
             )
-            coordinator.config_entry.async_start_reauth(coordinator.hass)
+            coordinator.entry.async_start_reauth(coordinator.hass)
         elif err.status in {
             ERROR_STATUS_VEHICLE_STATE,
             ERROR_STATUS_RATE_LIMIT,

@@ -12,6 +12,11 @@ from .entity import SmartcarEntity, SmartcarEntityDescription
 
 _LOGGER = logging.getLogger(__name__)
 
+# commands are serialised: the vehicle's monthly allowance is shared with
+# reads, and two commands racing to the same car is not something the OEM
+# handles gracefully.
+PARALLEL_UPDATES = 1
+
 
 def _hvac_bool(body: object) -> object:
     """Extract a boolean from an HVAC webhook signal body ({"value": bool}).
@@ -93,7 +98,7 @@ class SmartcarChargingSwitch(SmartcarEntity[bool, bool], SwitchEntity):
 
     async def async_turn_on(
         self,
-        **kwargs,  # noqa: ARG002, ANN003
+        **kwargs: object,  # noqa: ARG002
     ) -> None:
         version = self.coordinator.auth.version
         command = "/charge/start"
@@ -109,7 +114,7 @@ class SmartcarChargingSwitch(SmartcarEntity[bool, bool], SwitchEntity):
 
     async def async_turn_off(
         self,
-        **kwargs,  # noqa: ARG002, ANN003
+        **kwargs: object,  # noqa: ARG002
     ) -> None:
         version = self.coordinator.auth.version
         command = "/charge/stop"
@@ -140,7 +145,7 @@ class SmartcarClimateSwitch(SmartcarEntity[bool, bool], SwitchEntity):
 
     async def async_turn_on(
         self,
-        **kwargs,  # noqa: ARG002, ANN003
+        **kwargs: object,  # noqa: ARG002
     ) -> None:
         await self._async_send_command("/climate", {"action": "START"})
         self._inject_raw_value(value=True)
@@ -148,7 +153,7 @@ class SmartcarClimateSwitch(SmartcarEntity[bool, bool], SwitchEntity):
 
     async def async_turn_off(
         self,
-        **kwargs,  # noqa: ARG002, ANN003
+        **kwargs: object,  # noqa: ARG002
     ) -> None:
         await self._async_send_command("/climate", {"action": "STOP"})
         self._inject_raw_value(value=False)

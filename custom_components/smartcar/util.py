@@ -1,5 +1,5 @@
 import asyncio
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
 from functools import reduce
 import hashlib
 import hmac
@@ -76,11 +76,11 @@ def api_version_for_client_id(client_id: str) -> APIVersion:
     return "v2"
 
 
-def unique_id_from_entry_data(data: dict) -> str:
+def unique_id_from_entry_data(data: Mapping[str, Any]) -> str:
     return " ".join(sorted(data["vehicles"].keys())).lower()
 
 
-def vins_from_entry_data(data: dict) -> str:
+def vins_from_entry_data(data: Mapping[str, Any]) -> str:
     return " ".join(
         sorted(
             [
@@ -134,14 +134,14 @@ def key_path_pop[KeyT: str, ValueT, EndValueT](
 
 @overload
 def key_path_pop[KeyT: str, ValueT](
-    dict_obj: dict[KeyT, ValueT], key_path: str
+    dict_obj: dict[KeyT, ValueT], key_path: str, /
 ) -> Any: ...  # noqa: ANN401
 
 
-def key_path_pop(dict_obj, key_path, /, *args):
+def key_path_pop(dict_obj: Any, key_path: str, /, *args: Any) -> Any:
     try:
         dict_obj = _key_path_traverse(dict_obj, key_path, -1)
-        return dict_obj.pop(key_path.split(".")[-1])
+        return dict_obj.pop(key_path.rsplit(".", maxsplit=1)[-1])
     except KeyError as err:
         has_default = len(args) > 0
         if has_default:

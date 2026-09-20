@@ -18,6 +18,11 @@ from .entity import SmartcarEntity, SmartcarEntityDescription
 
 _LOGGER = logging.getLogger(__name__)
 
+# commands are serialised: the vehicle's monthly allowance is shared with
+# reads, and two commands racing to the same car is not something the OEM
+# handles gracefully.
+PARALLEL_UPDATES = 1
+
 
 @dataclass(frozen=True, kw_only=True)
 class SmartcarNumberDescription(NumberEntityDescription, SmartcarEntityDescription):

@@ -84,6 +84,12 @@
     },
     "batch_update_error": {
       "message": "An error occurred while retrieving vehicle state from the Smartcar API: {error}"
+    },
+    "budget_exhausted": {
+      "message": "This vehicle has used {used} of its {budget} Smartcar API calls this period, and {reserve} are reserved for commands. Subscribe the vehicle to a webhook, or wait for the allowance to reset."
+    },
+    "invalid_vin": {
+      "message": "No vehicle with VIN {vin} is set up in this Smartcar entry."
     }
   },
   "issues": {
@@ -97,6 +103,10 @@
           }
         }
       }
+    },
+    "polling_without_webhook": {
+      "title": "Smartcar is polling without a webhook subscription",
+      "description": "{title} is polling the Smartcar API on a schedule. Without a webhook subscription Smartcar only refreshes vehicle data about once every 24 hours, so scheduled polling spends the 500 calls per vehicle per month allowance without producing newer data.\n\nSubscribing the vehicle to a webhook gives updates as often as the manufacturer allows, and costs nothing from the allowance. See {docs_url}."
     }
   },
   "options": {
@@ -116,6 +126,28 @@
         },
         "description": "Provide your _Application Management Token_ from your [Smartcar account]({smartcar_url}) to use webhooks.\n\nTo send events to Home Assistant, you will need to set up a [webhook with Smartcar]({smartcar_url}). Use the following URL:\n\n`{webhook_url}`\n\nIf the above URL indicates that webhooks are not enabled, revisit this configuration screen after completing the setup to get the URL.\n\nSee [the documentation]({docs_url}) for further details.",
         "title": "Smartcar configuration"
+      },
+      "polling": {
+        "title": "Polling and API budget",
+        "description": "Smartcar allows 500 API calls per vehicle per month on the free tier, and a vehicle that is not subscribed to a webhook only refreshes its data about once a day. Polling harder costs calls without producing newer data. This profile currently schedules about {estimate} calls a month against an allowance of {budget}.",
+        "data": {
+          "poll_profile": "Polling profile",
+          "poll_interval_hours": "Interval in hours (used by the Custom interval profile)",
+          "presence_entities": "People or device trackers to watch",
+          "poll_on_leave_home": "Refresh when someone leaves home",
+          "poll_on_arrive_home": "Refresh when someone arrives home",
+          "low_battery_threshold": "Treat the battery as low below this percentage",
+          "daily_event_cap": "Maximum event driven refreshes per day",
+          "monthly_budget": "API calls allowed per vehicle per month",
+          "budget_reserve": "Calls reserved for commands",
+          "auto_subscribe_webhook": "Subscribe vehicles to the webhook automatically"
+        },
+        "data_description": {
+          "poll_profile": "Webhooks only makes no scheduled calls at all and is the cheapest and freshest option. On demand only refreshes when an automation or the Refresh action asks, plus once a day if someone is away from home.",
+          "presence_entities": "Where the people are is free to watch. A phone leaving home is a better reason to ask the car where it is than a timer is.",
+          "daily_event_cap": "Stops a device tracker that flaps between home and away from spending a month of allowance in an afternoon.",
+          "budget_reserve": "Commands are billed from the same allowance. These calls are never spent on polling, so a lock or a charge stop always has room."
+        }
       }
     }
   },
@@ -147,6 +179,35 @@
         }
       },
       "name": "Unlock doors"
+    },
+    "refresh_vehicle": {
+      "name": "Refresh vehicle",
+      "description": "Ask Smartcar for fresh data for one vehicle. Spends one API call from that vehicle's monthly allowance unless it is skipped by the budget.",
+      "fields": {
+        "vin": {
+          "name": "VIN",
+          "description": "The vehicle to refresh. Omit to refresh every vehicle in the entry."
+        },
+        "config_entry": {
+          "name": "Integration entry",
+          "description": "Which Smartcar account to use."
+        },
+        "force": {
+          "name": "Ignore the reserve",
+          "description": "Refresh even when only the reserved commands budget is left. Use sparingly."
+        }
+      }
+    }
+  },
+  "selector": {
+    "poll_profile": {
+      "options": {
+        "webhook_only": "Webhooks only, no scheduled polling",
+        "on_demand": "On demand, plus once daily when away from home",
+        "daily": "Once a day",
+        "twice_daily": "Twice a day",
+        "interval": "Custom interval"
+      }
     }
   }
 }

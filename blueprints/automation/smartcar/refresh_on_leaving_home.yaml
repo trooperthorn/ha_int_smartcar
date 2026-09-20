@@ -1,0 +1,62 @@
+blueprint:
+  name: Smartcar - refresh the vehicle when someone leaves home
+  description: >-
+    Asks Smartcar for fresh vehicle data when a person or device tracker leaves
+    home, instead of paying for a fixed polling schedule.
+
+
+    Smartcar allows 500 API calls per vehicle per month on the free tier, and a
+    vehicle that is not subscribed to a webhook only refreshes its own data
+    about once every 24 hours. Polling on a timer therefore spends the
+    allowance on readings that have not changed. Where the people are is
+    something Home Assistant already knows for free, and a phone leaving home
+    is a far better reason to ask the car where it is.
+
+
+    The integration enforces its own daily cap and keeps a reserve for
+    commands, so this cannot overspend even if the tracker misbehaves.
+  domain: automation
+  homeassistant:
+    min_version: 2026.9.0
+  input:
+    presence:
+      name: People to watch
+      description: Leaving home triggers a refresh.
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - domain: person
+            - domain: device_tracker
+    config_entry:
+      name: Smartcar account
+      selector:
+        config_entry:
+          integration: smartcar
+    settle:
+      name: Settle time
+      description: >-
+        How long the person must stay away before refreshing. Stops a refresh
+        firing on a GPS wobble at the edge of the home zone.
+      default: 300
+      selector:
+        duration: {}
+
+mode: single
+max_exceptions: 0
+
+triggers:
+  - trigger: state
+    entity_id: !input presence
+    from: home
+    for: !input settle
+
+conditions:
+  - condition: template
+    value_template: "{{ trigger.to_state.state not in ['unknown', 'unavailable'] }}"
+
+actions:
+  - action: smartcar.refresh_vehicle
+    data:
+      config_entry: !input config_entry
+    continue_on_error: true

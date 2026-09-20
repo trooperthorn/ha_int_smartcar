@@ -1,0 +1,81 @@
+blueprint:
+  name: Smartcar - refresh, wait for fresh data, then act
+  description: >-
+    Refreshes one vehicle, waits for the data to actually arrive, and only then
+    runs whatever you put in the action.
+
+
+    Smartcar commands do not return updated state, and a refresh is
+    asynchronous, so acting immediately after asking for data reads the values
+    that were already there. This waits for a chosen sensor to actually change,
+    or gives up after a timeout, so the decision is made on data that arrived
+    after the request rather than before it.
+
+
+    Use this to wrap anything that must not act on stale readings, such as
+    deciding whether to start charging based on state of charge.
+  domain: script
+  homeassistant:
+    min_version: 2026.9.0
+  input:
+    config_entry:
+      name: Smartcar account
+      selector:
+        config_entry:
+          integration: smartcar
+    witness:
+      name: Sensor to watch for freshness
+      description: >-
+        Any Smartcar sensor for this vehicle. Its last-updated time is used to
+        tell that new data landed.
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              integration: smartcar
+    wait_seconds:
+      name: How long to wait for data
+      default: 120
+      selector:
+        number:
+          min: 10
+          max: 600
+          step: 10
+          unit_of_measurement: s
+    then:
+      name: What to do once the data is fresh
+      default: []
+      selector:
+        action: {}
+
+mode: single
+
+sequence:
+  - variables:
+      witness_entity: !input witness
+      started_at: "{{ now().isoformat() }}"
+  - action: smartcar.refresh_vehicle
+    data:
+      config_entry: !input config_entry
+    continue_on_error: true
+  - wait_template: >-
+      {{ (state_attr(witness_entity, 'fetched_at') is not none
+          and (state_attr(witness_entity, 'fetched_at') | as_datetime)
+              > (started_at | as_datetime))
+         or states[witness_entity].last_updated > (started_at | as_datetime) }}
+    timeout:
+      seconds: !input wait_seconds
+    continue_on_timeout: true
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ wait.completed }}"
+        sequence: !input then
+    default:
+      - action: system_log.write
+        data:
+          level: warning
+          logger: blueprint.smartcar
+          message: >-
+            Smartcar data did not refresh within the timeout, so the follow-up
+            actions were skipped rather than run on stale values.

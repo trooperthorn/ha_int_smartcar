@@ -27,6 +27,20 @@ CONF_APPLICATION_ID = "application_id"
 CONF_APPLICATION_MANAGEMENT_TOKEN = "application_management_token"  # noqa: S105
 CONF_CLOUDHOOK = "cloudhook"
 
+# polling policy. see polling.py for why these exist: the free tier allows 500
+# calls per vehicle per month, and an unsubscribed vehicle's data only refreshes
+# about once a day, so polling hard is both expensive and pointless.
+CONF_POLL_PROFILE = "poll_profile"
+CONF_POLL_INTERVAL_HOURS = "poll_interval_hours"
+CONF_PRESENCE_ENTITIES = "presence_entities"
+CONF_POLL_ON_LEAVE_HOME = "poll_on_leave_home"
+CONF_POLL_ON_ARRIVE_HOME = "poll_on_arrive_home"
+CONF_LOW_BATTERY = "low_battery_threshold"
+CONF_DAILY_EVENT_CAP = "daily_event_cap"
+CONF_MONTHLY_BUDGET = "monthly_budget"
+CONF_BUDGET_RESERVE = "budget_reserve"
+CONF_AUTO_SUBSCRIBE = "auto_subscribe_webhook"
+
 
 class Scope(StrEnum):
     """Scope enumeration class."""
@@ -127,6 +141,8 @@ class EntityDescriptionKey(StrEnum):
     CHARGE_FAST_CHARGER_PRESENT = auto()
     FIRMWARE_VERSION = auto()
     LAST_WEBHOOK_RECEIVED = auto()
+    API_CALLS_USED = auto()
+    API_CALLS_REMAINING = auto()
     # Diagnostics (requires read_diagnostics)
     DIAG_ABS = auto()
     DIAG_MIL = auto()

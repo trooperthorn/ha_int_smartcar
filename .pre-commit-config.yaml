@@ -45,10 +45,22 @@ repos:
           - --skip="./.*,*.csv,*.json"
           - --quiet-level=2
         exclude_types: [csv, json]
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.16.0
+  # mypy runs from the environment rather than an isolated one on purpose. The
+  # isolated hook had no homeassistant installed, so every framework import
+  # resolved to Any and the type check could not see a single Home Assistant
+  # API. The quality scale's strict-typing rule is meaningless under those
+  # conditions, so this runs where the dependencies actually are.
+  - repo: local
     hooks:
       - id: mypy
+        name: mypy
+        entry: python -m mypy
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+        # the integration only, which is the scope the quality scale's
+        # strict-typing rule covers and the scope core applies these flags to.
+        files: ^custom_components/
         args:
           - --pretty
           - --show-error-codes

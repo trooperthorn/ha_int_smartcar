@@ -19,11 +19,14 @@ from custom_components.smartcar import coordinator as coordinator_module
 from custom_components.smartcar.const import (
     CONF_APPLICATION_MANAGEMENT_TOKEN,
     CONF_CLOUDHOOK,
+    CONF_POLL_INTERVAL_HOURS,
+    CONF_POLL_PROFILE,
     DEFAULT_ENABLED_ENTITY_DESCRIPTION_KEYS,
     DOMAIN,
     REQUIRED_SCOPES,
     EntityDescriptionKey,
 )
+from custom_components.smartcar.polling import PollProfile
 from custom_components.smartcar.types import APIVersion
 
 from . import MOCK_API_ENDPOINT_LEGACY, setup_added_integration, setup_integration
@@ -456,8 +459,12 @@ async def test_migration(
     # check change in config entry and verify most recent version
     if expect_migrated:
         assert config_entry.version == 2
-        assert config_entry.minor_version == 0
+        assert config_entry.minor_version == 1
         assert config_entry.data == snapshot(name="config_entry_data")
+        # an entry that predates the polling options keeps the six hour cadence
+        # it already had, rather than silently adopting the new default
+        assert config_entry.options[CONF_POLL_PROFILE] == PollProfile.INTERVAL
+        assert config_entry.options[CONF_POLL_INTERVAL_HOURS] == 6
 
     assert config_entry.unique_id == expected_unique_id
 
@@ -542,6 +549,8 @@ _SNAPSHOT_ORDER = {
     key: idx
     for idx, key in enumerate(
         [
+            "api_calls_remaining",
+            "api_calls_used",
             "battery_capacity",
             "battery_level",
             "charging_state",

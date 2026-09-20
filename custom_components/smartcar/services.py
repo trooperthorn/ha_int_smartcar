@@ -2,7 +2,7 @@
 
 from functools import partial
 import logging
-from typing import Final, Literal
+from typing import Final, Literal, cast
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import (
@@ -12,7 +12,7 @@ from homeassistant.core import (
     SupportsResponse,
     callback,
 )
-from homeassistant.exceptions import ServiceValidationError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import (
     config_validation as cv,
     entity_registry as er,
@@ -22,15 +22,17 @@ from homeassistant.helpers.entity_component import DATA_INSTANCES
 import voluptuous as vol
 
 from .const import DOMAIN, EntityDescriptionKey
-from .entity import async_send_command, inject_raw_value
+from .entity import SmartcarEntityDescription, async_send_command, inject_raw_value
 from .lock import ENTITY_DESCRIPTIONS as LOCK_ENTITY_DESCRIPTIONS
 
 _LOGGER = logging.getLogger(__name__)
 
 SERVICE_NAME_LOCK_DOORS: Final = "lock_doors"
 SERVICE_NAME_UNLOCK_DOORS: Final = "unlock_doors"
+SERVICE_NAME_REFRESH: Final = "refresh_vehicle"
 ATTR_CONFIG_ENTRY: Final = "config_entry"
 ATTR_VIN: Final = "vin"
+ATTR_FORCE: Final = "force"
 
 
 _SERVICE_SCHEMA_DOORS_SECURITY: Final = vol.Schema(
@@ -45,6 +47,16 @@ _SERVICE_SCHEMA_DOORS_SECURITY: Final = vol.Schema(
 )
 SERVICE_SCHEMA_LOCK_DOORS: Final = _SERVICE_SCHEMA_DOORS_SECURITY
 SERVICE_SCHEMA_UNLOCK_DOORS: Final = _SERVICE_SCHEMA_DOORS_SECURITY
+
+SERVICE_SCHEMA_REFRESH: Final = vol.Schema(
+    {
+        vol.Required(ATTR_CONFIG_ENTRY): selector.ConfigEntrySelector(
+            {"integration": DOMAIN},
+        ),
+        vol.Optional(ATTR_VIN): cv.string,
+        vol.Optional(ATTR_FORCE, default=False): cv.boolean,
+    },
+)
 
 
 def _async_write_entity_state(hass: HomeAssistant, entity_id: str) -> None:
@@ -75,7 +87,7 @@ async def _send_security_command(
 ) -> None:
     entry_id: str = call.data[ATTR_CONFIG_ENTRY]
     entry: ConfigEntry | None = hass.config_entries.async_get_entry(entry_id)
-    vin: str = call.data.get(ATTR_VIN)
+    vin: str | None = call.data.get(ATTR_VIN)
 
     if not entry:
         raise ServiceValidationError(
@@ -116,7 +128,11 @@ async def _send_security_command(
         payload = {"action": action}
 
     if await async_send_command(coordinator, command, payload):
-        inject_raw_value(coordinator, description, value=action == "LOCK")
+        inject_raw_value(
+            coordinator,
+            cast("SmartcarEntityDescription", description),
+            value=action == "LOCK",
+        )
 
         entities: list[er.RegistryEntry] = er.async_entries_for_config_entry(
             er.async_get(hass), entry_id
@@ -135,6 +151,8 @@ async def _lock_doors(
 ) -> ServiceResponse:
     await _send_security_command(call, "LOCK", hass=hass)
 
+    return None
+
 
 async def _unlock_doors(
     call: ServiceCall,
@@ -143,8 +161,65 @@ async def _unlock_doors(
 ) -> ServiceResponse:
     await _send_security_command(call, "UNLOCK", hass=hass)
 
+    return None
+
 
 @callback
+async def _refresh_vehicle(call: ServiceCall, *, hass: HomeAssistant) -> None:
+    """Refresh one vehicle, or every vehicle in the entry.
+
+    This is the action blueprints call. It exists so that a user can decide for
+    themselves what is worth an API call, rather than paying a fixed schedule
+    for readings nobody asked for.
+
+    Raises:
+        ServiceValidationError: If the config entry or VIN does not exist.
+        HomeAssistantError: If the vehicle's allowance is already spent.
+    """
+    entry_id: str = call.data[ATTR_CONFIG_ENTRY]
+    entry: ConfigEntry | None = hass.config_entries.async_get_entry(entry_id)
+    vin: str | None = call.data.get(ATTR_VIN)
+    force: bool = call.data[ATTR_FORCE]
+
+    if not entry:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="invalid_config_entry",
+            translation_placeholders={"config_entry": entry_id},
+        )
+
+    coordinators = [
+        coordinator
+        for coordinator in entry.runtime_data.coordinators.values()
+        if vin is None or coordinator.vin == vin
+    ]
+
+    if not coordinators:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="invalid_vin",
+            translation_placeholders={"vin": vin or ""},
+        )
+
+    for coordinator in coordinators:
+        if not force and not coordinator.budget_allows_poll():
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="budget_exhausted",
+                translation_placeholders={
+                    "used": str(
+                        coordinator.budget.used(coordinator.vehicle_id)
+                        if coordinator.budget
+                        else 0
+                    ),
+                    "budget": str(coordinator.monthly_budget),
+                    "reserve": str(coordinator.budget_reserve),
+                },
+            )
+
+        await coordinator.async_request_refresh()
+
+
 def async_setup_services(hass: HomeAssistant) -> None:
     """Set up Smartcar services."""
     hass.services.async_register(
@@ -160,5 +235,13 @@ def async_setup_services(hass: HomeAssistant) -> None:
         SERVICE_NAME_UNLOCK_DOORS,
         partial(_unlock_doors, hass=hass),
         schema=SERVICE_SCHEMA_UNLOCK_DOORS,
+        supports_response=SupportsResponse.NONE,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_NAME_REFRESH,
+        partial(_refresh_vehicle, hass=hass),
+        schema=SERVICE_SCHEMA_REFRESH,
         supports_response=SupportsResponse.NONE,
     )

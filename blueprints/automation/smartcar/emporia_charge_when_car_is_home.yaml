@@ -1,0 +1,87 @@
+blueprint:
+  name: Smartcar + Emporia - only allow charging when the car is actually home
+  description: >-
+    Turns the Emporia EV charger off whenever Smartcar says the vehicle is not
+    at home, and restores the current when it returns.
+
+
+    Why the two integrations together: Smartcar knows which car is plugged in
+    and what its state of charge is, but cannot read or set the charging
+    current on a vehicle like the ID. Buzz. Emporia owns the current, but has
+    no idea which car is on the end of the cable, or whether it is even there.
+    Neither one can do this alone.
+
+
+    The vehicle location comes from the Smartcar device tracker, which is
+    refreshed by webhook or by the presence-driven refresh blueprint rather
+    than by polling, so this costs no extra API calls.
+  domain: automation
+  homeassistant:
+    min_version: 2026.9.0
+  input:
+    vehicle_tracker:
+      name: Smartcar device tracker for the vehicle
+      selector:
+        entity:
+          filter:
+            - domain: device_tracker
+              integration: smartcar
+    charger_switch:
+      name: Emporia charger switch
+      selector:
+        entity:
+          filter:
+            - domain: switch
+              integration: emporia_vue
+    charger_current:
+      name: Emporia charging current
+      description: The Emporia number entity that sets the charge current in amps.
+      selector:
+        entity:
+          filter:
+            - domain: number
+              integration: emporia_vue
+    home_current:
+      name: Current to allow when the vehicle is home
+      default: 32
+      selector:
+        number:
+          min: 6
+          max: 48
+          step: 1
+          unit_of_measurement: A
+
+mode: queued
+max: 3
+
+triggers:
+  - trigger: state
+    entity_id: !input vehicle_tracker
+
+conditions:
+  - condition: template
+    value_template: >-
+      {{ trigger.to_state.state not in ['unknown', 'unavailable'] }}
+
+actions:
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: !input vehicle_tracker
+            state: home
+        sequence:
+          - action: number.set_value
+            target:
+              entity_id: !input charger_current
+            data:
+              value: !input home_current
+            continue_on_error: true
+          - action: switch.turn_on
+            target:
+              entity_id: !input charger_switch
+            continue_on_error: true
+    default:
+      - action: switch.turn_off
+        target:
+          entity_id: !input charger_switch
+        continue_on_error: true

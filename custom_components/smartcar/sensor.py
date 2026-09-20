@@ -1,9 +1,10 @@
+from collections.abc import Callable
 from dataclasses import dataclass
 import datetime as dt
 from datetime import date, datetime
 from decimal import Decimal
 import logging
-from typing import Any
+from typing import Any, cast
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -51,6 +52,9 @@ from .entity import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+# read only platform; the coordinator owns all fetching.
+PARALLEL_UPDATES = 0
 
 
 def _diag_status(body: object) -> object:
@@ -473,7 +477,7 @@ async def async_setup_entry(  # noqa: RUF029
     )
     meta_coordinator = entry.runtime_data.meta_coordinator
     _LOGGER.debug("Setting up sensors for vehicles: %s", list(coordinators.keys()))
-    entities = [
+    entities: list[SensorEntity] = [
         SmartcarSensor(coordinator, description)
         for coordinator in coordinators.values()
         for description in SENSOR_TYPES
@@ -497,6 +501,11 @@ async def async_setup_entry(  # noqa: RUF029
             )
         )
     ]
+    entities += [
+        SmartcarBudgetSensor(coordinator, description)
+        for coordinator in coordinators.values()
+        for description in BUDGET_SENSOR_TYPES
+    ]
     _LOGGER.info("Adding %s Smartcar sensor entities", len(entities))
     async_add_entities(entities)
 
@@ -510,14 +519,14 @@ class SmartcarSensor[ValueT, RawValueT](
 
     @property
     def native_value(self) -> StateType | date | datetime | Decimal:
-        return self._extract_value()
+        return cast("StateType | date | datetime | Decimal", self._extract_value())
 
 
-class SmartcarMetaSensor(CoordinatorEntity[DataUpdateCoordinator], SensorEntity):
+class SmartcarMetaSensor(CoordinatorEntity[DataUpdateCoordinator[Any]], SensorEntity):
     """Meta sensor entity."""
 
     _attr_has_entity_name = True
-    entity_description: SmartcarMetaEntityDescription
+    entity_description: SmartcarMetaEntityDescription  # type: ignore[assignment]
 
     def __init__(
         self,
@@ -543,3 +552,95 @@ class SmartcarMetaSensor(CoordinatorEntity[DataUpdateCoordinator], SensorEntity)
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return the state attributes."""
         return self.entity_description.attr_fn(self.coordinator.data)
+
+
+@dataclass(frozen=True, kw_only=True)
+class SmartcarBudgetSensorDescription(SensorEntityDescription):
+    """Describes a sensor reporting this vehicle's API call allowance."""
+
+    value_fn: Callable[[SmartcarVehicleCoordinator], int]
+
+
+BUDGET_SENSOR_TYPES: tuple[SmartcarBudgetSensorDescription, ...] = (
+    SmartcarBudgetSensorDescription(
+        key=EntityDescriptionKey.API_CALLS_USED,
+        translation_key=EntityDescriptionKey.API_CALLS_USED,
+        name="API Calls Used",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        state_class=SensorStateClass.TOTAL,
+        value_fn=lambda coordinator: (
+            coordinator.budget.used(coordinator.vehicle_id) if coordinator.budget else 0
+        ),
+        icon="mdi:counter",
+    ),
+    SmartcarBudgetSensorDescription(
+        key=EntityDescriptionKey.API_CALLS_REMAINING,
+        translation_key=EntityDescriptionKey.API_CALLS_REMAINING,
+        name="API Calls Remaining",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda coordinator: (
+            coordinator.budget.remaining(
+                coordinator.vehicle_id, coordinator.monthly_budget
+            )
+            if coordinator.budget
+            else coordinator.monthly_budget
+        ),
+        icon="mdi:gauge",
+    ),
+)
+
+
+class SmartcarBudgetSensor(CoordinatorEntity[SmartcarVehicleCoordinator], SensorEntity):
+    """How much of this vehicle's monthly API allowance is left.
+
+    Smartcar bills per vehicle per month and does not publish a remaining
+    count, so this is Home Assistant's own tally of the calls it made. It is an
+    estimate of Smartcar's number, not a reconciliation of it: calls made by
+    anything else using the same application are not visible from here.
+    """
+
+    _attr_has_entity_name = True
+    entity_description: SmartcarBudgetSensorDescription
+
+    def __init__(
+        self,
+        coordinator: SmartcarVehicleCoordinator,
+        description: SmartcarBudgetSensorDescription,
+    ) -> None:
+        """Initialize."""
+        super().__init__(coordinator)
+        device_id = coordinator.vehicle_id
+
+        if coordinator.version == "v2" and coordinator.vin:
+            device_id = coordinator.vin
+
+        self.entity_description = description
+        self._attr_unique_id = f"{device_id}_{description.key}"
+        self._attr_device_info = {"identifiers": {(DOMAIN, device_id)}}
+
+    @property
+    def native_value(self) -> int:
+        """The current count.
+
+        Returns:
+            Calls used or remaining, depending on the description.
+        """
+        return self.entity_description.value_fn(self.coordinator)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Context that makes the number actionable.
+
+        Returns:
+            The period, allowance, reserve and the profile's own estimate.
+        """
+        coordinator = self.coordinator
+        settings = coordinator.settings
+
+        return {
+            "period": coordinator.budget.period if coordinator.budget else None,
+            "monthly_budget": coordinator.monthly_budget,
+            "reserved_for_commands": coordinator.budget_reserve,
+            "poll_profile": settings.profile.value,
+            "scheduled_calls_per_month": settings.monthly_estimate(),
+        }
