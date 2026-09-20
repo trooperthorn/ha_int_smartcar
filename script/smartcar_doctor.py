@@ -41,6 +41,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import socket
 import ssl
 import sys
@@ -84,6 +85,7 @@ class Redactor:
         """Initialize the redactor."""
         self.enabled = enabled
         self.map: dict[str, str] = {}
+        self._seen: dict[str, str] = {}
 
     def __call__(self, kind: str, value: Any) -> Any:
         """Redact one identifier.
@@ -95,9 +97,18 @@ class Redactor:
             return value
 
         text = str(value)
+
+        # the same value keeps the placeholder it was first given, even when a
+        # later caller would label it differently. a vehicle id read out of a
+        # connection and the same id seen inside a raw body have to match, or
+        # the report cannot be followed from one section to the next.
+        if existing := self._seen.get(text):
+            return existing
+
         digest = hashlib.sha256(text.encode()).hexdigest()[:8]
         placeholder = f"{kind}_{digest}"
         self.map[placeholder] = text
+        self._seen[text] = placeholder
 
         return placeholder
 
@@ -330,7 +341,9 @@ def check_token(client_id: str, client_secret: str) -> tuple[Result, str | None]
     return result.passed(summary, {"expires_in": parsed.get("expires_in")}), str(token)
 
 
-def check_connections(token: str, redact: Redactor) -> tuple[Result, list[dict]]:
+def check_connections(
+    token: str, redact: Redactor
+) -> tuple[Result, list[dict], list[Any]]:
     """Read every page of /connections.
 
     Application level, so it does not come out of any vehicle's allowance. This
@@ -338,10 +351,11 @@ def check_connections(token: str, redact: Redactor) -> tuple[Result, list[dict]]
     refuses to set up.
 
     Returns:
-        The result, and the connection resources.
+        The result, the connection resources, and the raw pages.
     """
     result = Result("List connections", FREE)
     connections: list[dict] = []
+    pages: list[Any] = []
     page = 1
 
     while page <= CONNECTIONS_PAGE_LIMIT:
@@ -351,13 +365,18 @@ def check_connections(token: str, redact: Redactor) -> tuple[Result, list[dict]]
         status, _, body = http("get", f"{VEHICLE_API}/connections?{query}", token=token)
 
         if status != 200:
-            return result.failed(f"HTTP {status} on page {page}. {body[:300]}"), []
+            return (
+                result.failed(f"HTTP {status} on page {page}. {body[:300]}"),
+                [],
+                pages,
+            )
 
         parsed = parse_json(body)
 
         if not isinstance(parsed, dict):
-            return result.failed(f"page {page} is not JSON: {body[:200]}"), []
+            return result.failed(f"page {page} is not JSON: {body[:200]}"), [], pages
 
+        pages.append(parsed)
         connections.extend(parsed.get("data", []))
         total = parsed.get("meta", {}).get("totalCount")
 
@@ -376,19 +395,27 @@ def check_connections(token: str, redact: Redactor) -> tuple[Result, list[dict]]
     )
 
     if not connections:
-        return result.failed(f"{summary}. The integration aborts with no_vehicles."), []
+        return (
+            result.failed(f"{summary}. The integration aborts with no_vehicles."),
+            [],
+            pages,
+        )
 
     if len(users) != 1:
-        return result.failed(
-            f"{summary}. The integration only supports a single user application "
-            "and aborts with not_single_user_app."
-        ), connections
+        return (
+            result.failed(
+                f"{summary}. The integration only supports a single user application "
+                "and aborts with not_single_user_app."
+            ),
+            connections,
+            pages,
+        )
 
     for connection in connections:
         redact("veh", dig(connection, "relationships", "vehicle", "data", "id"))
         redact("user", dig(connection, "relationships", "user", "data", "id"))
 
-    return result.passed(summary), connections
+    return result.passed(summary), connections, pages
 
 
 def check_management(token: str) -> list[Result]:
@@ -457,6 +484,21 @@ def check_signals(
         return result.failed(f"HTTP 200 but the body is not JSON: {body[:200]}"), None
 
     signals = parsed.get("data", [])
+
+    if not signals:
+        # a 200 carrying nothing is the worst answer the endpoint can give: the
+        # integration's poll makes exactly this request, so an empty set here
+        # means an empty set there, and no entity ever gets a value. the keys
+        # that came back alongside `data` are the only clue to why.
+        keys = ", ".join(sorted(parsed)) or "none"
+        meta = json.dumps(parsed.get("meta", {}))[:200]
+
+        return result.failed(
+            f"HTTP 200 with an empty signal set. Top level keys: {keys}. "
+            f"meta: {meta}. The integration makes this same request, so it "
+            "would see nothing either."
+        ), parsed
+
     counts = summarise_signals(signals)
     summary = (
         f"{len(signals)} signal(s): {counts['ok']} with a value, "
@@ -466,6 +508,62 @@ def check_signals(
     )
 
     return result.passed(summary, counts), parsed
+
+
+def probe_empty_signals(
+    token: str, user_id: str, vehicle_id: str, redact: Redactor
+) -> tuple[list[Result], dict[str, Any]]:
+    """Work out why the signal set came back empty. Costs one call per probe.
+
+    Four questions, each isolating one cause, and each the cheapest request that
+    can answer it:
+
+    `GET /vehicles/{id}` says whether the vehicle is readable at all. It is the
+    only one of these that is not a signals request, so an answer here with an
+    empty signals list separates a dead connection from a dead endpoint.
+
+    A single signal path answers whether signals work one at a time. If `vin`
+    returns a value while the collection returns nothing, the bug is in the
+    collection endpoint or in how it is being called, which is the integration's
+    only polling request.
+
+    The same collection with an explicit `signals` filter tests whether the
+    endpoint wants to be told what to ask for. Nothing published says it does,
+    and the integration sends a bare GET.
+
+    The same collection without `sc-user-id` tests whether that header is
+    filtering everything out. The spec calls it required, so this is expected to
+    fail; it failing differently would be informative.
+
+    Returns:
+        The results, and the raw bodies keyed by probe.
+    """
+    base = f"{VEHICLE_API}/vehicles/{vehicle_id}"
+    headers = {"sc-user-id": user_id}
+    probes: list[tuple[str, str, dict[str, str] | None]] = [
+        ("vehicle", base, headers),
+        ("single signal (vin)", f"{base}/signals/vin", headers),
+        ("signals?signals=vin", f"{base}/signals?signals=vin", headers),
+        ("signals without sc-user-id", f"{base}/signals", None),
+    ]
+    results = []
+    bodies: dict[str, Any] = {}
+
+    for name, url, probe_headers in probes:
+        result = Result(f"Probe: {name}", ONE_CALL_PER_VEHICLE)
+        status, _, body = http("get", url, token=token, headers=probe_headers)
+        parsed = parse_json(body)
+        bodies[name] = scrub(parsed, redact) if parsed is not None else body[:500]
+
+        if status != 200:
+            results.append(result.failed(f"HTTP {status}. {body[:200]}"))
+            continue
+
+        data = parsed.get("data") if isinstance(parsed, dict) else None
+        count = len(data) if isinstance(data, list) else "1" if data else "0"
+        results.append(result.passed(f"HTTP 200, data: {count}"))
+
+    return results, bodies
 
 
 def summarise_signals(signals: list[dict]) -> dict[str, int]:
@@ -498,6 +596,55 @@ def summarise_signals(signals: list[dict]) -> dict[str, int]:
         counts[kind if kind in counts else "other"] += 1
 
     return counts
+
+
+SENSITIVE_KEYS = {
+    "vin": "vin",
+    "id": "id",
+    "vehicleId": "veh",
+    "userId": "user",
+    "webhookId": "hook",
+    "connectionId": "conn",
+}
+DROPPED_KEYS = {"latitude", "longitude", "accessToken", "refreshToken", "secret"}
+
+# a VIN is identifying wherever it turns up, and it does not only turn up under
+# a key named `vin`: the signal catalogue carries it as the `value` of the
+# `vin` signal. Matching the shape catches both. The excluded letters are the
+# ones the VIN standard does not use.
+VIN_PATTERN = re.compile(r"^[A-HJ-NPR-Z0-9]{17}$")
+
+
+def scrub(value: Any, redact: Redactor, key: str = "") -> Any:
+    """Copy a decoded body with identifiers hashed and coordinates dropped.
+
+    Keeping the raw envelope is what makes a surprising response diagnosable
+    without a second run. An empty `data` array says nothing on its own; the
+    `meta`, `links` and any sibling keys around it are where the reason lives.
+    Rather than pick fields in advance, this keeps the whole shape and replaces
+    only the parts that identify a person or a car.
+
+    Returns:
+        The scrubbed copy.
+    """
+    if isinstance(value, dict):
+        return {
+            item_key: scrub(item, redact, item_key) for item_key, item in value.items()
+        }
+
+    if isinstance(value, list):
+        return [scrub(item, redact, key) for item in value]
+
+    if key in DROPPED_KEYS and value is not None:
+        return "<redacted>"
+
+    if key in SENSITIVE_KEYS and isinstance(value, str):
+        return redact(SENSITIVE_KEYS[key], value)
+
+    if redact.enabled and isinstance(value, str) and VIN_PATTERN.match(value):
+        return redact("vin", value)
+
+    return value
 
 
 def dig(source: Any, *keys: str) -> Any:
@@ -676,11 +823,12 @@ def main() -> int:
         "generated": datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%SZ"),
         "billed": 0,
         "vehicles": [],
+        "raw": {},
     }
 
     def record(result: Result) -> Result:
         results.append(result)
-        report["billed"] += result.cost if result.ok else 0
+        report["billed"] += result.cost
         print(f"  [{result.mark:>4}] {result.name}: {result.detail}")
 
         return result
@@ -706,8 +854,9 @@ def main() -> int:
         return 1
 
     print("\nApplication (free, not billed to a vehicle):")
-    connections_result, connections = check_connections(token, redact)
+    connections_result, connections, pages = check_connections(token, redact)
     record(connections_result)
+    report["raw"]["connections"] = scrub(pages, redact)
 
     for result in check_management(token):
         record(result)
@@ -734,17 +883,41 @@ def main() -> int:
             for user_id, vehicle_id in vehicles:
                 result, body = check_signals(token, user_id, vehicle_id, redact)
                 record(result)
+                label = redact("veh", vehicle_id)
                 signals = [
                     clean_signal(signal, redact)
                     for signal in (body or {}).get("data", [])
                 ]
                 report["vehicles"].append(
                     {
-                        "id": redact("veh", vehicle_id),
+                        "id": label,
                         "summary": result.detail,
                         "signals": signals,
                     }
                 )
+                report["raw"][f"signals {label}"] = (
+                    scrub(body, redact) if body is not None else None
+                )
+
+                if signals or body is None:
+                    continue
+
+                print(
+                    "The signal set came back empty, which is what the "
+                    "integration would see. Four more requests narrow down "
+                    "why, at one call each."
+                )
+
+                if not (args.yes or input("Run them? [y/N] ").strip().lower() == "y"):
+                    print("Skipped.")
+                    continue
+
+                probes, bodies = probe_empty_signals(token, user_id, vehicle_id, redact)
+
+                for probe in probes:
+                    record(probe)
+
+                report["raw"][f"probes {label}"] = bodies
         else:
             print("Skipped.")
 
