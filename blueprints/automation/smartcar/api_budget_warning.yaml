@@ -1,0 +1,54 @@
+blueprint:
+  name: Smartcar - warn before the monthly API allowance runs out
+  description: >-
+    Notifies you when a vehicle has spent most of its Smartcar API allowance
+    for the month.
+
+
+    Running out matters more than it sounds: commands are billed from the same
+    allowance, so an exhausted budget is a lock or a charge stop that cannot be
+    sent. The integration keeps a reserve back for exactly that reason, and
+    this warns you before the reserve is all that is left.
+  domain: automation
+  homeassistant:
+    min_version: 2026.9.0
+  input:
+    remaining:
+      name: API calls remaining sensor
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              integration: smartcar
+    threshold:
+      name: Warn below
+      default: 100
+      selector:
+        number:
+          min: 10
+          max: 400
+          step: 10
+    notify_target:
+      name: Notify action
+      description: The notify action to call, for example notify.mobile_app_phone.
+      default: notify.persistent_notification
+      selector:
+        text: {}
+
+mode: single
+
+triggers:
+  - trigger: numeric_state
+    entity_id: !input remaining
+    below: !input threshold
+
+actions:
+  - action: !input notify_target
+    data:
+      title: Smartcar API allowance is running low
+      message: >-
+        {{ trigger.to_state.name }} is down to {{ trigger.to_state.state }}
+        calls for {{ trigger.to_state.attributes.get('period', 'this period') }}.
+        {{ trigger.to_state.attributes.get('reserved_for_commands', 0) }} are
+        reserved for commands. Subscribing the vehicle to a Smartcar webhook
+        gives updates that do not spend the allowance at all.

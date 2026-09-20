@@ -1,14 +1,27 @@
 {
   "domain": "smartcar",
   "name": "Smartcar",
-  "after_dependencies": ["cloud"],
-  "codeowners": ["@tube0013", "@wbyoung"],
+  "after_dependencies": [
+    "cloud"
+  ],
+  "codeowners": [
+    "@tube0013",
+    "@wbyoung"
+  ],
   "config_flow": true,
-  "dependencies": ["application_credentials", "webhook"],
+  "dependencies": [
+    "application_credentials",
+    "webhook"
+  ],
   "documentation": "https://github.com/wbyoung/smartcar",
   "homekit": {},
+  "integration_type": "service",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/wbyoung/smartcar/issues",
+  "loggers": [
+    "custom_components.smartcar"
+  ],
+  "quality_scale": "silver",
   "requirements": [],
   "ssdp": [],
   "version": "0.1.0",

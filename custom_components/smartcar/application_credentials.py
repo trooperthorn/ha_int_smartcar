@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from http import HTTPStatus
 import json
 import logging
-from typing import Any, cast
+from typing import Any
 
 from aiohttp import ClientResponseError, RequestInfo
 from homeassistant.components.application_credentials import (
@@ -57,6 +57,7 @@ class SmartcarAuthImplementation(AuthImplementation):
         )
 
         if api_version_for_client_id(credential.client_id) == "v2":
+            assert isinstance(authorization_server, SmartcarAuthorizationServer)
             self.token_url = authorization_server.token_url_v2
 
     async def _token_request(self, data: dict) -> dict:
@@ -77,7 +78,7 @@ class SmartcarAuthImplementation(AuthImplementation):
             core refresh path has the key it expects.
         """
         if api_version_for_client_id(self.client_id) == "v2":
-            return cast("dict", await super()._token_request(data))
+            return await super()._token_request(data)
 
         session = async_get_clientsession(self.hass)
         response = await session.post(

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import logging
+from typing import Any
 
 from aiohttp import ClientResponse, ClientSession
 
@@ -51,7 +52,7 @@ class AbstractAuth(ABC):
         self,
         method: str,
         path: str,
-        **kwargs,  # noqa: ANN003
+        **kwargs: Any,  # noqa: ANN401
     ) -> ClientResponse:
         return await self.request(method, path, version="v2", **kwargs)
 
@@ -59,7 +60,7 @@ class AbstractAuth(ABC):
         self,
         method: str,
         path: str,
-        **kwargs,  # noqa: ANN003
+        **kwargs: Any,  # noqa: ANN401
     ) -> ClientResponse:
         return await self.request(method, path, version="v3", **kwargs)
 
@@ -68,7 +69,7 @@ class AbstractAuth(ABC):
         method: str,
         path: str,
         version: APIVersion,
-        **kwargs,  # noqa: ANN003
+        **kwargs: Any,  # noqa: ANN401
     ) -> ClientResponse:
         """Make a request.
 

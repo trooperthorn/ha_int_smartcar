@@ -19,9 +19,18 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.config_entry_oauth2_flow import (
     AbstractOAuth2FlowHandler,
     AbstractOAuth2Implementation,
+    LocalOAuth2Implementation,
     async_get_config_entry_implementation,
 )
 from homeassistant.helpers.selector import (
+    EntitySelector,
+    EntitySelectorConfig,
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
     TextSelector,
     TextSelectorConfig,
     TextSelectorType,
@@ -30,11 +39,22 @@ import voluptuous as vol
 
 from . import populate_entry_data, vehicle_vins_in_use
 from .auth_impl import AccessTokenAuthImpl
+from .budget import DEFAULT_MONTHLY_BUDGET, DEFAULT_RESERVE
 from .const import (
     API_ENDPOINTS,
     CONF_APPLICATION_ID,
     CONF_APPLICATION_MANAGEMENT_TOKEN,
+    CONF_AUTO_SUBSCRIBE,
+    CONF_BUDGET_RESERVE,
     CONF_CLOUDHOOK,
+    CONF_DAILY_EVENT_CAP,
+    CONF_LOW_BATTERY,
+    CONF_MONTHLY_BUDGET,
+    CONF_POLL_INTERVAL_HOURS,
+    CONF_POLL_ON_ARRIVE_HOME,
+    CONF_POLL_ON_LEAVE_HOME,
+    CONF_POLL_PROFILE,
+    CONF_PRESENCE_ENTITIES,
     CONFIGURABLE_SCOPES,
     DEFAULT_NAME,
     DEFAULT_SCOPES,
@@ -47,6 +67,13 @@ from .errors import (
     EmptyVehicleListError,
     InvalidAuthError,
     UnsupportedUserConfigurationError,
+)
+from .polling import (
+    DEFAULT_DAILY_EVENT_CAP,
+    DEFAULT_LOW_BATTERY,
+    DEFAULT_PROFILE,
+    PollProfile,
+    resolve_settings,
 )
 from .util import (
     api_version_for_client_id,
@@ -75,6 +102,38 @@ BASE_DESCRIPTION_PLACEHOLDERS = {
 }
 
 
+POLLING_SCHEMA = {
+    vol.Required(CONF_POLL_PROFILE, default=DEFAULT_PROFILE): SelectSelector(
+        SelectSelectorConfig(
+            options=[profile.value for profile in PollProfile],
+            translation_key="poll_profile",
+            mode=SelectSelectorMode.DROPDOWN,
+        )
+    ),
+    vol.Optional(CONF_POLL_INTERVAL_HOURS, default=6): NumberSelector(
+        NumberSelectorConfig(min=1, max=168, step=1, mode=NumberSelectorMode.BOX)
+    ),
+    vol.Optional(CONF_PRESENCE_ENTITIES, default=list): EntitySelector(
+        EntitySelectorConfig(domain=["person", "device_tracker"], multiple=True)
+    ),
+    vol.Optional(CONF_POLL_ON_LEAVE_HOME, default=True): bool,
+    vol.Optional(CONF_POLL_ON_ARRIVE_HOME, default=False): bool,
+    vol.Optional(CONF_LOW_BATTERY, default=DEFAULT_LOW_BATTERY): NumberSelector(
+        NumberSelectorConfig(min=0, max=100, step=5, mode=NumberSelectorMode.SLIDER)
+    ),
+    vol.Optional(CONF_DAILY_EVENT_CAP, default=DEFAULT_DAILY_EVENT_CAP): NumberSelector(
+        NumberSelectorConfig(min=0, max=24, step=1, mode=NumberSelectorMode.BOX)
+    ),
+    vol.Optional(CONF_MONTHLY_BUDGET, default=DEFAULT_MONTHLY_BUDGET): NumberSelector(
+        NumberSelectorConfig(min=10, max=100000, step=10, mode=NumberSelectorMode.BOX)
+    ),
+    vol.Optional(CONF_BUDGET_RESERVE, default=DEFAULT_RESERVE): NumberSelector(
+        NumberSelectorConfig(min=0, max=1000, step=5, mode=NumberSelectorMode.BOX)
+    ),
+    vol.Optional(CONF_AUTO_SUBSCRIBE, default=True): bool,
+}
+
+
 def _validate_general_configuration_input(
     user_input: dict[str, Any],
     flow_impl: AbstractOAuth2Implementation,
@@ -90,7 +149,13 @@ def _validate_general_configuration_input(
     if not use_webhooks and management_token:
         errors["base"] = "extraneous_management_token"
 
-    if not application_id and api_version_for_client_id(flow_impl.client_id) == "v3":
+    if (
+        not application_id
+        and api_version_for_client_id(
+            cast("LocalOAuth2Implementation", flow_impl).client_id
+        )
+        == "v3"
+    ):
         errors["base"] = "no_application_id"
 
     if not management_token:
@@ -98,8 +163,8 @@ def _validate_general_configuration_input(
 
 
 def _add_dynamic_values_to_entry_data(
-    data: dict[str, Any],
-) -> dict[str, Any]:
+    data: Mapping[str, Any],
+) -> Mapping[str, Any]:
     return (
         {
             **data,
@@ -110,12 +175,12 @@ def _add_dynamic_values_to_entry_data(
     )
 
 
-class SmartcarOAuth2FlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):  # type: ignore[call-arg]
+class SmartcarOAuth2FlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):
     """Config flow to handle Smartcar OAuth2 authentication."""
 
     DOMAIN = DOMAIN
     VERSION = 2
-    MINOR_VERSION = 0
+    MINOR_VERSION = 1
     entry_data: dict[str, Any] | None = None
     scope_data: dict[str, Any] | None = None
 
@@ -165,12 +230,15 @@ class SmartcarOAuth2FlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):  # ty
                 #     correct end-user in multi-user app configurations).
                 "client_id": self.entry_data.get(CONF_APPLICATION_ID, ""),
             }
-            if api_version_for_client_id(self.flow_impl.client_id) == "v3"
+            if api_version_for_client_id(
+                cast("LocalOAuth2Implementation", self.flow_impl).client_id
+            )
+            == "v3"
             else {}
         )
 
-    def _initial_data(self) -> dict[str, Any]:
-        result: dict[str, Any] = {}
+    def _initial_data(self) -> Mapping[str, Any]:
+        result: Mapping[str, Any] = {}
         if self.source == SOURCE_REAUTH:
             result = self._get_reauth_entry().data
         if self.source == SOURCE_RECONFIGURE:
@@ -322,7 +390,9 @@ class SmartcarOAuth2FlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):  # ty
             session,
             token,
             API_ENDPOINTS,
-            version=api_version_for_client_id(self.flow_impl.client_id),
+            version=api_version_for_client_id(
+                cast("LocalOAuth2Implementation", self.flow_impl).client_id
+            ),
         )
         data = {**self.entry_data, **data}
         data.pop(CONF_USE_WEBHOOKS, None)
@@ -369,7 +439,7 @@ class SmartcarOAuth2FlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):  # ty
         if duplicate_vins:
             return self.async_abort(
                 reason="duplicate_vehicles",
-                description_placeholders={"vins": duplicate_vins},
+                description_placeholders={"vins": ", ".join(duplicate_vins)},
             )
 
         if self.source == SOURCE_REAUTH:
@@ -379,6 +449,8 @@ class SmartcarOAuth2FlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):  # ty
                     "vins": vins_from_entry_data(self._initial_data())
                 },
             )
+
+            assert current_entry is not None
 
             return self.async_update_reload_and_abort(
                 current_entry, data={**self._initial_data(), **data}
@@ -423,6 +495,8 @@ class SmartcarOAuth2FlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):  # ty
                 reconfigure_data.pop(CONF_WEBHOOK_ID, None)
                 reconfigure_data.pop(CONF_CLOUDHOOK, None)
 
+            assert current_entry is not None
+
             return self.async_update_reload_and_abort(
                 current_entry,
                 data=reconfigure_data,
@@ -439,8 +513,10 @@ class SmartcarOAuth2FlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):  # ty
 class SmartcarOptionsFlow(OptionsFlow):
     """Handle a option flow."""
 
-    def _initial_data(self) -> dict[str, Any]:
-        result: dict[str, Any] = self.config_entry.data
+    _poll_options: dict[str, Any] = {}  # noqa: RUF012
+
+    def _initial_data(self) -> Mapping[str, Any]:
+        result: Mapping[str, Any] = self.config_entry.data
         return result
 
     async def async_step_init(
@@ -452,7 +528,39 @@ class SmartcarOptionsFlow(OptionsFlow):
         Returns:
             The config flow result.
         """
-        return await self.async_step_webhooks(user_input)
+        return await self.async_step_polling(user_input)
+
+    async def async_step_polling(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Choose how often, and on what, this account spends its API calls.
+
+        Smartcar allows 500 calls per vehicle per month on the free tier, and
+        an unsubscribed vehicle's data only refreshes about once a day, so the
+        useful question is not "how fast" but "on what". See polling.py.
+
+        Returns:
+            The config flow result.
+        """
+        if user_input is not None:
+            self._poll_options = {**user_input}
+            return await self.async_step_webhooks()
+
+        settings = resolve_settings(dict(self.config_entry.options))
+        options = dict(self.config_entry.options)
+
+        return self.async_show_form(
+            step_id="polling",
+            data_schema=self.add_suggested_values_to_schema(
+                vol.Schema(POLLING_SCHEMA), options
+            ),
+            last_step=False,
+            description_placeholders={
+                "estimate": str(settings.monthly_estimate()),
+                "budget": str(options.get(CONF_MONTHLY_BUDGET, DEFAULT_MONTHLY_BUDGET)),
+            },
+        )
 
     async def async_step_webhooks(
         self,
@@ -506,6 +614,7 @@ class SmartcarOptionsFlow(OptionsFlow):
             changed = self.hass.config_entries.async_update_entry(
                 self.config_entry,
                 data=entry_data,
+                options={**self.config_entry.options, **self._poll_options},
             )
 
             # this flow writes to entry.data, not entry.options, so

@@ -25,6 +25,7 @@ from custom_components.smartcar.const import (
     CONF_APPLICATION_ID,
     CONF_APPLICATION_MANAGEMENT_TOKEN,
     CONF_CLOUDHOOK,
+    CONF_POLL_PROFILE,
     CONFIGURABLE_SCOPES,
     DEFAULT_NAME,
     DOMAIN,
@@ -33,6 +34,7 @@ from custom_components.smartcar.const import (
     OAUTH2_TOKEN_LEGACY,
     REQUIRED_SCOPES,
 )
+from custom_components.smartcar.polling import PollProfile
 from custom_components.smartcar.types import APIVersion
 
 from . import MOCK_API_ENDPOINT, MOCK_API_ENDPOINT_LEGACY, setup_integration
@@ -591,7 +593,9 @@ async def test_duplicate_vins_disallowed(
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "duplicate_vehicles"
-    assert result["description_placeholders"] == {"vins": [vehicle["vin"]]}
+    # placeholders are substituted into a translated string, so they have to
+    # be strings: a list rendered as a Python repr in the abort message.
+    assert result["description_placeholders"] == {"vins": vehicle["vin"]}
 
 
 @pytest.mark.usefixtures("current_request_with_host")
@@ -1329,6 +1333,17 @@ async def test_options_flow(
     ):
         result = await hass.config_entries.options.async_init(
             mock_config_entry.entry_id
+        )
+
+        # the options flow now asks about polling before webhooks, because how
+        # often to spend the vehicle's monthly API allowance is the decision
+        # that matters most on the free tier
+        assert result["type"] is FlowResultType.FORM
+        assert result["step_id"] == "polling"
+
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            user_input={CONF_POLL_PROFILE: PollProfile.TWICE_DAILY.value},
         )
 
         assert result["type"] is FlowResultType.FORM

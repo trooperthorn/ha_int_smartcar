@@ -12,6 +12,11 @@ from .entity import SmartcarEntity, SmartcarEntityDescription
 
 _LOGGER = logging.getLogger(__name__)
 
+# commands are serialised: the vehicle's monthly allowance is shared with
+# reads, and two commands racing to the same car is not something the OEM
+# handles gracefully.
+PARALLEL_UPDATES = 1
+
 
 @dataclass(frozen=True, kw_only=True)
 class SmartcarLockDescription(LockEntityDescription, SmartcarEntityDescription):
@@ -56,7 +61,7 @@ class SmartcarDoorLock(SmartcarEntity[bool, bool], LockEntity):
 
     async def async_lock(
         self,
-        **kwargs,  # noqa: ARG002, ANN003
+        **kwargs: object,  # noqa: ARG002
     ) -> None:
         version = self.coordinator.auth.version
         command = "/security/lock"
@@ -72,7 +77,7 @@ class SmartcarDoorLock(SmartcarEntity[bool, bool], LockEntity):
 
     async def async_unlock(
         self,
-        **kwargs,  # noqa: ARG002, ANN003
+        **kwargs: object,  # noqa: ARG002
     ) -> None:
         version = self.coordinator.auth.version
         command = "/security/unlock"

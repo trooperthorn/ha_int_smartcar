@@ -20,3 +20,20 @@ unlock_doors:
       required: false
       selector:
         text:
+refresh_vehicle:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: smartcar
+    vin:
+      required: false
+      example: WVWZZZE1ZPP000000
+      selector:
+        text:
+    force:
+      required: false
+      default: false
+      selector:
+        boolean:

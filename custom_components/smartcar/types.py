@@ -5,11 +5,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 if TYPE_CHECKING:
     from .auth import AbstractAuth
+    from .budget import ApiBudget
     from .coordinator import SmartcarVehicleCoordinator
+    from .management import ManagementApi
 
 
 type APIVersion = Literal["v2", "v3"]
@@ -22,6 +25,13 @@ class SmartcarData:
     auth: AbstractAuth
     coordinators: dict[str, SmartcarVehicleCoordinator]
     meta_coordinator: DataUpdateCoordinator
+    budget: ApiBudget
+    management: ManagementApi
+
+
+# the quality scale's strict-typing rule requires a typed config entry alias
+# wherever runtime_data is used, so that entry.runtime_data is not Any.
+type SmartcarConfigEntry = ConfigEntry[SmartcarData]
 
 
 @dataclass

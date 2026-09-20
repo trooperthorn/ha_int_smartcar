@@ -107,8 +107,10 @@
       'discovery_keys': dict({
       }),
       'domain': 'smartcar',
-      'minor_version': 0,
+      'minor_version': 1,
       'options': dict({
+        'poll_interval_hours': 6,
+        'poll_profile': 'interval',
       }),
       'pref_disable_new_entities': False,
       'pref_disable_polling': False,
@@ -252,8 +254,10 @@
       'discovery_keys': dict({
       }),
       'domain': 'smartcar',
-      'minor_version': 0,
+      'minor_version': 1,
       'options': dict({
+        'poll_interval_hours': 6,
+        'poll_profile': 'interval',
       }),
       'pref_disable_new_entities': False,
       'pref_disable_polling': False,
@@ -299,8 +303,10 @@
       'discovery_keys': dict({
       }),
       'domain': 'smartcar',
-      'minor_version': 0,
+      'minor_version': 1,
       'options': dict({
+        'poll_interval_hours': 6,
+        'poll_profile': 'interval',
       }),
       'pref_disable_new_entities': False,
       'pref_disable_polling': False,
@@ -350,8 +356,10 @@
       'discovery_keys': dict({
       }),
       'domain': 'smartcar',
-      'minor_version': 0,
+      'minor_version': 1,
       'options': dict({
+        'poll_interval_hours': 6,
+        'poll_profile': 'interval',
       }),
       'pref_disable_new_entities': False,
       'pref_disable_polling': False,
@@ -930,8 +938,10 @@
       'discovery_keys': dict({
       }),
       'domain': 'smartcar',
-      'minor_version': 0,
+      'minor_version': 1,
       'options': dict({
+        'poll_interval_hours': 6,
+        'poll_profile': 'interval',
       }),
       'pref_disable_new_entities': False,
       'pref_disable_polling': False,

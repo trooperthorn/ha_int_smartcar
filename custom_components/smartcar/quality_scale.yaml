@@ -1,0 +1,215 @@
+# Home Assistant integration quality scale.
+#
+# Status is recorded honestly rather than aspirationally: `done` means the rule
+# is met, `todo` means it is not yet, and `exempt` means the rule does not
+# apply and says why. The manifest claims the highest tier whose rules are all
+# done or exempt.
+#
+# Tier assignment follows script/hassfest/quality_scale.py in core 2026.9.2.
+rules:
+  # ------------------------------------------------------------- bronze ----
+  action-setup:
+    status: done
+    comment: |
+      Actions are registered in async_setup, not async_setup_entry, so they
+      exist and validate their config entry even when no entry is loaded.
+  appropriate-polling:
+    status: done
+    comment: |
+      Smartcar allows 500 API calls per vehicle per month on the free tier, and
+      an unsubscribed vehicle's data only refreshes about once every 24 hours,
+      so polling faster buys nothing. The default is twice daily, webhooks
+      disable scheduled polling entirely, and polling.py documents the
+      reasoning. Entries created before this existed keep their old six hour
+      cadence rather than being changed silently.
+  brands: done
+  common-modules:
+    status: done
+    comment: The coordinator lives in coordinator.py and the base entity in entity.py.
+  config-flow:
+    status: done
+    comment: |
+      OAuth2 via application_credentials, with the connection options split
+      into their own steps and every field carrying a data_description.
+  config-flow-test-coverage: done
+  dependency-transparency:
+    status: exempt
+    comment: |
+      There are no third party dependencies. The integration speaks HTTP to
+      Smartcar directly, which is also Smartcar's own guidance for v3.
+  docs-actions: done
+  docs-conditions:
+    status: exempt
+    comment: The integration provides no conditions.
+  docs-high-level-description: done
+  docs-installation-instructions: done
+  docs-removal-instructions: done
+  docs-triggers:
+    status: exempt
+    comment: The integration provides no triggers.
+  entity-event-setup:
+    status: done
+    comment: |
+      The presence listener is registered through entry.async_on_unload, and
+      webhook registration is torn down in async_unload_entry.
+  entity-unique-id: done
+  has-entity-name: done
+  runtime-data:
+    status: done
+    comment: |
+      entry.runtime_data holds SmartcarData, with the typed alias
+      SmartcarConfigEntry used at the setup and unload boundaries.
+  test-before-configure:
+    status: done
+    comment: The config flow lists connections and vehicles before creating the entry.
+  test-before-setup:
+    status: done
+    comment: |
+      The first refresh raises ConfigEntryAuthFailed or ConfigEntryNotReady,
+      and the capability read at setup surfaces auth failures early.
+  unique-config-entry:
+    status: done
+    comment: |
+      The unique id is derived from the vehicle ids, and overlapping VINs
+      across entries are rejected in async_setup_entry.
+
+  # ------------------------------------------------------------- silver ----
+  action-exceptions:
+    status: done
+    comment: |
+      Actions raise ServiceValidationError for user error and
+      HomeAssistantError with a translation key for API failures, including a
+      budget_exhausted message that names the allowance and the way out.
+  config-entry-unloading: done
+  docs-configuration-parameters: done
+  docs-installation-parameters: done
+  entity-unavailable:
+    status: done
+    comment: |
+      Entities report unavailable when their datapoint has no value, and
+      signals the vehicle reports as incapable get no entity at all.
+  integration-owner: done
+  log-when-unavailable:
+    status: done
+    comment: |
+      Structural signal errors are logged once at debug rather than repeatedly
+      at error, and a skipped poll explains the allowance and the reserve.
+  parallel-updates:
+    status: done
+    comment: |
+      Commands are serialised at 1 for switch, lock and number. Read only
+      platforms are 0 because the coordinator owns all fetching.
+  reauthentication-flow:
+    status: done
+    comment: |
+      A rejected v3 credential raises the core OAuth2 reauth error carrying
+      Smartcar's own error text, rather than failing with an unknown error.
+  test-coverage:
+    status: done
+    comment: 100 percent, enforced by .github/validate_coverage.py.
+
+  # --------------------------------------------------------------- gold ----
+  devices: done
+  diagnostics: done
+  discovery:
+    status: exempt
+    comment: A cloud account cannot be discovered on the network.
+  discovery-update-info:
+    status: exempt
+    comment: Same reason as discovery.
+  docs-data-update:
+    status: done
+    comment: |
+      docs/polling.md explains webhooks versus polling, the per-vehicle
+      allowance and what each profile costs.
+  docs-examples:
+    status: done
+    comment: Six blueprints under blueprints/, three of them Smartcar only.
+  docs-known-limitations:
+    status: done
+    comment: |
+      docs/api-reference.md records the gaps, including the signals and
+      commands Smartcar does not support per vehicle.
+  docs-supported-devices:
+    status: done
+    comment: |
+      Supported vehicles vary by make, model, year and region; the reference
+      explains how to read the compatibility matrix rather than listing them.
+  docs-supported-functions: done
+  docs-troubleshooting:
+    status: done
+    comment: FAQ.md, plus the v3 configuration failure modes in docs/api-reference.md.
+  docs-use-cases: done
+  dynamic-devices:
+    status: todo
+    comment: |
+      Vehicles added to the Smartcar account after setup are not picked up
+      until the entry is reconfigured. The connections endpoint supports
+      polling for this; nothing does it yet.
+  entity-category:
+    status: done
+    comment: Diagnostic entities are categorised, including the API budget sensors.
+  entity-device-class: done
+  entity-disabled-by-default:
+    status: done
+    comment: |
+      Rarely useful entities are disabled by default, and entities the vehicle
+      is incapable of are not created at all.
+  entity-translations:
+    status: todo
+    comment: |
+      Most entity descriptions still carry a literal `name` rather than a
+      translation_key with entries under `entity:` in the translations. The
+      budget sensors are done; the rest are not.
+  exception-translations:
+    status: done
+    comment: |
+      User facing errors raise with translation_domain and translation_key.
+  icon-translations:
+    status: todo
+    comment: |
+      Icons are set with `icon=` on the entity descriptions. They need moving
+      to an icons.json keyed by translation_key, which depends on
+      entity-translations landing first.
+  reconfiguration-flow: done
+  repair-issues:
+    status: done
+    comment: |
+      A legacy v2 client id raises a fixable repair issue.
+  stale-devices:
+    status: todo
+    comment: |
+      A vehicle removed from the Smartcar account leaves its device behind.
+      Related to dynamic-devices; both want the connections list to be
+      reconciled against the device registry.
+
+  # ----------------------------------------------------------- platinum ----
+  async-dependency:
+    status: done
+    comment: |
+      There is no third party dependency to be async or otherwise. The
+      integration's own HTTP layer is aiohttp throughout, with no executor
+      jobs and no blocking calls.
+  inject-websession:
+    status: done
+    comment: |
+      Home Assistant's shared aiohttp session is used everywhere:
+      async_get_clientsession feeds the auth layer, the coordinator and the
+      Management API client.
+  strict-typing:
+    status: done
+    comment: |
+      The eight flags core applies to an integration in its .strict-typing file
+      are enabled in pyproject.toml, scoped to this package. Blanket `strict`
+      is deliberately not used: it adds disallow_any_generics, which fights
+      Home Assistant's own untyped generics rather than finding bugs here.
+
+      mypy also now runs from the environment rather than an isolated one. The
+      previous hook had no homeassistant installed, so every framework import
+      resolved to Any and the type check could not see a single Home Assistant
+      API. Fixing that made about 60 real errors visible, including a latent
+      bug where AuthorizationServer was accessed for a token_url_v2 that only
+      its Smartcar subclass declares. All are fixed; mypy is clean.
+
+      runtime-data's requirement is met too: SmartcarConfigEntry is the typed
+      alias used at the setup and unload boundaries.

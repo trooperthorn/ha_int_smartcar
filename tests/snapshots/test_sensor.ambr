@@ -470,6 +470,45 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_webhook_scenarios[broad_auth_error-vw_id_4-sensor][sensor.vw_id_4_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '500',
+  })
+# ---
+# name: test_webhook_scenarios[broad_auth_error-vw_id_4-sensor][sensor.vw_id_4_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '0',
+  })
+# ---
 # name: test_webhook_scenarios[broad_auth_error-vw_id_4-sensor][sensor.vw_id_4_battery]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -997,6 +1036,45 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_webhook_scenarios[invalid_json-vw_id_4-sensor][sensor.vw_id_4_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '500',
+  })
+# ---
+# name: test_webhook_scenarios[invalid_json-vw_id_4-sensor][sensor.vw_id_4_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '0',
   })
 # ---
 # name: test_webhook_scenarios[invalid_json-vw_id_4-sensor][sensor.vw_id_4_battery]
@@ -1529,6 +1607,45 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_webhook_scenarios[invalid_signature-vw_id_4-sensor][sensor.vw_id_4_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '500',
+  })
+# ---
+# name: test_webhook_scenarios[invalid_signature-vw_id_4-sensor][sensor.vw_id_4_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '0',
+  })
+# ---
 # name: test_webhook_scenarios[invalid_signature-vw_id_4-sensor][sensor.vw_id_4_battery]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -2059,6 +2176,45 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_webhook_scenarios[irrelevant_auth_error-vw_id_4-sensor][sensor.vw_id_4_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '500',
+  })
+# ---
+# name: test_webhook_scenarios[irrelevant_auth_error-vw_id_4-sensor][sensor.vw_id_4_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '0',
+  })
+# ---
 # name: test_webhook_scenarios[irrelevant_auth_error-vw_id_4-sensor][sensor.vw_id_4_battery]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -2586,6 +2742,45 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_webhook_scenarios[test_mode-vw_id_4-sensor][sensor.vw_id_4_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '500',
+  })
+# ---
+# name: test_webhook_scenarios[test_mode-vw_id_4-sensor][sensor.vw_id_4_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '0',
   })
 # ---
 # name: test_webhook_scenarios[test_mode-vw_id_4-sensor][sensor.vw_id_4_battery]
@@ -3118,6 +3313,45 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_webhook_scenarios[vehicle_error-vw_id_4-sensor][sensor.vw_id_4_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '500',
+  })
+# ---
+# name: test_webhook_scenarios[vehicle_error-vw_id_4-sensor][sensor.vw_id_4_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '0',
+  })
+# ---
 # name: test_webhook_scenarios[vehicle_error-vw_id_4-sensor][sensor.vw_id_4_battery]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -3645,6 +3879,45 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_webhook_scenarios[vehicle_mismatch-vw_id_4-sensor][sensor.vw_id_4_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '500',
+  })
+# ---
+# name: test_webhook_scenarios[vehicle_mismatch-vw_id_4-sensor][sensor.vw_id_4_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '0',
   })
 # ---
 # name: test_webhook_scenarios[vehicle_mismatch-vw_id_4-sensor][sensor.vw_id_4_battery]
@@ -4175,6 +4448,45 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_webhook_scenarios[vehicle_state-vw_id_4-sensor][sensor.vw_id_4_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '500',
+  })
+# ---
+# name: test_webhook_scenarios[vehicle_state-vw_id_4-sensor][sensor.vw_id_4_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '0',
   })
 # ---
 # name: test_webhook_scenarios[vehicle_state-vw_id_4-sensor][sensor.vw_id_4_battery]
@@ -4710,6 +5022,45 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_webhook_scenarios[vehicle_state_fuel-vw_id_4-sensor][sensor.vw_id_4_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '500',
+  })
+# ---
+# name: test_webhook_scenarios[vehicle_state_fuel-vw_id_4-sensor][sensor.vw_id_4_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '0',
+  })
+# ---
 # name: test_webhook_scenarios[vehicle_state_fuel-vw_id_4-sensor][sensor.vw_id_4_battery]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -5243,6 +5594,45 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_webhook_scenarios[verify-vw_id_4-sensor][sensor.vw_id_4_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '500',
+  })
+# ---
+# name: test_webhook_scenarios[verify-vw_id_4-sensor][sensor.vw_id_4_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '0',
+  })
+# ---
 # name: test_webhook_scenarios[verify-vw_id_4-sensor][sensor.vw_id_4_battery]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -5771,6 +6161,45 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_webhook_update[vehicle_state_all-byd_seal-sensor][sensor.byd_seal_u_dm_i_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.byd_seal_u_dm_i_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '500',
+  })
+# ---
+# name: test_webhook_update[vehicle_state_all-byd_seal-sensor][sensor.byd_seal_u_dm_i_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.byd_seal_u_dm_i_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '0',
   })
 # ---
 # name: test_webhook_update[vehicle_state_all-byd_seal-sensor][sensor.byd_seal_u_dm_i_battery]
@@ -6304,6 +6733,45 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_webhook_update[vehicle_state_all-jaguar_ipace-sensor][sensor.jaguar_i_pace_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.jaguar_i_pace_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '500',
+  })
+# ---
+# name: test_webhook_update[vehicle_state_all-jaguar_ipace-sensor][sensor.jaguar_i_pace_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.jaguar_i_pace_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '0',
   })
 # ---
 # name: test_webhook_update[vehicle_state_all-jaguar_ipace-sensor][sensor.jaguar_i_pace_battery]
@@ -6845,6 +7313,45 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_webhook_update[vehicle_state_all-jaguar_ipace2-sensor][sensor.jaguar_i_pace_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.jaguar_i_pace_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '500',
+  })
+# ---
+# name: test_webhook_update[vehicle_state_all-jaguar_ipace2-sensor][sensor.jaguar_i_pace_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.jaguar_i_pace_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '0',
   })
 # ---
 # name: test_webhook_update[vehicle_state_all-jaguar_ipace2-sensor][sensor.jaguar_i_pace_battery]
@@ -7406,6 +7913,45 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_webhook_update[vehicle_state_all-polestar_2-sensor][sensor.polestar_polestar_2_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.polestar_polestar_2_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '500',
+  })
+# ---
+# name: test_webhook_update[vehicle_state_all-polestar_2-sensor][sensor.polestar_polestar_2_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.polestar_polestar_2_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '0',
+  })
+# ---
 # name: test_webhook_update[vehicle_state_all-polestar_2-sensor][sensor.polestar_polestar_2_battery]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -7955,6 +8501,45 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_webhook_update[vehicle_state_all-vw_id_4-sensor][sensor.vw_id_4_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '500',
+  })
+# ---
+# name: test_webhook_update[vehicle_state_all-vw_id_4-sensor][sensor.vw_id_4_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-02',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '0',
   })
 # ---
 # name: test_webhook_update[vehicle_state_all-vw_id_4-sensor][sensor.vw_id_4_battery]

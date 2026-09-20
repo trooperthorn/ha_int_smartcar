@@ -36,6 +36,76 @@
         None,
       ]),
       'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:gauge',
+      'original_name': 'API Calls Remaining',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_REMAINING: 'api_calls_remaining'>,
+      'unique_id': 'VIWP1AB29P15LA85784N_api_calls_remaining',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': dict({
+        <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+      }),
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_api_calls_used',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:counter',
+      'original_name': 'API Calls Used',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_USED: 'api_calls_used'>,
+      'unique_id': 'VIWP1AB29P15LA85784N_api_calls_used',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
       'capabilities': dict({
         <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
       }),
@@ -180,6 +250,45 @@
       'unit_of_measurement': None,
     }),
   ])
+# ---
+# name: test_limited_scopes[enabled_entities0-enabled_scopes0-vw_id_4][sensor.vw_id_4_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-09',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '499',
+  })
+# ---
+# name: test_limited_scopes[enabled_entities0-enabled_scopes0-vw_id_4][sensor.vw_id_4_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-09',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '1',
+  })
 # ---
 # name: test_limited_scopes[enabled_entities0-enabled_scopes0-vw_id_4][sensor.vw_id_4_battery]
   StateSnapshot({
@@ -475,6 +584,76 @@
 # ---
 # name: test_standard_setup[unknown_make][entities]
   list([
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.smartcar_784n_api_calls_remaining',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:gauge',
+      'original_name': 'API Calls Remaining',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_REMAINING: 'api_calls_remaining'>,
+      'unique_id': 'VIWP1AB29P15LA85784N_api_calls_remaining',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': dict({
+        <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+      }),
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.smartcar_784n_api_calls_used',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:counter',
+      'original_name': 'API Calls Used',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_USED: 'api_calls_used'>,
+      'unique_id': 'VIWP1AB29P15LA85784N_api_calls_used',
+      'unit_of_measurement': None,
+    }),
     EntityRegistryEntrySnapshot({
       'aliases': list([
         None,
@@ -1269,6 +1448,45 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_standard_setup[unknown_make][sensor.smartcar_784n_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Smartcar 784N API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-09',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.smartcar_784n_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '499',
+  })
+# ---
+# name: test_standard_setup[unknown_make][sensor.smartcar_784n_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Smartcar 784N API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-09',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.smartcar_784n_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '1',
+  })
+# ---
 # name: test_standard_setup[unknown_make][sensor.smartcar_784n_battery]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -1606,6 +1824,76 @@
 # ---
 # name: test_standard_setup[vw_id_4][entities]
   list([
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:gauge',
+      'original_name': 'API Calls Remaining',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_REMAINING: 'api_calls_remaining'>,
+      'unique_id': 'VIWP1AB29P15LA85784N_api_calls_remaining',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': dict({
+        <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+      }),
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_api_calls_used',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:counter',
+      'original_name': 'API Calls Used',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_USED: 'api_calls_used'>,
+      'unique_id': 'VIWP1AB29P15LA85784N_api_calls_used',
+      'unit_of_measurement': None,
+    }),
     EntityRegistryEntrySnapshot({
       'aliases': list([
         None,
@@ -2400,6 +2688,45 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_standard_setup[vw_id_4][sensor.vw_id_4_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-09',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '499',
+  })
+# ---
+# name: test_standard_setup[vw_id_4][sensor.vw_id_4_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-09',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '1',
+  })
+# ---
 # name: test_standard_setup[vw_id_4][sensor.vw_id_4_battery]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -3081,6 +3408,76 @@
 # ---
 # name: test_standard_setup_with_all_entities[unknown_make-v2][entities]
   list([
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.smartcar_784n_api_calls_remaining',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:gauge',
+      'original_name': 'API Calls Remaining',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_REMAINING: 'api_calls_remaining'>,
+      'unique_id': 'VIWP1AB29P15LA85784N_api_calls_remaining',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': dict({
+        <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+      }),
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.smartcar_784n_api_calls_used',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:counter',
+      'original_name': 'API Calls Used',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_USED: 'api_calls_used'>,
+      'unique_id': 'VIWP1AB29P15LA85784N_api_calls_used',
+      'unit_of_measurement': None,
+    }),
     EntityRegistryEntrySnapshot({
       'aliases': list([
         None,
@@ -5546,6 +5943,45 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_standard_setup_with_all_entities[unknown_make-v2][sensor.smartcar_784n_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Smartcar 784N API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-09',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.smartcar_784n_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '499',
+  })
+# ---
+# name: test_standard_setup_with_all_entities[unknown_make-v2][sensor.smartcar_784n_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Smartcar 784N API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-09',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.smartcar_784n_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '1',
+  })
+# ---
 # name: test_standard_setup_with_all_entities[unknown_make-v2][sensor.smartcar_784n_battery]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -6579,6 +7015,76 @@
 # ---
 # name: test_standard_setup_with_all_entities[unknown_make-v3][entities]
   list([
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.smartcar_784n_api_calls_remaining',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:gauge',
+      'original_name': 'API Calls Remaining',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_REMAINING: 'api_calls_remaining'>,
+      'unique_id': 'a1d50709-3502-4faa-ba43-a5c7565e6a09_api_calls_remaining',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': dict({
+        <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+      }),
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.smartcar_784n_api_calls_used',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:counter',
+      'original_name': 'API Calls Used',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_USED: 'api_calls_used'>,
+      'unique_id': 'a1d50709-3502-4faa-ba43-a5c7565e6a09_api_calls_used',
+      'unit_of_measurement': None,
+    }),
     EntityRegistryEntrySnapshot({
       'aliases': list([
         None,
@@ -8980,6 +9486,45 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_standard_setup_with_all_entities[unknown_make-v3][sensor.smartcar_784n_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Smartcar 784N API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-09',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.smartcar_784n_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '499',
+  })
+# ---
+# name: test_standard_setup_with_all_entities[unknown_make-v3][sensor.smartcar_784n_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Smartcar 784N API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-09',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.smartcar_784n_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '1',
+  })
+# ---
 # name: test_standard_setup_with_all_entities[unknown_make-v3][sensor.smartcar_784n_battery]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -9990,6 +10535,76 @@
 # ---
 # name: test_standard_setup_with_all_entities[vw_id_4-v2][entities]
   list([
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:gauge',
+      'original_name': 'API Calls Remaining',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_REMAINING: 'api_calls_remaining'>,
+      'unique_id': 'VIWP1AB29P15LA85784N_api_calls_remaining',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': dict({
+        <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+      }),
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_api_calls_used',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:counter',
+      'original_name': 'API Calls Used',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_USED: 'api_calls_used'>,
+      'unique_id': 'VIWP1AB29P15LA85784N_api_calls_used',
+      'unit_of_measurement': None,
+    }),
     EntityRegistryEntrySnapshot({
       'aliases': list([
         None,
@@ -12457,6 +13072,45 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_standard_setup_with_all_entities[vw_id_4-v2][sensor.vw_id_4_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-09',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '499',
+  })
+# ---
+# name: test_standard_setup_with_all_entities[vw_id_4-v2][sensor.vw_id_4_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-09',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '1',
+  })
+# ---
 # name: test_standard_setup_with_all_entities[vw_id_4-v2][sensor.vw_id_4_battery]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -13458,6 +14112,76 @@
 # ---
 # name: test_standard_setup_with_all_entities[vw_id_4-v3][entities]
   list([
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:gauge',
+      'original_name': 'API Calls Remaining',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_REMAINING: 'api_calls_remaining'>,
+      'unique_id': 'a1d50709-3502-4faa-ba43-a5c7565e6a09_api_calls_remaining',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': dict({
+        <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+      }),
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_api_calls_used',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:counter',
+      'original_name': 'API Calls Used',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_USED: 'api_calls_used'>,
+      'unique_id': 'a1d50709-3502-4faa-ba43-a5c7565e6a09_api_calls_used',
+      'unit_of_measurement': None,
+    }),
     EntityRegistryEntrySnapshot({
       'aliases': list([
         None,
@@ -15651,6 +16375,45 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_standard_setup_with_all_entities[vw_id_4-v3][sensor.vw_id_4_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+      'monthly_budget': 500,
+      'period': '2026-09',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '499',
+  })
+# ---
+# name: test_standard_setup_with_all_entities[vw_id_4-v3][sensor.vw_id_4_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      'monthly_budget': 500,
+      'period': '2026-09',
+      'poll_profile': 'interval',
+      'reserved_for_commands': 50,
+      'scheduled_calls_per_month': 120,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '1',
+  })
+# ---
 # name: test_standard_setup_with_all_entities[vw_id_4-v3][sensor.vw_id_4_battery]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -16603,6 +17366,76 @@
 # ---
 # name: test_update_errors[network_error-vw_id_4][entities]
   list([
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:gauge',
+      'original_name': 'API Calls Remaining',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_REMAINING: 'api_calls_remaining'>,
+      'unique_id': 'VIWP1AB29P15LA85784N_api_calls_remaining',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': dict({
+        <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+      }),
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_api_calls_used',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:counter',
+      'original_name': 'API Calls Used',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_USED: 'api_calls_used'>,
+      'unique_id': 'VIWP1AB29P15LA85784N_api_calls_used',
+      'unit_of_measurement': None,
+    }),
     EntityRegistryEntrySnapshot({
       'aliases': list([
         None,
@@ -19068,6 +19901,35 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_update_errors[network_error-vw_id_4][sensor.vw_id_4_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unavailable',
+  })
+# ---
+# name: test_update_errors[network_error-vw_id_4][sensor.vw_id_4_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unavailable',
+  })
+# ---
 # name: test_update_errors[network_error-vw_id_4][sensor.vw_id_4_battery]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -20070,6 +20932,76 @@
 # ---
 # name: test_update_errors[network_proxy_response-vw_id_4][entities]
   list([
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:gauge',
+      'original_name': 'API Calls Remaining',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_REMAINING: 'api_calls_remaining'>,
+      'unique_id': 'VIWP1AB29P15LA85784N_api_calls_remaining',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': dict({
+        <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+      }),
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_api_calls_used',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:counter',
+      'original_name': 'API Calls Used',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_USED: 'api_calls_used'>,
+      'unique_id': 'VIWP1AB29P15LA85784N_api_calls_used',
+      'unit_of_measurement': None,
+    }),
     EntityRegistryEntrySnapshot({
       'aliases': list([
         None,
@@ -22535,6 +23467,35 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_update_errors[network_proxy_response-vw_id_4][sensor.vw_id_4_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unavailable',
+  })
+# ---
+# name: test_update_errors[network_proxy_response-vw_id_4][sensor.vw_id_4_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unavailable',
+  })
+# ---
 # name: test_update_errors[network_proxy_response-vw_id_4][sensor.vw_id_4_battery]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -23537,6 +24498,76 @@
 # ---
 # name: test_update_errors[server_error-vw_id_4][entities]
   list([
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:gauge',
+      'original_name': 'API Calls Remaining',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_REMAINING: 'api_calls_remaining'>,
+      'unique_id': 'VIWP1AB29P15LA85784N_api_calls_remaining',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': dict({
+        <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+      }),
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_api_calls_used',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:counter',
+      'original_name': 'API Calls Used',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_USED: 'api_calls_used'>,
+      'unique_id': 'VIWP1AB29P15LA85784N_api_calls_used',
+      'unit_of_measurement': None,
+    }),
     EntityRegistryEntrySnapshot({
       'aliases': list([
         None,
@@ -26002,6 +27033,35 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_update_errors[server_error-vw_id_4][sensor.vw_id_4_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unavailable',
+  })
+# ---
+# name: test_update_errors[server_error-vw_id_4][sensor.vw_id_4_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_used',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unavailable',
+  })
+# ---
 # name: test_update_errors[server_error-vw_id_4][sensor.vw_id_4_battery]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -27004,6 +28064,76 @@
 # ---
 # name: test_update_errors[unauthorized-vw_id_4][entities]
   list([
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:gauge',
+      'original_name': 'API Calls Remaining',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_REMAINING: 'api_calls_remaining'>,
+      'unique_id': 'VIWP1AB29P15LA85784N_api_calls_remaining',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': dict({
+        <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+      }),
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_api_calls_used',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': None,
+      'original_icon': 'mdi:counter',
+      'original_name': 'API Calls Used',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': <EntityDescriptionKey.API_CALLS_USED: 'api_calls_used'>,
+      'unique_id': 'VIWP1AB29P15LA85784N_api_calls_used',
+      'unit_of_measurement': None,
+    }),
     EntityRegistryEntrySnapshot({
       'aliases': list([
         None,
@@ -29463,6 +30593,35 @@
     }),
     'context': <ANY>,
     'entity_id': 'sensor.vw_id_4_abs_status',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unavailable',
+  })
+# ---
+# name: test_update_errors[unauthorized-vw_id_4][sensor.vw_id_4_api_calls_remaining]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_remaining',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unavailable',
+  })
+# ---
+# name: test_update_errors[unauthorized-vw_id_4][sensor.vw_id_4_api_calls_used]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_api_calls_used',
     'last_changed': <ANY>,
     'last_reported': <ANY>,
     'last_updated': <ANY>,

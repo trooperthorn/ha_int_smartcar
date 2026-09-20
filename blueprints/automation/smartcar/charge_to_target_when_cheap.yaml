@@ -1,0 +1,99 @@
+blueprint:
+  name: Smartcar - charge to a target only while power is cheap
+  description: >-
+    Starts charging when a price or tariff entity says power is cheap and the
+    battery is below your target, and stops when it reaches the target or the
+    cheap window ends.
+
+
+    This is deliberately conservative about API calls. Smartcar bills commands
+    from the same 500 calls per vehicle per month allowance as data, so the
+    automation only sends a command when the charging state actually needs to
+    change, rather than re-asserting it on every price tick.
+  domain: automation
+  homeassistant:
+    min_version: 2026.9.0
+  input:
+    battery:
+      name: Battery level sensor
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: battery
+    charging_switch:
+      name: Charging switch
+      description: The Smartcar charging switch for this vehicle.
+      selector:
+        entity:
+          filter:
+            - domain: switch
+              integration: smartcar
+    cheap:
+      name: Cheap power indicator
+      description: >-
+        A binary sensor that is on while power is cheap. A utility tariff
+        binary sensor, a solar surplus sensor, or a schedule helper all work.
+      selector:
+        entity:
+          filter:
+            - domain: binary_sensor
+            - domain: schedule
+            - domain: input_boolean
+    target:
+      name: Target charge level
+      default: 80
+      selector:
+        number:
+          min: 50
+          max: 100
+          step: 5
+          unit_of_measurement: "%"
+
+mode: single
+
+triggers:
+  - trigger: state
+    entity_id: !input cheap
+  - trigger: numeric_state
+    entity_id: !input battery
+    above: !input target
+
+conditions: []
+
+actions:
+  - choose:
+      # cheap and below target, and not already charging
+      - conditions:
+          - condition: state
+            entity_id: !input cheap
+            state: "on"
+          - condition: numeric_state
+            entity_id: !input battery
+            below: !input target
+          - condition: state
+            entity_id: !input charging_switch
+            state: "off"
+        sequence:
+          - action: switch.turn_on
+            target:
+              entity_id: !input charging_switch
+            continue_on_error: true
+      # expensive or at target, and still charging
+      - conditions:
+          - condition: state
+            entity_id: !input charging_switch
+            state: "on"
+          - condition: or
+            conditions:
+              - condition: state
+                entity_id: !input cheap
+                state: "off"
+              - condition: numeric_state
+                entity_id: !input battery
+                above: !input target
+        sequence:
+          - action: switch.turn_off
+            target:
+              entity_id: !input charging_switch
+            continue_on_error: true

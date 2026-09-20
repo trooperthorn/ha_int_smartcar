@@ -23,6 +23,9 @@ from .entity import SmartcarEntity, SmartcarEntityDescription
 
 _LOGGER = logging.getLogger(__name__)
 
+# read only platform; the coordinator owns all fetching.
+PARALLEL_UPDATES = 0
+
 
 def _hvac_bool(body: object) -> object:
     """Extract a boolean from an HVAC webhook signal body ({"value": bool}).

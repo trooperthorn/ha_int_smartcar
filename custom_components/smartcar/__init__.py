@@ -2,19 +2,22 @@ import asyncio
 from functools import partial
 from http import HTTPStatus
 import logging
+from typing import cast
 
 from aiohttp import ClientResponseError
 from homeassistant.components import cloud, webhook
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ACCESS_TOKEN, CONF_TOKEN, CONF_WEBHOOK_ID
-from homeassistant.core import HomeAssistant
+from homeassistant.core import Event, EventStateChangedData, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.config_entry_oauth2_flow import (
+    LocalOAuth2Implementation,
     OAuth2Session,
     async_get_config_entry_implementation,
 )
+from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.issue_registry import IssueSeverity, async_create_issue
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -22,15 +25,27 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from . import util
 from .auth import AbstractAuth
 from .auth_impl import AccessTokenAuthImpl, AsyncConfigEntryAuth
-from .const import API_ENDPOINTS, CONF_CLOUDHOOK, DOMAIN, PLATFORMS, Scope
+from .budget import ApiBudget
+from .const import (
+    API_ENDPOINTS,
+    CONF_AUTO_SUBSCRIBE,
+    CONF_CLOUDHOOK,
+    CONF_POLL_INTERVAL_HOURS,
+    CONF_POLL_PROFILE,
+    DOMAIN,
+    PLATFORMS,
+    Scope,
+)
 from .coordinator import SmartcarVehicleCoordinator
 from .errors import (
     EmptyVehicleListError,
     InvalidAuthError,
     UnsupportedUserConfigurationError,
 )
+from .management import ManagementApi, webhook_id_matching_url
+from .polling import PollProfile, presence_transition_wants_poll, resolve_settings
 from .services import async_setup_services
-from .types import SmartcarData
+from .types import SmartcarConfigEntry, SmartcarData
 from .util import api_version_for_client_id
 from .webhooks import handle_webhook, webhook_url_from_id
 
@@ -51,7 +66,7 @@ async def async_setup(  # noqa: RUF029
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: SmartcarConfigEntry) -> bool:
     """Set up Smartcar from a config entry.
 
     Returns:
@@ -60,7 +75,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     Raises:
         ConfigEntryError: For overlapping VIN in config entries.
     """
-    implementation = await async_get_config_entry_implementation(hass, entry)
+    implementation = cast(
+        "LocalOAuth2Implementation",
+        await async_get_config_entry_implementation(hass, entry),
+    )
     version = api_version_for_client_id(implementation.client_id)
     auth = AsyncConfigEntryAuth(
         async_get_clientsession(hass),
@@ -69,6 +87,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         API_ENDPOINTS,
         user_id=entry.data.get("user_id"),
     )
+    budget = await ApiBudget(hass, entry.entry_id).async_load()
     coordinators: dict[str, SmartcarVehicleCoordinator] = {}
     meta_coordinator = DataUpdateCoordinator(
         hass, _LOGGER, name=f"{DOMAIN}_meta", config_entry=entry
@@ -78,6 +97,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         auth=auth,
         coordinators=coordinators,
         meta_coordinator=meta_coordinator,
+        budget=budget,
+        management=ManagementApi(auth, async_get_clientsession(hass)),
     )
     device_registry = dr.async_get(hass)
     other_vins = vehicle_vins_in_use(hass, entry)
@@ -117,6 +138,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             vin=vin,
             entry=entry,
             version=version,
+            budget=budget,
         )
         _LOGGER.debug(
             "Coordinator created and initial data fetched for %s (VIN: %s)",
@@ -172,12 +194,108 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         *[async_do_first_refresh(coordinator) for coordinator in refresh_needed]
     )
 
+    async_setup_presence_trigger(hass, entry)
+
+    if entry.options.get(CONF_AUTO_SUBSCRIBE) and CONF_WEBHOOK_ID in entry.data:
+        entry.async_create_background_task(
+            hass,
+            async_subscribe_vehicles(hass, entry),
+            name=f"{DOMAIN}_subscribe_{entry.entry_id}",
+        )
+
     # log stored scopes once on successful setup
     _LOGGER.info(
         "Using token with scopes: %s", entry.data.get("token", {}).get("scopes")
     )
 
     return True
+
+
+@callback
+def async_setup_presence_trigger(
+    hass: HomeAssistant, entry: SmartcarConfigEntry
+) -> None:
+    """Poll when a watched person or tracker crosses the home boundary.
+
+    Where the people are is something Home Assistant already knows, for free
+    and as often as it likes. Where the car is costs one of a few hundred calls
+    a month. So the phone is the trigger and the car is the question, rather
+    than polling the car to discover something the phone already said.
+    """
+    settings = resolve_settings(dict(entry.options))
+
+    if not settings.watches_presence:
+        return
+
+    async def _handle(event: Event[EventStateChangedData]) -> None:
+        old_state = event.data["old_state"]
+        new_state = event.data["new_state"]
+
+        if not presence_transition_wants_poll(
+            settings,
+            old_state.state if old_state else None,
+            new_state.state if new_state else None,
+        ):
+            return
+
+        reason = f"{event.data['entity_id']} is now {new_state.state if new_state else 'unknown'}"
+
+        for coordinator in entry.runtime_data.coordinators.values():
+            await coordinator.async_request_event_poll(reason)
+
+    entry.async_on_unload(
+        async_track_state_change_event(hass, list(settings.presence_entities), _handle)
+    )
+
+    _LOGGER.debug(
+        "Watching %s for presence changes that should refresh the vehicles",
+        ", ".join(settings.presence_entities),
+    )
+
+
+async def async_subscribe_vehicles(
+    hass: HomeAssistant, entry: SmartcarConfigEntry
+) -> None:
+    """Subscribe every vehicle to the webhook that points at this instance.
+
+    A subscribed vehicle is pushed data as often as the OEM allows and costs
+    nothing from its monthly allowance, which is the only way to have both
+    fresh data and a working budget. Doing it here removes the manual dashboard
+    step that was previously required per vehicle.
+    """
+    runtime = entry.runtime_data
+    management = runtime.management
+    user_id = entry.data.get("user_id")
+
+    if not user_id:
+        _LOGGER.debug("No user id stored; cannot subscribe vehicles")
+        return
+
+    if not (webhook_id := entry.data.get(CONF_WEBHOOK_ID)):
+        _LOGGER.debug("No webhook configured; nothing to subscribe vehicles to")
+        return
+
+    callback_url, _cloudhook = await webhook_url_from_id(hass, webhook_id)
+    webhooks = await management.async_list_webhooks()
+    target_webhook = webhook_id_matching_url(webhooks, callback_url)
+
+    if target_webhook is None:
+        _LOGGER.warning(
+            "No Smartcar webhook is configured with the callback URL %s, so "
+            "vehicles cannot be subscribed automatically. Create one in the "
+            "Smartcar dashboard with that URL",
+            callback_url,
+        )
+        return
+
+    for vehicle_id in runtime.coordinators:
+        if await management.async_subscriptions_for_vehicle(vehicle_id):
+            _LOGGER.debug("Vehicle %s already has a subscription", vehicle_id)
+            continue
+
+        await management.async_subscribe(
+            webhook_id=target_webhook, user_id=user_id, vehicle_id=vehicle_id
+        )
 
 
 async def async_load_capabilities(
@@ -209,7 +327,7 @@ async def async_do_first_refresh(coordinator: SmartcarVehicleCoordinator) -> Non
     )
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: SmartcarConfigEntry) -> bool:
     """Unload a config entry.
 
     Returns:
@@ -221,7 +339,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return bool(await hass.config_entries.async_unload_platforms(entry, PLATFORMS))
 
 
-async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def async_remove_entry(hass: HomeAssistant, entry: SmartcarConfigEntry) -> None:
     """Cleanup when entry is removed."""
     if CONF_WEBHOOK_ID in entry.data and (
         cloud.async_active_subscription(hass) or entry.data.get(CONF_CLOUDHOOK, False)
@@ -248,7 +366,10 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
 
     if config_entry.version == 1:
         old_data = config_entry.data
-        implementation = await async_get_config_entry_implementation(hass, config_entry)
+        implementation = cast(
+            "LocalOAuth2Implementation",
+            await async_get_config_entry_implementation(hass, config_entry),
+        )
         session = async_get_clientsession(hass)
         token = old_data[CONF_TOKEN]
         access_token = token[CONF_ACCESS_TOKEN]
@@ -299,6 +420,23 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
             minor_version=0,
         )
 
+    if config_entry.minor_version < 1:
+        # polling used to be a fixed six hour interval for everyone. the new
+        # default is twice a day, which is kinder to the 500 calls per vehicle
+        # per month allowance, but changing an existing entry's behaviour
+        # silently is not ours to do. write the old cadence explicitly instead,
+        # and leave the new default to entries created from now on.
+        hass.config_entries.async_update_entry(
+            config_entry,
+            options={
+                CONF_POLL_PROFILE: PollProfile.INTERVAL.value,
+                CONF_POLL_INTERVAL_HOURS: 6,
+                **config_entry.options,
+            },
+            version=2,
+            minor_version=1,
+        )
+
     _LOGGER.debug(
         "Migration to configuration version %s.%s successful",
         config_entry.version,
@@ -309,7 +447,7 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
 
 
 def vehicle_vins_in_use(
-    hass: HomeAssistant, config_entry: ConfigEntry = None
+    hass: HomeAssistant, config_entry: ConfigEntry | None = None
 ) -> set[str]:
     return {
         vehicle["vin"]
