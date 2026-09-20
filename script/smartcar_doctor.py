@@ -424,17 +424,23 @@ def check_connections(
     return result.passed(summary), connections, pages
 
 
-def check_management(token: str) -> list[Result]:
-    """Probe both Management API hosts, read only.
+def check_management(
+    token: str, redact: Redactor
+) -> tuple[list[Result], dict[str, Any]]:
+    """Read the webhook configuration from both Management API hosts.
 
-    Neither has been exercised from here. Whichever answers 2xx to a webhook
-    list is the live one, and a 401 against one but not the other says the
-    token model differs rather than the host being wrong.
+    Free: these are application level and come out of no vehicle's allowance.
+
+    What each webhook is configured to collect decides what can ever appear in
+    the signal store, so an empty store and a webhook with nothing enabled on
+    it are the same finding seen from two ends. The configuration is therefore
+    summarised rather than counted.
 
     Returns:
-        One result per host.
+        One result per host, plus the raw bodies.
     """
     results = []
+    bodies: dict[str, Any] = {}
 
     for label, base in MANAGEMENT_HOSTS.items():
         result = Result(f"Management API {label}", FREE)
@@ -444,15 +450,111 @@ def check_management(token: str) -> list[Result]:
             results.append(result.failed(f"request did not complete. {body}"))
             continue
 
+        parsed = parse_json(body)
+
         if 200 <= status < 300:
-            parsed = parse_json(body)
-            count = len(parsed.get("data", [])) if isinstance(parsed, dict) else "?"
-            results.append(result.passed(f"HTTP {status}, {count} webhook(s) listed"))
+            webhooks = parsed.get("data", []) if isinstance(parsed, dict) else []
+            results.append(
+                result.passed(f"HTTP {status}, {len(webhooks)} webhook(s) listed")
+            )
+
+            # describe before scrubbing, so a webhook id is named `hook_` in
+            # both places rather than taking whatever label the scrubber's
+            # generic `id` rule reached first.
+            results.extend(describe_webhook(webhook, redact) for webhook in webhooks)
+            bodies[label] = scrub(parsed, redact)
             continue
+
+        if parsed is not None:
+            bodies[label] = scrub(parsed, redact)
 
         results.append(result.failed(f"HTTP {status}. {body[:200]}"))
 
-    return results
+    return results, bodies
+
+
+def describe_webhook(webhook: dict, redact: Redactor) -> Result:
+    """Say what one webhook is set up to collect.
+
+    The attribute names are not pinned by anything that has been verified, so
+    rather than reach for particular keys this reports every list of strings
+    the webhook carries. Triggers and enabled signals are lists of codes, so
+    whatever they are called they show up, and a webhook with empty lists reads
+    as the failure it is.
+
+    Returns:
+        The result, failed when the webhook collects nothing.
+    """
+    label = redact("hook", webhook.get("id"))
+    result = Result(f"Webhook {label}", FREE)
+    attributes = webhook.get("attributes", {})
+
+    if not isinstance(attributes, dict):
+        return result.failed("the webhook carries no attributes")
+
+    scalars = {
+        key: value
+        for key, value in attributes.items()
+        if isinstance(value, (str, bool, int))
+        and key not in {"callbackUri", "url", "secret"}
+    }
+    lists = {
+        key: [item for item in value if isinstance(item, str)]
+        for key, value in attributes.items()
+        if isinstance(value, list)
+    }
+    described = ", ".join(f"{key}={value}" for key, value in sorted(scalars.items()))
+    collected = ", ".join(
+        f"{key}: {len(value)} ({', '.join(sorted(value)) or 'empty'})"
+        for key, value in sorted(lists.items())
+    )
+    detail = " | ".join(part for part in (described, collected) if part)
+
+    if lists and not any(lists.values()):
+        return result.failed(
+            f"nothing enabled, so nothing will ever be collected. {detail}"
+        )
+
+    if not lists:
+        return result.passed(
+            f"{detail}. No list of codes in the attributes; see the raw body "
+            "for what it does carry."
+        )
+
+    return result.passed(detail)
+
+
+def check_subscriptions(
+    token: str, vehicle_id: str, redact: Redactor
+) -> tuple[Result, Any]:
+    """Ask the Management API which webhooks a vehicle is subscribed to.
+
+    Free. This is the same thing the dashboard shows in its "Subscribed to
+    webhook(s)" column, read from the API instead, which matters because the
+    integration acts on the API's answer and not on the dashboard's.
+
+    Returns:
+        The result and the raw body.
+    """
+    label = redact("veh", vehicle_id)
+    result = Result(f"Subscriptions for {label}", FREE)
+    base = MANAGEMENT_HOSTS["v3 (spec)"]
+    query = urllib.parse.urlencode({"filter[vehicleId]": vehicle_id})
+    status, _, body = http("get", f"{base}/subscriptions?{query}", token=token)
+    parsed = parse_json(body)
+
+    if not 200 <= status < 300:
+        return result.failed(f"HTTP {status}. {body[:200]}"), parsed
+
+    subscriptions = parsed.get("data", []) if isinstance(parsed, dict) else []
+
+    if not subscriptions:
+        return result.failed(
+            "the vehicle is subscribed to no webhook, so nothing will be "
+            "collected for it"
+        ), parsed
+
+    return result.passed(f"subscribed to {len(subscriptions)} webhook(s)"), parsed
 
 
 def check_signals(
@@ -617,6 +719,7 @@ def summarise_signals(signals: list[dict]) -> dict[str, int]:
 
 SENSITIVE_KEYS = {
     "vin": "vin",
+    "callbackUri": "url",
     "id": "id",
     "vehicleId": "veh",
     "userId": "user",
@@ -884,8 +987,12 @@ def main() -> int:
     record(connections_result)
     report["raw"]["connections"] = scrub(pages, redact)
 
-    for result in check_management(token):
+    management_results, webhook_bodies = check_management(token, redact)
+
+    for result in management_results:
         record(result)
+
+    report["raw"]["webhooks"] = webhook_bodies
 
     vehicles = [
         (
@@ -895,6 +1002,15 @@ def main() -> int:
         for connection in connections
     ]
     vehicles = [(user, vehicle) for user, vehicle in vehicles if user and vehicle]
+
+    for _user_id, vehicle_id in vehicles:
+        subscription_result, subscription_body = check_subscriptions(
+            token, vehicle_id, redact
+        )
+        record(subscription_result)
+        report["raw"][f"subscriptions {redact('veh', vehicle_id)}"] = scrub(
+            subscription_body, redact
+        )
 
     if vehicles and not args.free_only:
         cost = len(vehicles)
