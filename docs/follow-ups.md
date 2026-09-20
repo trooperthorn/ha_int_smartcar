@@ -93,6 +93,25 @@ Removing the config entry leaves the vehicle connected on the Smartcar side.
 Now that the Management API client exists, unsubscribing and disconnecting on
 `async_remove_entry` is a short addition.
 
+### 10. Auto-subscribe cannot create the webhook it needs
+
+`async_subscribe` subscribes a vehicle to an existing webhook, found by matching
+its callback URL. An application with no webhook at all, which is what a new
+Smartcar account has, matches nothing, so setup completes and subscribes
+nothing. The first live run against a real account listed zero webhooks, so this
+is the normal case rather than an edge one.
+
+Creating the webhook is a dashboard step today: a name, the callback URL, the
+triggers and data signals to send, and a verification challenge that Home
+Assistant has to answer with the Application Management Token. The Management
+API declares a create endpoint, so most of that could move into setup, but the
+signal selection is a real choice (the free tier carries about nine of each) and
+would need a form rather than a default.
+
+**Action:** at minimum, say so. Setup should report that no webhook points at
+this instance and that scheduled polling is therefore the only source of data,
+instead of leaving it silent.
+
 ### 9. The budget is Home Assistant's tally, not Smartcar's
 
 Smartcar publishes no remaining-calls endpoint, so the count cannot be
