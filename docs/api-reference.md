@@ -13,7 +13,12 @@ and the disagreements matter:
 | `S-spec` | The published OpenAPI documents: `auth.yaml`, `full-vehicle.yaml`, `management.yaml`, from `smartcar.com/docs/specs/` | Highest. Machine generated from the service. |
 | `D-docs` | The prose reference at `smartcar.com/docs`, mirrored in `llms-full.txt` | Good, but lags the spec. One place below contradicts it. |
 | `C-code` | Observed in this integration or its test fixtures | Says what we send, not what the service accepts. |
+| `M-matrix` | The per-vehicle compatibility matrix exported from the Smartcar dashboard, 2026-09-20 | Authoritative for what a given make, model, year and region supports. |
 | `U-unver` | Believed but confirmed by none of the above | Do not build on it without a probe. |
+
+The matrix is not committed here. It is a 646 KB export that goes stale, and
+it regenerates from Dashboard, Compatible Vehicles. Keep a copy outside the
+working tree while using it.
 
 Where a row is `C-code` only, this integration is calling something no
 published source describes. There is one such row and it is a defect, not a
@@ -199,6 +204,14 @@ command at any version. What exists is:
   `/tesla/climate/steering_wheel`: make specific, v2 only, deprecated along
   with v2 `D-docs`
 
+The compatibility matrix settles it from a fourth direction. It carries one
+column per command, eleven in total: close charge port door, control
+navigation, the three charge schedule creates, lock, open charge port door,
+set charge limit, start charge, stop charge, unlock. **There is no climate
+column for any vehicle** `M-matrix`. That is the same eleven commands the spec
+declares, so the matrix and the spec agree with each other and disagree with
+this integration.
+
 So the standardized v3 climate command was never published. `CLIMATE` is in
 `DEFAULT_ENABLED_ENTITY_DESCRIPTION_KEYS`, so the entity ships enabled and
 every press should fail. Either the path is undocumented and working, in which
@@ -359,6 +372,7 @@ unchecked by the user at consent time.
 | `powertrainType` never read | EV entities created on combustion vehicles | `S-spec` |
 | Charge schedules unimplemented | No scheduled charging through this integration | `S-spec` |
 | Charge port open and close unimplemented | No charge port control | `S-spec` |
+| Entities created from scopes, not from vehicle compatibility | On an ID. Buzz, 23 of 95 signals are supported, so most default enabled entities can never populate | `M-matrix` |
 | 42 signals unmapped | Listed below | `S-spec` |
 
 ## On the SDKs
@@ -374,6 +388,73 @@ wraps the native iOS and Android auth SDKs to launch the consent sheet and
 return an auth code, user ID and optional external ID. It never calls the
 vehicle API, so it has no bearing on this integration, which already does that
 job through Home Assistant's own OAuth handler.
+
+## What a given vehicle actually supports
+
+The catalogue below is the API surface. It is not what any particular car
+answers. Support varies by make, model, year **and region**, and the
+difference is large enough that a signal being mapped here says almost nothing
+about whether it will ever produce a value.
+
+The compatibility matrix exported from the dashboard is the authority. It
+carries one row per make, model, powertrain, region and year range, and one
+column per signal and per command, valued `TRUE`, `-` (not supported) or `N/A`
+(not applicable to the powertrain, for example the combustion columns on a
+BEV).
+
+Three signals appear in the matrix that have no path in the OpenAPI document:
+`tractionbattery-estimatedrange`, `tractionbattery-idealrange` and
+`tractionbattery-ratedrange` `M-matrix`. The spec exposes only
+`tractionbattery-range`. One signal goes the other way:
+`vehicleuseraccount-permissions` is in the spec and absent from the matrix.
+Neither source is complete on its own.
+
+### Worked example: Volkswagen ID. Buzz, BEV, US, 2025
+
+23 of 95 signals and 5 of 11 commands `M-matrix`.
+
+Supported:
+
+| Group | Signals |
+| --- | --- |
+| Charge | `chargelimits`, `chargerate`, `chargingconnectortype`, `detailedchargingstatus`, `ischarging`, `ischargingcableconnected`, `ischargingcablelatched`, `timetocomplete`, `wattage` |
+| Closure | `doors`, `enginecover`, `fronttrunk`, `islocked`, `reartrunk`, `sunroof`, `windows` |
+| Location | `preciselocation` |
+| Odometer | `traveleddistance` |
+| Service | `records` |
+| TractionBattery | `nominalcapacity`, `range`, `stateofcharge` |
+| VehicleIdentification | `vin` |
+
+Commands: lock, unlock, start charge, stop charge, set charge limit.
+
+What that rules out, and why each one matters here:
+
+- **No amperage at all.** `charge-amperage`, `charge-amperagemax` and
+  `charge-amperagerequested` are all unsupported. Smartcar cannot read or
+  influence the current draw on this vehicle. Charge rate control has to come
+  from the EVSE side, not from the car.
+- **No HVAC or climate signals**, on top of the climate command not existing.
+  The whole climate feature set is unreachable on this vehicle by two
+  independent routes.
+- **No diagnostics whatsoever.** All 23 `diagnostics-*` columns are `-`. Five
+  of them are in `DEFAULT_ENABLED_ENTITY_DESCRIPTION_KEYS`, so they are
+  created enabled and can never populate.
+- **No `connectivitystatus-isonline` or `-isasleep`**, so there is no way to
+  tell a sleeping vehicle from a broken one.
+- **No `wheel-tires`**, so the four tire pressure entities cannot populate.
+- **No charge schedules and no charge port commands**, so three of the
+  unimplemented commands above would not work on this vehicle anyway. The
+  European ID. Buzz does get `charge-chargetimers`, along with
+  `charge-chargeportstatuscolor` and `charge-energyadded`; the US 2025 row does
+  not. Same model, different region, different surface.
+
+The general lesson for this integration: entities are created from the granted
+scopes, not from what the vehicle can answer. On a vehicle like this one, a
+large majority of the default enabled entities are structurally incapable of
+ever having a value, and `_BENIGN_SIGNAL_ERRORS` in the coordinator exists to
+stop that flooding the log. Reading the compatibility of the connected vehicle
+at setup, and declining to create entities it cannot support, would be a
+better answer than demoting the resulting errors to debug.
 
 ## Signal catalogue
 
