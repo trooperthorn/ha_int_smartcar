@@ -11,6 +11,28 @@ Before diving into deeper troubleshooting, it’s worth checking a few common Sm
 - [my.smartcar.com](https://my.smartcar.com/) – a useful app to check that you have the required permission (scopes) enabled for your vehicle and your integration (you'll need to re-authenticate your vehicle)
 - [Known Issues and Limitations](/wbyoung/smartcar?tab=readme-ov-file#known-issues--limitations) - In case you missed this section in the README, it is worth reviewing.
 
+### Checking the connection from outside Home Assistant
+
+`script/smartcar_doctor.py` in this repository talks to Smartcar directly, with
+the same credentials the integration uses, and reports which step fails. It is
+useful when setup aborts without saying why, when nothing updates after the v3
+migration, or when a maintainer asks what your vehicle actually supports.
+
+```
+python script/smartcar_doctor.py --client-id client_... --client-secret ...
+```
+
+It needs nothing but Python: no virtualenv, no packages, and it does not need
+Home Assistant running. Checks are ordered by cost. Reachability, the token
+request, the connection list and the Management API probe are all free. Reading
+a vehicle's signals costs one call out of that vehicle's 500 per month, so it
+asks first and `--free-only` skips it.
+
+The report is written to `~/workspace/` with identifiers replaced by stable
+short hashes and coordinates removed, so it can be attached to an issue. The
+`-idmap.json` beside it maps the hashes back to real ids and is the one file
+not to share.
+
 ### Is your car brand supported in your region?
 
 Smartcar availability varies by region. Check whether your car brand is supported where you live on [smartcar.com/global](https://smartcar.com/global)
