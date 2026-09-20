@@ -552,11 +552,12 @@ def probe_empty_signals(
     """
     base = f"{VEHICLE_API}/vehicles/{vehicle_id}"
     headers = {"sc-user-id": user_id}
+    # short names, because they are what `--probe` takes on a command line.
     probes: list[tuple[str, str, dict[str, str] | None]] = [
         ("vehicle", base, headers),
-        (f"single signal ({VIN_CODE})", f"{base}/signals/{VIN_CODE}", headers),
-        (f"single signal ({CHARGE_CODE})", f"{base}/signals/{CHARGE_CODE}", headers),
-        (f"signals?signals={VIN_CODE}", f"{base}/signals?signals={VIN_CODE}", headers),
+        ("vin", f"{base}/signals/{VIN_CODE}", headers),
+        ("charge", f"{base}/signals/{CHARGE_CODE}", headers),
+        ("filter", f"{base}/signals?signals={VIN_CODE}", headers),
     ]
 
     if selected:
@@ -822,7 +823,8 @@ def main() -> int:
         default="",
         help=(
             "comma separated probe names to run when the signal set is empty, "
-            "instead of all of them. Each costs one call."
+            "instead of all of them: vehicle, vin, charge, filter. Each costs "
+            "one call."
         ),
     )
     parser.add_argument(
