@@ -477,7 +477,7 @@ async def async_setup_entry(  # noqa: RUF029
         SmartcarSensor(coordinator, description)
         for coordinator in coordinators.values()
         for description in SENSOR_TYPES
-        if coordinator.is_scope_enabled(description.key, verbose=True)
+        if coordinator.is_entity_supported(description.key, verbose=True)
     ] + [
         SmartcarMetaSensor(
             meta_coordinator,

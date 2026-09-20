@@ -13,10 +13,15 @@ and the disagreements matter:
 | `S-spec` | The published OpenAPI documents: `auth.yaml`, `full-vehicle.yaml`, `management.yaml`, from `smartcar.com/docs/specs/` | Highest. Machine generated from the service. |
 | `D-docs` | The prose reference at `smartcar.com/docs`, mirrored in `llms-full.txt` | Good, but lags the spec. One place below contradicts it. |
 | `C-code` | Observed in this integration or its test fixtures | Says what we send, not what the service accepts. |
+| `M-matrix` | The per-vehicle compatibility matrix exported from the Smartcar dashboard, 2026-09-20 | Authoritative for what a given make, model, year and region supports. |
 | `U-unver` | Believed but confirmed by none of the above | Do not build on it without a probe. |
 
+The matrix is not committed here. It is a 646 KB export that goes stale, and
+it regenerates from Dashboard, Compatible Vehicles. Keep a copy outside the
+working tree while using it.
+
 Where a row is `C-code` only, this integration is calling something no
-published source describes. There is one such row and it is a defect, not a
+published source describes. There was one such row and it was a defect, not a
 discovery. See "The climate command does not exist".
 
 ## Headline findings
@@ -32,9 +37,9 @@ not exchanged for anything usable. Connect exists solely to put `user_id` in
 the redirect, which then rides on every request as `sc-user-id`. The OAuth
 dance is a user identity harvest wearing an OAuth costume.
 
-**The climate command does not exist.** `switch.py` posts to
+**The climate command does not exist.** The integration used to post to
 `/commands/climate/start` and `/commands/climate/stop`. Neither path is in the
-spec, the prose, or the v2 reference.
+spec, the prose, the v2 reference, or the compatibility matrix.
 
 **Polling fetches everything.** For v3 the coordinator issues a bare
 `GET /vehicles/{id}/signals` with no filter, then discards what it does not
@@ -132,11 +137,12 @@ Base `https://vehicle.api.smartcar.com/v3`. All rows `S-spec`.
 `filter[user.externalId]`, `page[number]` (default 1) and `page[size]`
 (default 10).
 
-**The integration passes none of them.** It reads `data[]` from the first page
-only. An account with more than ten connections would silently lose vehicles,
-and the "exactly one user" check in `_store_all_vehicles` would be deciding on
-a partial set. The single user case is the only supported one, so nobody has
-hit this, but the pagination is unhandled rather than deliberately ignored.
+The integration reads every page, 100 at a time, and stops when the running
+count reaches `meta.totalCount` or after 50 pages. It used to read only the
+first page of ten, which would silently lose vehicles on a larger account and
+would also make the "exactly one user" check in `_store_all_vehicles` decide on
+a partial set, reporting a multi-user application for an account that simply
+has more than ten connections.
 
 The two DELETE endpoints are the clean teardown this integration does not do.
 `async_remove_entry` deletes the cloudhook and nothing else, so removing the
@@ -199,11 +205,22 @@ command at any version. What exists is:
   `/tesla/climate/steering_wheel`: make specific, v2 only, deprecated along
   with v2 `D-docs`
 
+The compatibility matrix settles it from a fourth direction. It carries one
+column per command, eleven in total: close charge port door, control
+navigation, the three charge schedule creates, lock, open charge port door,
+set charge limit, start charge, stop charge, unlock. **There is no climate
+column for any vehicle** `M-matrix`. That is the same eleven commands the spec
+declares, so the matrix and the spec agree with each other and disagree with
+this integration.
+
 So the standardized v3 climate command was never published. `CLIMATE` is in
-`DEFAULT_ENABLED_ENTITY_DESCRIPTION_KEYS`, so the entity ships enabled and
-every press should fail. Either the path is undocumented and working, in which
-case it needs a probe and a `U-unver` row here, or it is dead and the entity
-should go. Do not assume the first because the code exists.
+`DEFAULT_ENABLED_ENTITY_DESCRIPTION_KEYS`, so the entity shipped enabled and
+every press posted to a path that does not exist.
+
+The climate switch is now created only for a v2 entry, and the v3 command path
+it used to build has been deleted rather than left as unreachable code. If a
+probe ever shows the path working undocumented, add a `U-unver` row here with
+what was observed before putting the entity back.
 
 ## Management API
 
@@ -315,9 +332,10 @@ command finishes `D-docs`.
 A `202` is not a result. The docs are explicit: read the full body before
 deciding whether the command worked.
 
-`async_send_command` calls `raise_for_status()` and sets `success = True`
-without reading the body `C-code`. A slow command that ultimately failed is
-reported to Home Assistant as having succeeded.
+`async_send_command` used to call `raise_for_status()` and set `success = True`
+without reading the body, so a slow command that ultimately failed was reported
+to Home Assistant as having succeeded. The body is now read on every command
+and an error payload in it raises, whatever the status line said.
 
 ## Permissions
 
@@ -346,20 +364,69 @@ unchecked by the user at consent time.
 
 ## Gaps
 
+### Closed
+
 | Gap | Effect | Evidence |
 | --- | --- | --- |
-| Climate command path is not published | The default enabled climate switch should fail on every press | `S-spec` absent, `C-code` present |
-| `202` treated as success without reading the body | Failed long running commands reported as succeeded | `D-docs`, `C-code` |
-| `504` not in the handled command statuses | Gateway timeout escapes as a raw error | `S-spec` |
-| `/connections` read unpaginated and unfiltered | Vehicles beyond the first 10 invisible; user count check reads a partial set | `S-spec` |
+| Climate command path is not published | The default enabled climate switch failed on every press. The entity is no longer created on v3 | `S-spec` and `M-matrix` absent, `C-code` present |
+| `202` treated as success without reading the body | Failed long running commands reported as succeeded. The body is now read and an error in it fails the command | `D-docs`, `C-code` |
+| `504` not in the handled command statuses | Gateway timeout escaped as a raw error | `S-spec` |
+| `/connections` read unpaginated and unfiltered | Vehicles beyond the first 10 invisible; the single-user check read a partial set. All pages are now read | `S-spec` |
+| Entities created from scopes, not from vehicle compatibility | On an ID. Buzz, 23 of 95 signals are supported, so most default enabled entities could never populate. Signals the vehicle reports a COMPATIBILITY error for no longer get an entity | `M-matrix` |
+| A rejected v3 credential raised an assertion | The config flow aborted with an unknown error and no reauth. Rejections now surface as reauth, outages as transient, with Smartcar's own `error` text | `S-spec` |
+| The access token was written to the debug log | Application level bearer credential leaked into logs that get pasted into issues | `C-code` |
+
+### Open
+
+| Gap | Effect | Evidence |
+| --- | --- | --- |
 | Management API never called | Webhook subscribe and unsubscribe are manual dashboard steps | `S-spec` |
 | `DELETE /connections/{id}` never called | Removing the config entry leaves the Smartcar connection live | `S-spec` |
 | `charge/set-limit` floor of 50 not enforced locally | Values under 50 make a round trip only to be rejected | `S-spec` |
 | `resolution.type` ignored | Cannot distinguish retry from reauthenticate | `D-docs` |
-| `powertrainType` never read | EV entities created on combustion vehicles | `S-spec` |
+| `powertrainType` never read | Compatibility gating now covers most of this, but the attribute is still never read | `S-spec` |
 | Charge schedules unimplemented | No scheduled charging through this integration | `S-spec` |
 | Charge port open and close unimplemented | No charge port control | `S-spec` |
 | 42 signals unmapped | Listed below | `S-spec` |
+
+## Configuring v3, and what goes wrong
+
+Two different credentials from the Smartcar dashboard are involved, and putting
+one where the other belongs is the common failure.
+
+**Home Assistant's Application Credentials dialog wants the API credential.**
+Dashboard, API Credentials tab: a client ID that begins `client_` and its
+secret. This is what signs every API call.
+
+**The config flow separately asks for the Application ID.** Dashboard,
+Configuration. It is used only to build the Connect URL, because Connect
+identifies the application rather than the API credential. The flow refuses to
+continue without it on a v3 entry.
+
+**The Application Management Token is a third thing**, needed only for
+webhooks, and used only as the HMAC key that verifies inbound payloads.
+
+Failure modes, in the order they are worth checking:
+
+- **The entry is treated as v2.** Version is decided by the `client_` prefix on
+  the client ID `C-code`. Paste the Application ID into the Application
+  Credentials dialog and the entry silently becomes a v2 entry, talks to
+  `auth.smartcar.com`, and fails there. A repair issue saying the entry uses a
+  legacy client ID is the tell.
+- **The credential is rejected.** `401 invalid_client` means the ID or secret
+  is wrong; `400 invalid_request` means the request shape was. Both now surface
+  as a reauth carrying Smartcar's own error text. Before, both hit an assertion
+  that the config flow does not catch, so the user saw an unknown error with
+  nothing to act on.
+- **Existing entries keep the credentials they were created with.** Adding new
+  v3 application credentials does not move an entry that already exists; it
+  stays bound to the `auth_implementation` it was created with. Reconfigure the
+  entry, or remove and re-add it.
+- **Nothing updates, but setup succeeded.** With a management token configured
+  the coordinator has no update interval at all: webhooks are the only data
+  source `C-code`. If the webhook URL is not reachable from Smartcar, entities
+  keep their last value and nothing says so. Check the Last Webhook Received
+  sensor.
 
 ## On the SDKs
 
@@ -374,6 +441,73 @@ wraps the native iOS and Android auth SDKs to launch the consent sheet and
 return an auth code, user ID and optional external ID. It never calls the
 vehicle API, so it has no bearing on this integration, which already does that
 job through Home Assistant's own OAuth handler.
+
+## What a given vehicle actually supports
+
+The catalogue below is the API surface. It is not what any particular car
+answers. Support varies by make, model, year **and region**, and the
+difference is large enough that a signal being mapped here says almost nothing
+about whether it will ever produce a value.
+
+The compatibility matrix exported from the dashboard is the authority. It
+carries one row per make, model, powertrain, region and year range, and one
+column per signal and per command, valued `TRUE`, `-` (not supported) or `N/A`
+(not applicable to the powertrain, for example the combustion columns on a
+BEV).
+
+Three signals appear in the matrix that have no path in the OpenAPI document:
+`tractionbattery-estimatedrange`, `tractionbattery-idealrange` and
+`tractionbattery-ratedrange` `M-matrix`. The spec exposes only
+`tractionbattery-range`. One signal goes the other way:
+`vehicleuseraccount-permissions` is in the spec and absent from the matrix.
+Neither source is complete on its own.
+
+### Worked example: Volkswagen ID. Buzz, BEV, US, 2025
+
+23 of 95 signals and 5 of 11 commands `M-matrix`.
+
+Supported:
+
+| Group | Signals |
+| --- | --- |
+| Charge | `chargelimits`, `chargerate`, `chargingconnectortype`, `detailedchargingstatus`, `ischarging`, `ischargingcableconnected`, `ischargingcablelatched`, `timetocomplete`, `wattage` |
+| Closure | `doors`, `enginecover`, `fronttrunk`, `islocked`, `reartrunk`, `sunroof`, `windows` |
+| Location | `preciselocation` |
+| Odometer | `traveleddistance` |
+| Service | `records` |
+| TractionBattery | `nominalcapacity`, `range`, `stateofcharge` |
+| VehicleIdentification | `vin` |
+
+Commands: lock, unlock, start charge, stop charge, set charge limit.
+
+What that rules out, and why each one matters here:
+
+- **No amperage at all.** `charge-amperage`, `charge-amperagemax` and
+  `charge-amperagerequested` are all unsupported. Smartcar cannot read or
+  influence the current draw on this vehicle. Charge rate control has to come
+  from the EVSE side, not from the car.
+- **No HVAC or climate signals**, on top of the climate command not existing.
+  The whole climate feature set is unreachable on this vehicle by two
+  independent routes.
+- **No diagnostics whatsoever.** All 23 `diagnostics-*` columns are `-`. Five
+  of them are in `DEFAULT_ENABLED_ENTITY_DESCRIPTION_KEYS`, so they are
+  created enabled and can never populate.
+- **No `connectivitystatus-isonline` or `-isasleep`**, so there is no way to
+  tell a sleeping vehicle from a broken one.
+- **No `wheel-tires`**, so the four tire pressure entities cannot populate.
+- **No charge schedules and no charge port commands**, so three of the
+  unimplemented commands above would not work on this vehicle anyway. The
+  European ID. Buzz does get `charge-chargetimers`, along with
+  `charge-chargeportstatuscolor` and `charge-energyadded`; the US 2025 row does
+  not. Same model, different region, different surface.
+
+The general lesson for this integration: entities are created from the granted
+scopes, not from what the vehicle can answer. On a vehicle like this one, a
+large majority of the default enabled entities are structurally incapable of
+ever having a value, and `_BENIGN_SIGNAL_ERRORS` in the coordinator exists to
+stop that flooding the log. Reading the compatibility of the connected vehicle
+at setup, and declining to create entities it cannot support, would be a
+better answer than demoting the resulting errors to debug.
 
 ## Signal catalogue
 

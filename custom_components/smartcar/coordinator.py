@@ -11,7 +11,7 @@ import logging
 import numbers
 from typing import Any, Literal
 
-from aiohttp import ClientResponseError
+from aiohttp import ClientError, ClientResponseError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
@@ -582,6 +582,9 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
         self.version = version
         self.batch_requests: set[EntityDescriptionKey] = set()
         self.data: dict[str, Any] = {}
+        # signal codes the vehicle has positively reported it cannot answer.
+        # empty means unknown, which is treated as capable.
+        self.incapable_codes: frozenset[str] = frozenset()
 
         super().__init__(
             hass,
@@ -611,6 +614,121 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
             )
 
         return enabled
+
+    def is_entity_supported(
+        self, sensor_key: EntityDescriptionKey, *, verbose: bool = False
+    ) -> bool:
+        """Whether an entity should exist for this vehicle at all.
+
+        Two independent questions. The scopes decide what the user let us ask
+        for; the vehicle decides what it can answer. An entity needs both, and
+        the second one was previously not asked, which is why a vehicle with no
+        diagnostics still got five diagnostic entities that could never hold a
+        value.
+
+        Returns:
+            True when the scope is granted and the vehicle has not told us it
+            is incapable of the signal.
+        """
+        return self.is_scope_enabled(
+            sensor_key, verbose=verbose
+        ) and self.is_datapoint_capable(sensor_key, verbose=verbose)
+
+    def is_datapoint_capable(
+        self, sensor_key: EntityDescriptionKey, *, verbose: bool = False
+    ) -> bool:
+        """Whether the vehicle can answer the signal behind an entity.
+
+        Capability is read from the vehicle itself rather than from a table:
+        a signal the vehicle cannot produce comes back with a COMPATIBILITY
+        error, which is structural and permanent, unlike VEHICLE_STATE or
+        PERMISSION errors which say nothing about capability.
+
+        Defaults to True. An empty capability set means the probe has not run
+        or did not succeed, and a transient failure must never silently delete
+        a user's entities.
+
+        Returns:
+            True unless the vehicle has positively reported it is not capable.
+        """
+        code = DATAPOINT_ENTITY_KEY_MAP[sensor_key].code
+
+        if code is None or code not in self.incapable_codes:
+            return True
+
+        if verbose:
+            _LOGGER.debug(
+                "Skipping `%s`: %s reports the vehicle is not capable of `%s`",
+                sensor_key,
+                self.name,
+                code,
+            )
+
+        return False
+
+    async def async_load_capabilities(self) -> bool:
+        """Ask the vehicle which signals it can answer, before entities exist.
+
+        Platforms are set up before the first refresh so the entity registry can
+        drive what gets polled, which means capability has to be known earlier
+        than the coordinator's own first update. The v3 signals response answers
+        both questions at once, so this reads it and keeps the result as
+        coordinator data; the caller then skips the first refresh rather than
+        making the same request twice.
+
+        Failures are swallowed deliberately. Not knowing the capabilities means
+        creating every entity the scopes allow, which is the behaviour before
+        this existed, and the skipped first refresh then happens as usual.
+
+        Returns:
+            True when the data was loaded and stands in for a first refresh.
+        """
+        if self.auth.version != "v3":
+            return False
+
+        # "disable polling" is the user saying not to make requests to this
+        # service on our own initiative. a capability read is exactly that, so
+        # it is skipped, and every entity the scopes allow gets created.
+        if self.config_entry.pref_disable_polling:
+            _LOGGER.debug(
+                "Coordinator %s: polling is disabled, skipping the capability "
+                "read; entities are created from the granted scopes alone",
+                self.name,
+            )
+            return False
+
+        try:
+            response = await util.async_request_with_retry(
+                lambda: self.auth.request_v3(
+                    "get", f"vehicles/{self.vehicle_id}/signals"
+                ),
+                logger=_LOGGER,
+                context=f"Capabilities for {self.name}",
+            )
+            response.raise_for_status()
+            signal_data = await response.json()
+        except (ClientResponseError, ClientError, ValueError):
+            _LOGGER.warning(
+                "Coordinator %s: could not read vehicle capabilities; every "
+                "entity allowed by the granted scopes will be created",
+                self.name,
+            )
+            return False
+
+        self.incapable_codes = _incapable_codes(signal_data)
+
+        _LOGGER.info(
+            "Coordinator %s: vehicle cannot answer %s of %s signals",
+            self.name,
+            len(self.incapable_codes),
+            len(signal_data.get("data", [])),
+        )
+
+        # the response is a complete update, so keep it rather than throwing it
+        # away and asking again moments later.
+        self.async_set_updated_data(self._merge_signal_data(signal_data))
+
+        return True
 
     def batch_sensor(self, sensor: CoordinatorEntity) -> None:
         """Mark a sensor to be included in the next update batch."""
@@ -660,9 +778,16 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
                 continue
             config = DATAPOINT_ENTITY_KEY_MAP[key]
 
-            # currently polling is only supported via the v2 api
-            if config.endpoint_v2 and not entity.disabled:
-                self._batch_add(key)
+            if entity.disabled:
+                continue
+
+            # v2 can only poll a datapoint that has a v2 endpoint. v3 reads
+            # every signal in one request, so any enabled entity is reason
+            # enough to refresh, including the ones with no v2 equivalent.
+            if self.auth.version == "v2" and not config.endpoint_v2:
+                continue
+
+            self._batch_add(key)
 
     def _batch_process(self) -> list[EntityDescriptionKey]:
         """Process a batch of paths to request.
@@ -692,20 +817,33 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
 
         batch_requests = self._batch_process()
 
-        assert not any(
-            DATAPOINT_ENTITY_KEY_MAP[key].endpoint_v2 is None for key in batch_requests
-        )
-
+        # the batch machinery is v2 only: v3 reads every signal in one request
+        # and cannot select a subset, so the requested keys decide only whether
+        # to refresh, not what to ask for. many v3 signals have no v2 endpoint
+        # at all, so asserting on endpoint_v2 for a v3 request would break the
+        # update for the whole vehicle the first time someone called
+        # homeassistant.update_entity on one of them.
         request_path = f"vehicles/{self.vehicle_id}/batch"
-        request_batch_paths = sorted(
-            {
-                v2_endpoint
+        request_batch_paths: list[str] = []
+        request_body: dict[str, Any] = {}
+
+        if self.auth.version == "v2":
+            assert not any(
+                DATAPOINT_ENTITY_KEY_MAP[key].endpoint_v2 is None
                 for key in batch_requests
-                if (v2_endpoint := DATAPOINT_ENTITY_KEY_MAP[key].endpoint_v2)
-                is not None
+            )
+
+            request_batch_paths = sorted(
+                {
+                    v2_endpoint
+                    for key in batch_requests
+                    if (v2_endpoint := DATAPOINT_ENTITY_KEY_MAP[key].endpoint_v2)
+                    is not None
+                }
+            )
+            request_body = {
+                "requests": [{"path": path} for path in request_batch_paths]
             }
-        )
-        request_body = {"requests": [{"path": path} for path in request_batch_paths]}
 
         if not batch_requests:
             _LOGGER.warning(
@@ -764,13 +902,26 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
         response.raise_for_status()
         response_data = await response.json()
 
+        return self._merge_response_data(response_data)
+
+    def _merge_response_data(self, response_data: dict[str, Any]) -> dict[str, Any]:
+        """Merge an update response according to the API version in use.
+
+        Returns:
+            The newly merged data.
+
+        Raises:
+            UpdateFailed: If a v2 batch response has no responses array.
+        """
         if self.auth.version == "v2":
             if "responses" not in response_data:
                 msg = "Invalid batch response format"
                 raise UpdateFailed(msg)
 
             return self._merge_batch_data(response_data)
+
         assert self.auth.version == "v3"
+
         return self._merge_signal_data(response_data)
 
     def _merge_batch_data(self, batch_data: dict[str, Any]) -> dict[str, Any]:
@@ -828,8 +979,24 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
         Returns:
             The newly merged data.
         """
+        signals = signal_data.get("data", [])
+        total = signal_data.get("meta", {}).get("totalCount")
+
+        # the signals response is JSON:API shaped and advertises paging, but no
+        # page parameter is documented on this endpoint. in every capture the
+        # page has held the whole set. say so loudly if that ever stops being
+        # true, rather than quietly dropping signals.
+        if total is not None and total > len(signals):
+            _LOGGER.warning(
+                "Coordinator %s: signals response reported %s signals but "
+                "returned %s; some entities will not update",
+                self.name,
+                total,
+                len(signals),
+            )
+
         with self.create_updated_data() as (add, updated_data):
-            for signal in signal_data.get("data", []):
+            for signal in signals:
                 attributes = signal.get("attributes", {})
                 add.from_signal_attributes(
                     {
@@ -852,6 +1019,27 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
         updated_data = dict(self.data or {})
 
         yield _DataAdder(updated_data), updated_data
+
+
+def _incapable_codes(signal_data: dict[str, Any]) -> frozenset[str]:
+    """Signal codes the vehicle reported it is structurally incapable of.
+
+    Only COMPATIBILITY counts. A VEHICLE_STATE error means "not right now"
+    (charge rate while unplugged), and a PERMISSION error means the user needs
+    to re-consent. Neither is a statement about the vehicle's capability, and
+    treating either as one would delete entities that work.
+
+    Returns:
+        The set of codes to treat as unsupported.
+    """
+    return frozenset(
+        code
+        for signal in signal_data.get("data", [])
+        if (attributes := signal.get("attributes", {}))
+        and (code := attributes.get("code"))
+        and (status := attributes.get("status", {})).get("value") == "ERROR"
+        and status.get("error", {}).get("type") == "COMPATIBILITY"
+    )
 
 
 class _DataAdder:

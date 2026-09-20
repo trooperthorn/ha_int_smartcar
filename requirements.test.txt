@@ -1,6 +1,9 @@
-pre_commit==4.2.0
-pycares==4.11.0
-pytest==8.3.5
-pytest-cov==6.0.0
-pytest-homeassistant-custom-component==0.13.252
-syrupy==4.8.1
+pre_commit==4.4.0
+pycares==5.0.1
+pytest==9.0.3
+pytest-cov==7.1.0
+pytest-homeassistant-custom-component==0.13.365
+syrupy==6.0.0
+# the harness resolves a beta of the core it was built from; pin the release so
+# the suite runs against the same core users have.
+homeassistant==2026.9.2

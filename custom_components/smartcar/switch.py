@@ -62,13 +62,21 @@ async def async_setup_entry(  # noqa: RUF029
         SmartcarChargingSwitch(coordinator, description)
         for coordinator in coordinators.values()
         for description in ENTITY_DESCRIPTIONS
-        if coordinator.is_scope_enabled(description.key, verbose=True)
+        if coordinator.is_entity_supported(description.key, verbose=True)
     ]
+    # the climate switch is v2 only. Smartcar publishes no climate command on
+    # v3: not in the OpenAPI document, not in the API reference, and not as a
+    # column in the per-vehicle compatibility matrix, which lists all eleven
+    # commands that do exist. The only climate commands that ever shipped were
+    # make-specific v2 ones. Creating this entity on a v3 entry hands the user
+    # a control whose every press posts to a path that does not exist.
+    # See docs/api-reference.md, "The climate command does not exist".
     entities += [
         SmartcarClimateSwitch(coordinator, description)
         for coordinator in coordinators.values()
         for description in CLIMATE_ENTITY_DESCRIPTIONS
-        if coordinator.is_scope_enabled(description.key, verbose=True)
+        if coordinator.version == "v2"
+        and coordinator.is_entity_supported(description.key, verbose=True)
     ]
     _LOGGER.info("Adding %s Smartcar switch entities", len(entities))
     async_add_entities(entities)
@@ -117,7 +125,12 @@ class SmartcarChargingSwitch(SmartcarEntity[bool, bool], SwitchEntity):
 
 
 class SmartcarClimateSwitch(SmartcarEntity[bool, bool], SwitchEntity):
-    """Switch entity to start/stop cabin climate (preconditioning)."""
+    """Switch entity to start/stop cabin climate (preconditioning).
+
+    v2 only. There is no v3 climate command to send, so this entity is not
+    created for a v3 entry and the v3 command path it used to build has been
+    removed rather than left as unreachable code.
+    """
 
     _attr_has_entity_name = True
 
@@ -129,15 +142,7 @@ class SmartcarClimateSwitch(SmartcarEntity[bool, bool], SwitchEntity):
         self,
         **kwargs,  # noqa: ARG002, ANN003
     ) -> None:
-        version = self.coordinator.auth.version
-        command = "/climate/start"
-        payload = None
-
-        if version == "v2":
-            command = "/climate"
-            payload = {"action": "START"}
-
-        await self._async_send_command(command, payload)
+        await self._async_send_command("/climate", {"action": "START"})
         self._inject_raw_value(value=True)
         self.async_write_ha_state()
 
@@ -145,14 +150,6 @@ class SmartcarClimateSwitch(SmartcarEntity[bool, bool], SwitchEntity):
         self,
         **kwargs,  # noqa: ARG002, ANN003
     ) -> None:
-        version = self.coordinator.auth.version
-        command = "/climate/stop"
-        payload = None
-
-        if version == "v2":
-            command = "/climate"
-            payload = {"action": "STOP"}
-
-        await self._async_send_command(command, payload)
+        await self._async_send_command("/climate", {"action": "STOP"})
         self._inject_raw_value(value=False)
         self.async_write_ha_state()

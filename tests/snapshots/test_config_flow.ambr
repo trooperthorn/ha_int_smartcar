@@ -53,7 +53,7 @@
     ),
     tuple(
       'get',
-      URL('http://test.local/v3/connections'),
+      URL('http://test.local/v3/connections?page%5Bnumber%5D=1&page%5Bsize%5D=100'),
       None,
       dict({
         'authorization': 'Bearer mock-token',
@@ -124,7 +124,7 @@
     ),
     tuple(
       'get',
-      URL('http://test.local/v3/connections'),
+      URL('http://test.local/v3/connections?page%5Bnumber%5D=1&page%5Bsize%5D=100'),
       None,
       dict({
         'authorization': 'Bearer mock-token',
@@ -195,7 +195,7 @@
     ),
     tuple(
       'get',
-      URL('http://test.local/v3/connections'),
+      URL('http://test.local/v3/connections?page%5Bnumber%5D=1&page%5Bsize%5D=100'),
       None,
       dict({
         'authorization': 'Bearer mock-token',
@@ -266,7 +266,7 @@
     ),
     tuple(
       'get',
-      URL('http://test.local/v3/connections'),
+      URL('http://test.local/v3/connections?page%5Bnumber%5D=1&page%5Bsize%5D=100'),
       None,
       dict({
         'authorization': 'Bearer mock-token',
@@ -337,7 +337,7 @@
     ),
     tuple(
       'get',
-      URL('http://test.local/v3/connections'),
+      URL('http://test.local/v3/connections?page%5Bnumber%5D=1&page%5Bsize%5D=100'),
       None,
       dict({
         'authorization': 'Bearer mock-token',
@@ -384,7 +384,7 @@
     ),
     tuple(
       'get',
-      URL('http://test.local/v3/connections'),
+      URL('http://test.local/v3/connections?page%5Bnumber%5D=1&page%5Bsize%5D=100'),
       None,
       dict({
         'authorization': 'Bearer mock-token',
@@ -406,7 +406,7 @@
     ),
     tuple(
       'get',
-      URL('http://test.local/v3/connections'),
+      URL('http://test.local/v3/connections?page%5Bnumber%5D=1&page%5Bsize%5D=100'),
       None,
       dict({
         'authorization': 'Bearer mock-token',

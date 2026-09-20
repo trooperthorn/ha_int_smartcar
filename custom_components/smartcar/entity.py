@@ -5,7 +5,7 @@ from http import HTTPStatus
 import logging
 from typing import Any, Literal, Self
 
-from aiohttp import ClientResponseError
+from aiohttp import ClientError, ClientResponse, ClientResponseError
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityDescription
@@ -31,6 +31,7 @@ ERROR_STATUS_BILLING = 430
 ERROR_STATUS_SERVER_ERROR = 500
 ERROR_STATUS_COMPATIBILITY = 501
 ERROR_STATUS_UPSTREAM = 502
+ERROR_STATUS_GATEWAY_TIMEOUT = 504
 
 
 class SmartcarEntity[ValueT, RawValueT](
@@ -76,7 +77,14 @@ class SmartcarEntity[ValueT, RawValueT](
         if not self.enabled:
             return
 
-        if DATAPOINT_ENTITY_KEY_MAP[self.entity_description.key].endpoint_v2 is None:
+        # v2 can only refresh a datapoint that has a v2 endpoint. v3 reads every
+        # signal in one request, so any entity can be refreshed there, including
+        # the 36 datapoints that have no v2 equivalent.
+        if (
+            self.coordinator.version == "v2"
+            and DATAPOINT_ENTITY_KEY_MAP[self.entity_description.key].endpoint_v2
+            is None
+        ):
             msg = f"Unsupported update requests for: {self.entity_description.key}"
             raise NotImplementedError(msg)
 
@@ -278,6 +286,58 @@ def inject_raw_value[RawValueT](
         coordinator.data = updated_data
 
 
+async def _async_raise_for_streamed_error(
+    resp: ClientResponse,
+    subpath: str,
+    coordinator: SmartcarVehicleCoordinator,
+) -> None:
+    """Fail the command when the body reports an error the status line did not.
+
+    A command that takes longer than about 175 seconds gets a `202 Accepted`
+    with no Content-Length, and Smartcar then streams the real outcome on the
+    same connection once the command finishes. The status line is therefore not
+    the result, and a failure arrives only in the body. Reading it is what turns
+    a slow failure into a reported failure instead of a silent success.
+
+    The same body is read on a `200`, because Smartcar documents that the
+    `status` inside the payload may differ from the HTTP status.
+
+    Raises:
+        SmartcarAPIError: If the body carries an error payload.
+    """
+    try:
+        body = await resp.json(content_type=None)
+    except (ClientError, ValueError):
+        # a command with an empty or unreadable body and a success status is
+        # the ordinary fast path.
+        return
+
+    if not isinstance(body, dict):
+        return
+
+    nested = body.get("error")
+    error: dict[str, Any] = nested if isinstance(nested, dict) else body
+
+    if not (code := error.get("code")) or not (error_type := error.get("type")):
+        return
+
+    status = error.get("status") or resp.status
+    detail = error.get("detail") or error.get("title") or code
+
+    _LOGGER.warning(
+        "Command %s for %s (VIN: %s) returned HTTP %s but reported %s/%s: %s",
+        subpath,
+        coordinator.vehicle_id,
+        coordinator.vin,
+        resp.status,
+        error_type,
+        code,
+        detail,
+    )
+
+    raise SmartcarAPIError(int(status), f"{code}: {detail}")
+
+
 async def async_send_command(
     coordinator: SmartcarVehicleCoordinator,
     subpath: str,
@@ -309,6 +369,7 @@ async def async_send_command(
             context=f"Command {subpath} for {coordinator.vehicle_id} (VIN : {coordinator.vin}",
         )
         resp.raise_for_status()
+        await _async_raise_for_streamed_error(resp, subpath, coordinator)
         success = True
     except ClientResponseError as err:
         if err.status == HTTPStatus.UNAUTHORIZED:
@@ -327,6 +388,7 @@ async def async_send_command(
             ERROR_STATUS_SERVER_ERROR,
             ERROR_STATUS_COMPATIBILITY,
             ERROR_STATUS_UPSTREAM,
+            ERROR_STATUS_GATEWAY_TIMEOUT,
         }:
             raise SmartcarAPIError(err.status, err.message) from err
         else:

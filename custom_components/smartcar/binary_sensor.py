@@ -354,7 +354,7 @@ async def async_setup_entry(  # noqa: RUF029
         SmartcarBinarySensor(coordinator, description)
         for coordinator in coordinators.values()
         for description in SENSOR_TYPES
-        if coordinator.is_scope_enabled(description.key, verbose=True)
+        if coordinator.is_entity_supported(description.key, verbose=True)
     ]
     _LOGGER.info("Adding %s Smartcar binary sensor entities", len(entities))
     async_add_entities(entities)

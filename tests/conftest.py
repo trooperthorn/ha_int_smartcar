@@ -474,7 +474,9 @@ def webhook_scenario(
             if client_id_version == "v2"
             else vehicle_attributes["id"]
         )
-        device = device_registry.async_get_device({(DOMAIN, device_id)})
+        device = device_registry.async_get_device_by_identifier(
+            (DOMAIN, device_id), mock_config_entry.entry_id
+        )
         entities = entity_registry.entities.get_entries_for_device_id(device.id)
 
         for entity in entities:

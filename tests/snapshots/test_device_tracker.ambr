@@ -12,8 +12,9 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-device_tracker][device_tracker.byd_seal_u_dm_i_location]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'BYD Seal U Dm-i Location',
-      'icon': 'mdi:car',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Location',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car',
+      <DeviceTrackerEntityCapabilityAttribute.TRACKING_TYPE: 'tracking_type'>: <TrackingType.POSITION: 'position'>,
     }),
     'context': <ANY>,
     'entity_id': 'device_tracker.byd_seal_u_dm_i_location',
@@ -28,12 +29,15 @@
     'attributes': ReadOnlyDict({
       'age': '2025-12-07T16:55:44+00:00',
       'fetched_at': '2025-12-08T01:34:14.325000+00:00',
-      'friendly_name': 'JAGUAR I-PACE Location',
-      'gps_accuracy': 0,
-      'icon': 'mdi:car',
-      'latitude': 52.238523055555554,
-      'longitude': 0.15465555555555555,
-      'source_type': <SourceType.GPS: 'gps'>,
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Location',
+      <TrackerEntityStateAttribute.GPS_ACCURACY: 'gps_accuracy'>: 0,
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car',
+      <DeviceTrackerEntityStateAttribute.IN_ZONES: 'in_zones'>: list([
+      ]),
+      <EntityStateAttribute.LATITUDE: 'latitude'>: 52.238523055555554,
+      <EntityStateAttribute.LONGITUDE: 'longitude'>: 0.15465555555555555,
+      <DeviceTrackerEntityStateAttribute.SOURCE_TYPE: 'source_type'>: <SourceType.GPS: 'gps'>,
+      <DeviceTrackerEntityCapabilityAttribute.TRACKING_TYPE: 'tracking_type'>: <TrackingType.POSITION: 'position'>,
     }),
     'context': <ANY>,
     'entity_id': 'device_tracker.jaguar_i_pace_location',
@@ -48,12 +52,15 @@
     'attributes': ReadOnlyDict({
       'age': '2026-01-31T09:47:44+00:00',
       'fetched_at': '2026-02-01T09:25:42.671000+00:00',
-      'friendly_name': 'POLESTAR Polestar 2 Location',
-      'gps_accuracy': 0,
-      'icon': 'mdi:car',
-      'latitude': 61.11111111111111,
-      'longitude': 23.33333333333333,
-      'source_type': <SourceType.GPS: 'gps'>,
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Location',
+      <TrackerEntityStateAttribute.GPS_ACCURACY: 'gps_accuracy'>: 0,
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car',
+      <DeviceTrackerEntityStateAttribute.IN_ZONES: 'in_zones'>: list([
+      ]),
+      <EntityStateAttribute.LATITUDE: 'latitude'>: 61.11111111111111,
+      <EntityStateAttribute.LONGITUDE: 'longitude'>: 23.33333333333333,
+      <DeviceTrackerEntityStateAttribute.SOURCE_TYPE: 'source_type'>: <SourceType.GPS: 'gps'>,
+      <DeviceTrackerEntityCapabilityAttribute.TRACKING_TYPE: 'tracking_type'>: <TrackingType.POSITION: 'position'>,
     }),
     'context': <ANY>,
     'entity_id': 'device_tracker.polestar_polestar_2_location',
@@ -66,8 +73,9 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-device_tracker][device_tracker.vw_id_4_location]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'VW ID.4 Location',
-      'icon': 'mdi:car',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Location',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car',
+      <DeviceTrackerEntityCapabilityAttribute.TRACKING_TYPE: 'tracking_type'>: <TrackingType.POSITION: 'position'>,
     }),
     'context': <ANY>,
     'entity_id': 'device_tracker.vw_id_4_location',

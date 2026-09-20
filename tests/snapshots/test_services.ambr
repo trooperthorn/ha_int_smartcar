@@ -65,6 +65,32 @@
     ),
   ])
 # ---
+# name: test_door_closure[unauthorized-unknown_make-v2][api-calls]
+  list([
+    tuple(
+      'post',
+      URL('http://test.local/v2.0/vehicles/a1d50709-3502-4faa-ba43-a5c7565e6a09/security'),
+      dict({
+        'action': 'LOCK',
+      }),
+      dict({
+        'authorization': 'Bearer mock-token',
+      }),
+    ),
+  ])
+# ---
+# name: test_door_closure[unauthorized-unknown_make-v3][api-calls]
+  list([
+    tuple(
+      'post',
+      URL('http://test.local/v3/vehicles/a1d50709-3502-4faa-ba43-a5c7565e6a09/commands/security/lock'),
+      None,
+      dict({
+        'authorization': 'Bearer mock-token',
+      }),
+    ),
+  ])
+# ---
 # name: test_door_closure[unlock_doors-unknown_make-v2][api-calls]
   list([
     tuple(

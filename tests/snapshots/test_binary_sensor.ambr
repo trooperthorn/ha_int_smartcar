@@ -4,7 +4,7 @@
     'attributes': ReadOnlyDict({
       'age': '2026-01-09T00:53:21+00:00',
       'fetched_at': '2026-01-09T00:53:29.852000+00:00',
-      'friendly_name': 'BYD Seal U Dm-i Asleep',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Asleep',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_asleep',
@@ -17,7 +17,7 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_battery_heater_active]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'BYD Seal U Dm-i Battery Heater Active',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Battery Heater Active',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_battery_heater_active',
@@ -30,9 +30,9 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_cabin_hvac_active]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'running',
-      'friendly_name': 'BYD Seal U Dm-i Cabin HVAC Active',
-      'icon': 'mdi:air-conditioner',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'running',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Cabin HVAC Active',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:air-conditioner',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_cabin_hvac_active',
@@ -45,8 +45,8 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_charging_cable_plugged_in]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'plug',
-      'friendly_name': 'BYD Seal U Dm-i Charging Cable Plugged In',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'plug',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Charging Cable Plugged In',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_charging_cable_plugged_in',
@@ -61,7 +61,7 @@
     'attributes': ReadOnlyDict({
       'age': '2026-01-09T00:53:21+00:00',
       'fetched_at': '2026-01-09T00:53:29.852000+00:00',
-      'friendly_name': 'BYD Seal U Dm-i Digital Key Paired',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Digital Key Paired',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_digital_key_paired',
@@ -74,9 +74,9 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_door_back_left]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'door',
-      'friendly_name': 'BYD Seal U Dm-i Door Back Left',
-      'icon': 'mdi:car-door',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Door Back Left',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_door_back_left',
@@ -89,9 +89,9 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_door_back_left_lock]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'lock',
-      'friendly_name': 'BYD Seal U Dm-i Door Back Left Lock',
-      'icon': 'mdi:car-door-lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Door Back Left Lock',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door-lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_door_back_left_lock',
@@ -104,9 +104,9 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_door_back_right]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'door',
-      'friendly_name': 'BYD Seal U Dm-i Door Back Right',
-      'icon': 'mdi:car-door',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Door Back Right',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_door_back_right',
@@ -119,9 +119,9 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_door_back_right_lock]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'lock',
-      'friendly_name': 'BYD Seal U Dm-i Door Back Right Lock',
-      'icon': 'mdi:car-door-lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Door Back Right Lock',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door-lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_door_back_right_lock',
@@ -134,9 +134,9 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_door_front_left]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'door',
-      'friendly_name': 'BYD Seal U Dm-i Door Front Left',
-      'icon': 'mdi:car-door',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Door Front Left',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_door_front_left',
@@ -149,9 +149,9 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_door_front_left_lock]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'lock',
-      'friendly_name': 'BYD Seal U Dm-i Door Front Left Lock',
-      'icon': 'mdi:car-door-lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Door Front Left Lock',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door-lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_door_front_left_lock',
@@ -164,9 +164,9 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_door_front_right]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'door',
-      'friendly_name': 'BYD Seal U Dm-i Door Front Right',
-      'icon': 'mdi:car-door',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Door Front Right',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_door_front_right',
@@ -179,9 +179,9 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_door_front_right_lock]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'lock',
-      'friendly_name': 'BYD Seal U Dm-i Door Front Right Lock',
-      'icon': 'mdi:car-door-lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Door Front Right Lock',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door-lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_door_front_right_lock',
@@ -194,8 +194,8 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_engine_cover]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'door',
-      'friendly_name': 'BYD Seal U Dm-i Engine Cover',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Engine Cover',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_engine_cover',
@@ -208,8 +208,8 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_fast_charger_connected]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'plug',
-      'friendly_name': 'BYD Seal U Dm-i Fast Charger Connected',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'plug',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Fast Charger Connected',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_fast_charger_connected',
@@ -222,9 +222,9 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_front_defroster_active]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'running',
-      'friendly_name': 'BYD Seal U Dm-i Front Defroster Active',
-      'icon': 'mdi:car-defrost-front',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'running',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Front Defroster Active',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-defrost-front',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_front_defroster_active',
@@ -237,8 +237,8 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_front_trunk]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'door',
-      'friendly_name': 'BYD Seal U Dm-i Front Trunk',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Front Trunk',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_front_trunk',
@@ -251,8 +251,8 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_front_trunk_lock]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'lock',
-      'friendly_name': 'BYD Seal U Dm-i Front Trunk Lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Front Trunk Lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_front_trunk_lock',
@@ -267,7 +267,7 @@
     'attributes': ReadOnlyDict({
       'age': '2026-01-09T00:53:21+00:00',
       'fetched_at': '2026-01-09T00:53:29.852000+00:00',
-      'friendly_name': 'BYD Seal U Dm-i Online',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Online',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_online',
@@ -280,9 +280,9 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_rear_defroster_active]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'running',
-      'friendly_name': 'BYD Seal U Dm-i Rear Defroster Active',
-      'icon': 'mdi:car-defrost-rear',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'running',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Rear Defroster Active',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-defrost-rear',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_rear_defroster_active',
@@ -295,8 +295,8 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_rear_trunk]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'door',
-      'friendly_name': 'BYD Seal U Dm-i Rear Trunk',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Rear Trunk',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_rear_trunk',
@@ -309,8 +309,8 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_rear_trunk_lock]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'lock',
-      'friendly_name': 'BYD Seal U Dm-i Rear Trunk Lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Rear Trunk Lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_rear_trunk_lock',
@@ -323,9 +323,9 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_steering_wheel_heater_active]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'running',
-      'friendly_name': 'BYD Seal U Dm-i Steering Wheel Heater Active',
-      'icon': 'mdi:steering',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'running',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Steering Wheel Heater Active',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:steering',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_steering_wheel_heater_active',
@@ -338,8 +338,8 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_sunroof]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'door',
-      'friendly_name': 'BYD Seal U Dm-i Sunroof',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Sunroof',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_sunroof',
@@ -352,7 +352,7 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_surveillance_enabled]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'BYD Seal U Dm-i Surveillance Enabled',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Surveillance Enabled',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_surveillance_enabled',
@@ -365,8 +365,8 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_window_back_left]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'window',
-      'friendly_name': 'BYD Seal U Dm-i Window Back Left',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'window',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Window Back Left',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_window_back_left',
@@ -379,8 +379,8 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_window_back_right]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'window',
-      'friendly_name': 'BYD Seal U Dm-i Window Back Right',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'window',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Window Back Right',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_window_back_right',
@@ -393,8 +393,8 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_window_front_left]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'window',
-      'friendly_name': 'BYD Seal U Dm-i Window Front Left',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'window',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Window Front Left',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_window_front_left',
@@ -407,8 +407,8 @@
 # name: test_webhook_update[vehicle_state_all-byd_seal-binary_sensor][binary_sensor.byd_seal_u_dm_i_window_front_right]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'window',
-      'friendly_name': 'BYD Seal U Dm-i Window Front Right',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'window',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Window Front Right',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.byd_seal_u_dm_i_window_front_right',
@@ -421,7 +421,7 @@
 # name: test_webhook_update[vehicle_state_all-jaguar_ipace-binary_sensor][binary_sensor.jaguar_i_pace_asleep]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'JAGUAR I-PACE Asleep',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Asleep',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_asleep',
@@ -434,7 +434,7 @@
 # name: test_webhook_update[vehicle_state_all-jaguar_ipace-binary_sensor][binary_sensor.jaguar_i_pace_battery_heater_active]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'JAGUAR I-PACE Battery Heater Active',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Battery Heater Active',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_battery_heater_active',
@@ -447,9 +447,9 @@
 # name: test_webhook_update[vehicle_state_all-jaguar_ipace-binary_sensor][binary_sensor.jaguar_i_pace_cabin_hvac_active]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'running',
-      'friendly_name': 'JAGUAR I-PACE Cabin HVAC Active',
-      'icon': 'mdi:air-conditioner',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'running',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Cabin HVAC Active',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:air-conditioner',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_cabin_hvac_active',
@@ -463,9 +463,9 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2025-12-08T01:34:15+00:00',
-      'device_class': 'plug',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'plug',
       'fetched_at': '2025-12-08T01:34:24.453000+00:00',
-      'friendly_name': 'JAGUAR I-PACE Charging Cable Plugged In',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Charging Cable Plugged In',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_charging_cable_plugged_in',
@@ -478,7 +478,7 @@
 # name: test_webhook_update[vehicle_state_all-jaguar_ipace-binary_sensor][binary_sensor.jaguar_i_pace_digital_key_paired]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'JAGUAR I-PACE Digital Key Paired',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Digital Key Paired',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_digital_key_paired',
@@ -492,10 +492,10 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2025-12-08T01:34:15+00:00',
-      'device_class': 'door',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
       'fetched_at': '2025-12-08T01:34:24.453000+00:00',
-      'friendly_name': 'JAGUAR I-PACE Door Back Left',
-      'icon': 'mdi:car-door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Door Back Left',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_door_back_left',
@@ -509,10 +509,10 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2025-12-08T01:34:15+00:00',
-      'device_class': 'lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
       'fetched_at': '2025-12-08T01:34:24.453000+00:00',
-      'friendly_name': 'JAGUAR I-PACE Door Back Left Lock',
-      'icon': 'mdi:car-door-lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Door Back Left Lock',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door-lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_door_back_left_lock',
@@ -526,10 +526,10 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2025-12-08T01:34:15+00:00',
-      'device_class': 'door',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
       'fetched_at': '2025-12-08T01:34:24.453000+00:00',
-      'friendly_name': 'JAGUAR I-PACE Door Back Right',
-      'icon': 'mdi:car-door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Door Back Right',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_door_back_right',
@@ -543,10 +543,10 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2025-12-08T01:34:15+00:00',
-      'device_class': 'lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
       'fetched_at': '2025-12-08T01:34:24.453000+00:00',
-      'friendly_name': 'JAGUAR I-PACE Door Back Right Lock',
-      'icon': 'mdi:car-door-lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Door Back Right Lock',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door-lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_door_back_right_lock',
@@ -560,10 +560,10 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2025-12-08T01:34:15+00:00',
-      'device_class': 'door',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
       'fetched_at': '2025-12-08T01:34:24.453000+00:00',
-      'friendly_name': 'JAGUAR I-PACE Door Front Left',
-      'icon': 'mdi:car-door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Door Front Left',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_door_front_left',
@@ -577,10 +577,10 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2025-12-08T01:34:15+00:00',
-      'device_class': 'lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
       'fetched_at': '2025-12-08T01:34:24.453000+00:00',
-      'friendly_name': 'JAGUAR I-PACE Door Front Left Lock',
-      'icon': 'mdi:car-door-lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Door Front Left Lock',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door-lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_door_front_left_lock',
@@ -594,10 +594,10 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2025-12-08T01:34:15+00:00',
-      'device_class': 'door',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
       'fetched_at': '2025-12-08T01:34:24.453000+00:00',
-      'friendly_name': 'JAGUAR I-PACE Door Front Right',
-      'icon': 'mdi:car-door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Door Front Right',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_door_front_right',
@@ -611,10 +611,10 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2025-12-08T01:34:15+00:00',
-      'device_class': 'lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
       'fetched_at': '2025-12-08T01:34:24.453000+00:00',
-      'friendly_name': 'JAGUAR I-PACE Door Front Right Lock',
-      'icon': 'mdi:car-door-lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Door Front Right Lock',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door-lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_door_front_right_lock',
@@ -628,9 +628,9 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2025-12-08T01:34:15+00:00',
-      'device_class': 'door',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
       'fetched_at': '2025-12-08T01:34:24.453000+00:00',
-      'friendly_name': 'JAGUAR I-PACE Engine Cover',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Engine Cover',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_engine_cover',
@@ -643,8 +643,8 @@
 # name: test_webhook_update[vehicle_state_all-jaguar_ipace-binary_sensor][binary_sensor.jaguar_i_pace_fast_charger_connected]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'plug',
-      'friendly_name': 'JAGUAR I-PACE Fast Charger Connected',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'plug',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Fast Charger Connected',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_fast_charger_connected',
@@ -657,9 +657,9 @@
 # name: test_webhook_update[vehicle_state_all-jaguar_ipace-binary_sensor][binary_sensor.jaguar_i_pace_front_defroster_active]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'running',
-      'friendly_name': 'JAGUAR I-PACE Front Defroster Active',
-      'icon': 'mdi:car-defrost-front',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'running',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Front Defroster Active',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-defrost-front',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_front_defroster_active',
@@ -673,9 +673,9 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2025-12-08T01:34:15+00:00',
-      'device_class': 'door',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
       'fetched_at': '2025-12-08T01:34:24.453000+00:00',
-      'friendly_name': 'JAGUAR I-PACE Front Trunk',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Front Trunk',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_front_trunk',
@@ -689,9 +689,9 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2025-12-08T01:34:15+00:00',
-      'device_class': 'lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
       'fetched_at': '2025-12-08T01:34:24.453000+00:00',
-      'friendly_name': 'JAGUAR I-PACE Front Trunk Lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Front Trunk Lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_front_trunk_lock',
@@ -704,7 +704,7 @@
 # name: test_webhook_update[vehicle_state_all-jaguar_ipace-binary_sensor][binary_sensor.jaguar_i_pace_online]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'JAGUAR I-PACE Online',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Online',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_online',
@@ -717,9 +717,9 @@
 # name: test_webhook_update[vehicle_state_all-jaguar_ipace-binary_sensor][binary_sensor.jaguar_i_pace_rear_defroster_active]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'running',
-      'friendly_name': 'JAGUAR I-PACE Rear Defroster Active',
-      'icon': 'mdi:car-defrost-rear',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'running',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Rear Defroster Active',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-defrost-rear',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_rear_defroster_active',
@@ -733,9 +733,9 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2025-12-08T01:34:15+00:00',
-      'device_class': 'door',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
       'fetched_at': '2025-12-08T01:34:24.453000+00:00',
-      'friendly_name': 'JAGUAR I-PACE Rear Trunk',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Rear Trunk',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_rear_trunk',
@@ -749,9 +749,9 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2025-12-08T01:34:15+00:00',
-      'device_class': 'lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
       'fetched_at': '2025-12-08T01:34:24.453000+00:00',
-      'friendly_name': 'JAGUAR I-PACE Rear Trunk Lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Rear Trunk Lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_rear_trunk_lock',
@@ -764,9 +764,9 @@
 # name: test_webhook_update[vehicle_state_all-jaguar_ipace-binary_sensor][binary_sensor.jaguar_i_pace_steering_wheel_heater_active]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'running',
-      'friendly_name': 'JAGUAR I-PACE Steering Wheel Heater Active',
-      'icon': 'mdi:steering',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'running',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Steering Wheel Heater Active',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:steering',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_steering_wheel_heater_active',
@@ -779,8 +779,8 @@
 # name: test_webhook_update[vehicle_state_all-jaguar_ipace-binary_sensor][binary_sensor.jaguar_i_pace_sunroof]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'door',
-      'friendly_name': 'JAGUAR I-PACE Sunroof',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Sunroof',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_sunroof',
@@ -793,7 +793,7 @@
 # name: test_webhook_update[vehicle_state_all-jaguar_ipace-binary_sensor][binary_sensor.jaguar_i_pace_surveillance_enabled]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'JAGUAR I-PACE Surveillance Enabled',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Surveillance Enabled',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_surveillance_enabled',
@@ -807,9 +807,9 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2025-12-08T01:34:15+00:00',
-      'device_class': 'window',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'window',
       'fetched_at': '2025-12-08T01:34:24.453000+00:00',
-      'friendly_name': 'JAGUAR I-PACE Window Back Left',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Window Back Left',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_window_back_left',
@@ -823,9 +823,9 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2025-12-08T01:34:15+00:00',
-      'device_class': 'window',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'window',
       'fetched_at': '2025-12-08T01:34:24.453000+00:00',
-      'friendly_name': 'JAGUAR I-PACE Window Back Right',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Window Back Right',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_window_back_right',
@@ -839,9 +839,9 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2025-12-08T01:34:15+00:00',
-      'device_class': 'window',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'window',
       'fetched_at': '2025-12-08T01:34:24.453000+00:00',
-      'friendly_name': 'JAGUAR I-PACE Window Front Left',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Window Front Left',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_window_front_left',
@@ -855,9 +855,9 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2025-12-08T01:34:15+00:00',
-      'device_class': 'window',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'window',
       'fetched_at': '2025-12-08T01:34:24.453000+00:00',
-      'friendly_name': 'JAGUAR I-PACE Window Front Right',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Window Front Right',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.jaguar_i_pace_window_front_right',
@@ -872,7 +872,7 @@
     'attributes': ReadOnlyDict({
       'age': '2026-02-01T09:03:40+00:00',
       'fetched_at': '2026-02-01T09:25:42.645000+00:00',
-      'friendly_name': 'POLESTAR Polestar 2 Asleep',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Asleep',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_asleep',
@@ -885,7 +885,7 @@
 # name: test_webhook_update[vehicle_state_all-polestar_2-binary_sensor][binary_sensor.polestar_polestar_2_battery_heater_active]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'POLESTAR Polestar 2 Battery Heater Active',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Battery Heater Active',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_battery_heater_active',
@@ -898,9 +898,9 @@
 # name: test_webhook_update[vehicle_state_all-polestar_2-binary_sensor][binary_sensor.polestar_polestar_2_cabin_hvac_active]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'running',
-      'friendly_name': 'POLESTAR Polestar 2 Cabin HVAC Active',
-      'icon': 'mdi:air-conditioner',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'running',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Cabin HVAC Active',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:air-conditioner',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_cabin_hvac_active',
@@ -914,9 +914,9 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2026-02-01T09:25:33+00:00',
-      'device_class': 'plug',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'plug',
       'fetched_at': '2026-02-01T09:25:43.244000+00:00',
-      'friendly_name': 'POLESTAR Polestar 2 Charging Cable Plugged In',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Charging Cable Plugged In',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_charging_cable_plugged_in',
@@ -929,7 +929,7 @@
 # name: test_webhook_update[vehicle_state_all-polestar_2-binary_sensor][binary_sensor.polestar_polestar_2_digital_key_paired]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'POLESTAR Polestar 2 Digital Key Paired',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Digital Key Paired',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_digital_key_paired',
@@ -943,10 +943,10 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2026-01-31T22:09:52+00:00',
-      'device_class': 'door',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
       'fetched_at': '2026-02-01T09:25:42.652000+00:00',
-      'friendly_name': 'POLESTAR Polestar 2 Door Back Left',
-      'icon': 'mdi:car-door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Door Back Left',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_door_back_left',
@@ -960,10 +960,10 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2026-01-31T22:09:52+00:00',
-      'device_class': 'lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
       'fetched_at': '2026-02-01T09:25:42.652000+00:00',
-      'friendly_name': 'POLESTAR Polestar 2 Door Back Left Lock',
-      'icon': 'mdi:car-door-lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Door Back Left Lock',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door-lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_door_back_left_lock',
@@ -977,10 +977,10 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2026-01-31T22:09:52+00:00',
-      'device_class': 'door',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
       'fetched_at': '2026-02-01T09:25:42.652000+00:00',
-      'friendly_name': 'POLESTAR Polestar 2 Door Back Right',
-      'icon': 'mdi:car-door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Door Back Right',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_door_back_right',
@@ -994,10 +994,10 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2026-01-31T22:09:52+00:00',
-      'device_class': 'lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
       'fetched_at': '2026-02-01T09:25:42.652000+00:00',
-      'friendly_name': 'POLESTAR Polestar 2 Door Back Right Lock',
-      'icon': 'mdi:car-door-lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Door Back Right Lock',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door-lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_door_back_right_lock',
@@ -1011,10 +1011,10 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2026-01-31T22:09:52+00:00',
-      'device_class': 'door',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
       'fetched_at': '2026-02-01T09:25:42.652000+00:00',
-      'friendly_name': 'POLESTAR Polestar 2 Door Front Left',
-      'icon': 'mdi:car-door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Door Front Left',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_door_front_left',
@@ -1028,10 +1028,10 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2026-01-31T22:09:52+00:00',
-      'device_class': 'lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
       'fetched_at': '2026-02-01T09:25:42.652000+00:00',
-      'friendly_name': 'POLESTAR Polestar 2 Door Front Left Lock',
-      'icon': 'mdi:car-door-lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Door Front Left Lock',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door-lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_door_front_left_lock',
@@ -1045,10 +1045,10 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2026-01-31T22:09:52+00:00',
-      'device_class': 'door',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
       'fetched_at': '2026-02-01T09:25:42.652000+00:00',
-      'friendly_name': 'POLESTAR Polestar 2 Door Front Right',
-      'icon': 'mdi:car-door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Door Front Right',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_door_front_right',
@@ -1062,10 +1062,10 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2026-01-31T22:09:52+00:00',
-      'device_class': 'lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
       'fetched_at': '2026-02-01T09:25:42.652000+00:00',
-      'friendly_name': 'POLESTAR Polestar 2 Door Front Right Lock',
-      'icon': 'mdi:car-door-lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Door Front Right Lock',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door-lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_door_front_right_lock',
@@ -1078,8 +1078,8 @@
 # name: test_webhook_update[vehicle_state_all-polestar_2-binary_sensor][binary_sensor.polestar_polestar_2_engine_cover]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'door',
-      'friendly_name': 'POLESTAR Polestar 2 Engine Cover',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Engine Cover',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_engine_cover',
@@ -1093,9 +1093,9 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2026-02-01T09:25:33+00:00',
-      'device_class': 'plug',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'plug',
       'fetched_at': '2026-02-01T09:25:43.244000+00:00',
-      'friendly_name': 'POLESTAR Polestar 2 Fast Charger Connected',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Fast Charger Connected',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_fast_charger_connected',
@@ -1108,9 +1108,9 @@
 # name: test_webhook_update[vehicle_state_all-polestar_2-binary_sensor][binary_sensor.polestar_polestar_2_front_defroster_active]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'running',
-      'friendly_name': 'POLESTAR Polestar 2 Front Defroster Active',
-      'icon': 'mdi:car-defrost-front',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'running',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Front Defroster Active',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-defrost-front',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_front_defroster_active',
@@ -1124,9 +1124,9 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2026-01-31T22:09:52+00:00',
-      'device_class': 'door',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
       'fetched_at': '2026-02-01T09:25:42.652000+00:00',
-      'friendly_name': 'POLESTAR Polestar 2 Front Trunk',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Front Trunk',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_front_trunk',
@@ -1139,8 +1139,8 @@
 # name: test_webhook_update[vehicle_state_all-polestar_2-binary_sensor][binary_sensor.polestar_polestar_2_front_trunk_lock]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'lock',
-      'friendly_name': 'POLESTAR Polestar 2 Front Trunk Lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Front Trunk Lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_front_trunk_lock',
@@ -1155,7 +1155,7 @@
     'attributes': ReadOnlyDict({
       'age': '2026-02-01T09:03:40+00:00',
       'fetched_at': '2026-02-01T09:25:42.645000+00:00',
-      'friendly_name': 'POLESTAR Polestar 2 Online',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Online',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_online',
@@ -1168,9 +1168,9 @@
 # name: test_webhook_update[vehicle_state_all-polestar_2-binary_sensor][binary_sensor.polestar_polestar_2_rear_defroster_active]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'running',
-      'friendly_name': 'POLESTAR Polestar 2 Rear Defroster Active',
-      'icon': 'mdi:car-defrost-rear',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'running',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Rear Defroster Active',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-defrost-rear',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_rear_defroster_active',
@@ -1184,9 +1184,9 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2026-01-31T22:09:52+00:00',
-      'device_class': 'door',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
       'fetched_at': '2026-02-01T09:25:42.652000+00:00',
-      'friendly_name': 'POLESTAR Polestar 2 Rear Trunk',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Rear Trunk',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_rear_trunk',
@@ -1200,9 +1200,9 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2026-01-31T22:09:52+00:00',
-      'device_class': 'lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
       'fetched_at': '2026-02-01T09:25:42.652000+00:00',
-      'friendly_name': 'POLESTAR Polestar 2 Rear Trunk Lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Rear Trunk Lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_rear_trunk_lock',
@@ -1215,9 +1215,9 @@
 # name: test_webhook_update[vehicle_state_all-polestar_2-binary_sensor][binary_sensor.polestar_polestar_2_steering_wheel_heater_active]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'running',
-      'friendly_name': 'POLESTAR Polestar 2 Steering Wheel Heater Active',
-      'icon': 'mdi:steering',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'running',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Steering Wheel Heater Active',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:steering',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_steering_wheel_heater_active',
@@ -1230,8 +1230,8 @@
 # name: test_webhook_update[vehicle_state_all-polestar_2-binary_sensor][binary_sensor.polestar_polestar_2_sunroof]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'door',
-      'friendly_name': 'POLESTAR Polestar 2 Sunroof',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Sunroof',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_sunroof',
@@ -1244,7 +1244,7 @@
 # name: test_webhook_update[vehicle_state_all-polestar_2-binary_sensor][binary_sensor.polestar_polestar_2_surveillance_enabled]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'POLESTAR Polestar 2 Surveillance Enabled',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Surveillance Enabled',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_surveillance_enabled',
@@ -1258,9 +1258,9 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2026-01-31T22:09:52+00:00',
-      'device_class': 'window',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'window',
       'fetched_at': '2026-02-01T09:25:42.652000+00:00',
-      'friendly_name': 'POLESTAR Polestar 2 Window Back Left',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Window Back Left',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_window_back_left',
@@ -1274,9 +1274,9 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2026-01-31T22:09:52+00:00',
-      'device_class': 'window',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'window',
       'fetched_at': '2026-02-01T09:25:42.652000+00:00',
-      'friendly_name': 'POLESTAR Polestar 2 Window Back Right',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Window Back Right',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_window_back_right',
@@ -1290,9 +1290,9 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2026-01-31T22:09:52+00:00',
-      'device_class': 'window',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'window',
       'fetched_at': '2026-02-01T09:25:42.652000+00:00',
-      'friendly_name': 'POLESTAR Polestar 2 Window Front Left',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Window Front Left',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_window_front_left',
@@ -1306,9 +1306,9 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'age': '2026-01-31T22:09:52+00:00',
-      'device_class': 'window',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'window',
       'fetched_at': '2026-02-01T09:25:42.652000+00:00',
-      'friendly_name': 'POLESTAR Polestar 2 Window Front Right',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Window Front Right',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.polestar_polestar_2_window_front_right',
@@ -1321,7 +1321,7 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_asleep]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'VW ID.4 Asleep',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Asleep',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_asleep',
@@ -1334,7 +1334,7 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_battery_heater_active]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'VW ID.4 Battery Heater Active',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Battery Heater Active',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_battery_heater_active',
@@ -1347,9 +1347,9 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_cabin_hvac_active]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'running',
-      'friendly_name': 'VW ID.4 Cabin HVAC Active',
-      'icon': 'mdi:air-conditioner',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'running',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Cabin HVAC Active',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:air-conditioner',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_cabin_hvac_active',
@@ -1362,8 +1362,8 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_charging_cable_plugged_in]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'plug',
-      'friendly_name': 'VW ID.4 Charging Cable Plugged In',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'plug',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Charging Cable Plugged In',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_charging_cable_plugged_in',
@@ -1376,7 +1376,7 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_digital_key_paired]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'VW ID.4 Digital Key Paired',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Digital Key Paired',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_digital_key_paired',
@@ -1389,9 +1389,9 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_door_back_left]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'door',
-      'friendly_name': 'VW ID.4 Door Back Left',
-      'icon': 'mdi:car-door',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Door Back Left',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_door_back_left',
@@ -1404,9 +1404,9 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_door_back_left_lock]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'lock',
-      'friendly_name': 'VW ID.4 Door Back Left Lock',
-      'icon': 'mdi:car-door-lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Door Back Left Lock',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door-lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_door_back_left_lock',
@@ -1419,9 +1419,9 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_door_back_right]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'door',
-      'friendly_name': 'VW ID.4 Door Back Right',
-      'icon': 'mdi:car-door',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Door Back Right',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_door_back_right',
@@ -1434,9 +1434,9 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_door_back_right_lock]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'lock',
-      'friendly_name': 'VW ID.4 Door Back Right Lock',
-      'icon': 'mdi:car-door-lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Door Back Right Lock',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door-lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_door_back_right_lock',
@@ -1449,9 +1449,9 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_door_front_left]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'door',
-      'friendly_name': 'VW ID.4 Door Front Left',
-      'icon': 'mdi:car-door',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Door Front Left',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_door_front_left',
@@ -1464,9 +1464,9 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_door_front_left_lock]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'lock',
-      'friendly_name': 'VW ID.4 Door Front Left Lock',
-      'icon': 'mdi:car-door-lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Door Front Left Lock',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door-lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_door_front_left_lock',
@@ -1479,9 +1479,9 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_door_front_right]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'door',
-      'friendly_name': 'VW ID.4 Door Front Right',
-      'icon': 'mdi:car-door',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Door Front Right',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_door_front_right',
@@ -1494,9 +1494,9 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_door_front_right_lock]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'lock',
-      'friendly_name': 'VW ID.4 Door Front Right Lock',
-      'icon': 'mdi:car-door-lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Door Front Right Lock',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-door-lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_door_front_right_lock',
@@ -1509,8 +1509,8 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_engine_cover]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'door',
-      'friendly_name': 'VW ID.4 Engine Cover',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Engine Cover',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_engine_cover',
@@ -1523,8 +1523,8 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_fast_charger_connected]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'plug',
-      'friendly_name': 'VW ID.4 Fast Charger Connected',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'plug',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Fast Charger Connected',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_fast_charger_connected',
@@ -1537,9 +1537,9 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_front_defroster_active]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'running',
-      'friendly_name': 'VW ID.4 Front Defroster Active',
-      'icon': 'mdi:car-defrost-front',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'running',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Front Defroster Active',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-defrost-front',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_front_defroster_active',
@@ -1552,8 +1552,8 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_front_trunk]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'door',
-      'friendly_name': 'VW ID.4 Front Trunk',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Front Trunk',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_front_trunk',
@@ -1566,8 +1566,8 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_front_trunk_lock]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'lock',
-      'friendly_name': 'VW ID.4 Front Trunk Lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Front Trunk Lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_front_trunk_lock',
@@ -1580,7 +1580,7 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_online]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'VW ID.4 Online',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Online',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_online',
@@ -1593,9 +1593,9 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_rear_defroster_active]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'running',
-      'friendly_name': 'VW ID.4 Rear Defroster Active',
-      'icon': 'mdi:car-defrost-rear',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'running',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Rear Defroster Active',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:car-defrost-rear',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_rear_defroster_active',
@@ -1608,8 +1608,8 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_rear_trunk]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'door',
-      'friendly_name': 'VW ID.4 Rear Trunk',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Rear Trunk',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_rear_trunk',
@@ -1622,8 +1622,8 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_rear_trunk_lock]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'lock',
-      'friendly_name': 'VW ID.4 Rear Trunk Lock',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'lock',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Rear Trunk Lock',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_rear_trunk_lock',
@@ -1636,9 +1636,9 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_steering_wheel_heater_active]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'running',
-      'friendly_name': 'VW ID.4 Steering Wheel Heater Active',
-      'icon': 'mdi:steering',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'running',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Steering Wheel Heater Active',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:steering',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_steering_wheel_heater_active',
@@ -1651,8 +1651,8 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_sunroof]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'door',
-      'friendly_name': 'VW ID.4 Sunroof',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'door',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Sunroof',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_sunroof',
@@ -1665,7 +1665,7 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_surveillance_enabled]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'VW ID.4 Surveillance Enabled',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Surveillance Enabled',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_surveillance_enabled',
@@ -1678,8 +1678,8 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_window_back_left]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'window',
-      'friendly_name': 'VW ID.4 Window Back Left',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'window',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Window Back Left',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_window_back_left',
@@ -1692,8 +1692,8 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_window_back_right]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'window',
-      'friendly_name': 'VW ID.4 Window Back Right',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'window',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Window Back Right',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_window_back_right',
@@ -1706,8 +1706,8 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_window_front_left]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'window',
-      'friendly_name': 'VW ID.4 Window Front Left',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'window',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Window Front Left',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_window_front_left',
@@ -1720,8 +1720,8 @@
 # name: test_webhook_update[vehicle_state_all-vw_id_4-binary_sensor][binary_sensor.vw_id_4_window_front_right]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'window',
-      'friendly_name': 'VW ID.4 Window Front Right',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'window',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Window Front Right',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.vw_id_4_window_front_right',

@@ -59,7 +59,7 @@ async def async_setup_entry(  # noqa: RUF029
         SmartcarChargeLimitNumber(coordinator, description)
         for coordinator in coordinators.values()
         for description in ENTITY_DESCRIPTIONS
-        if coordinator.is_scope_enabled(description.key, verbose=True)
+        if coordinator.is_entity_supported(description.key, verbose=True)
     ]
     _LOGGER.info("Adding %s Smartcar number entities", len(entities))
     async_add_entities(entities)

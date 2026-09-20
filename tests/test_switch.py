@@ -147,6 +147,37 @@ async def test_switch(
 
 
 @pytest.mark.usefixtures("enable_all_entities")
+@pytest.mark.parametrize("client_id_version", ["v3"])
+@pytest.mark.parametrize("vehicle_fixture", ["unknown_make"])
+async def test_no_climate_switch_on_v3(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    vehicle: AsyncMock,
+    client_id_version: APIVersion,
+) -> None:
+    """No climate switch is created on v3, because the command does not exist.
+
+    Smartcar publishes eleven commands on v3 and none of them is climate: not in
+    the OpenAPI document, not in the API reference, and not as a column in the
+    per-vehicle compatibility matrix. The switch used to be created anyway and
+    posted to /commands/climate/start, a path that does not exist, so every
+    press failed. See docs/api-reference.md.
+    """
+    assert client_id_version == "v3"
+
+    await setup_integration(hass, mock_config_entry)
+
+    coordinator = mock_config_entry.runtime_data.coordinators[vehicle["id"]]
+    coordinator.async_set_updated_data(
+        {**(coordinator.data or {}), "hvac-iscabinhvacactive": {"value": False}}
+    )
+    await hass.async_block_till_done()
+
+    # seeding the HVAC value is what would make the switch available if it
+    # existed, so this asserts absence rather than unavailability.
+    assert hass.states.get("switch.smartcar_784n_climate") is None
+
+
 @pytest.mark.parametrize("platform", [Platform.SWITCH])
 @pytest.mark.parametrize("vehicle_fixture", ["vw_id_4", "jaguar_ipace", "byd_seal"])
 @pytest.mark.parametrize(
@@ -168,7 +199,7 @@ def test_hvac_bool_cast() -> None:
     assert switch_module._hvac_bool(None) is None
 
 
-@pytest.mark.parametrize("client_id_version", ["v2", "v3"])
+@pytest.mark.parametrize("client_id_version", ["v2"])
 @pytest.mark.parametrize(
     (
         "service_action",

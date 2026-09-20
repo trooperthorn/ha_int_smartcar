@@ -48,7 +48,9 @@ async def test_standard_setup(
     await setup_integration(hass, mock_config_entry)
 
     device_id = vehicle["vin"] if client_id_version == "v2" else vehicle["id"]
-    device = device_registry.async_get_device({(DOMAIN, device_id)})
+    device = device_registry.async_get_device_by_identifier(
+        (DOMAIN, device_id), mock_config_entry.entry_id
+    )
 
     assert device is not None
     assert device == snapshot(
@@ -84,7 +86,9 @@ async def test_standard_setup_with_all_entities(
     await setup_integration(hass, mock_config_entry)
 
     device_id = vehicle["vin"] if client_id_version == "v2" else vehicle["id"]
-    device = device_registry.async_get_device({(DOMAIN, device_id)})
+    device = device_registry.async_get_device_by_identifier(
+        (DOMAIN, device_id), mock_config_entry.entry_id
+    )
 
     assert device is not None
     assert device == snapshot(
@@ -158,7 +162,9 @@ async def test_limited_scopes(
     await setup_integration(hass, mock_config_entry)
 
     device_id = vehicle["vin"] if client_id_version == "v2" else vehicle["id"]
-    device = device_registry.async_get_device({(DOMAIN, device_id)})
+    device = device_registry.async_get_device_by_identifier(
+        (DOMAIN, device_id), mock_config_entry.entry_id
+    )
 
     assert device is not None
     assert device == snapshot(
@@ -205,7 +211,9 @@ async def test_update_errors(
     await setup_integration(hass, mock_config_entry)
 
     device_id = vehicle["vin"] if client_id_version == "v2" else vehicle["id"]
-    device = device_registry.async_get_device({(DOMAIN, device_id)})
+    device = device_registry.async_get_device_by_identifier(
+        (DOMAIN, device_id), mock_config_entry.entry_id
+    )
 
     assert device is not None
     assert device == snapshot(
@@ -229,7 +237,7 @@ async def test_update_errors(
 @pytest.mark.parametrize(
     ("data_attribute", "expected_reloads"),
     [
-        ("arbitrary-update", 1),
+        ("arbitrary-update", 0),
         ("token", 0),
     ],
     ids=["data-change", "oauth-token-change"],
@@ -241,6 +249,15 @@ async def test_update_entry(
     data_attribute: str,
     expected_reloads: int,
 ) -> None:
+    """Updating entry data does not by itself reload the entry.
+
+    The entry deliberately carries no update listener: combining one with the
+    reloading methods the config flow uses is deprecated since 2026.6 and an
+    error from 2026.12. The reload is owned by whoever changed the data, which
+    is the config flow (async_update_reload_and_abort) or the options flow
+    (an explicit async_schedule_reload), so a bare async_update_entry must not
+    trigger one.
+    """
     await setup_integration(hass, mock_config_entry)
 
     with patch(
