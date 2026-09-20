@@ -3,34 +3,47 @@ name: "Release"
 on:
   release:
     types: ["published"]
+  # so an asset can be rebuilt for a release that already exists, without
+  # deleting and recreating the release to fire the event again.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to build the asset for"
+        required: true
+        type: string
+
+permissions:
+  contents: write
 
 jobs:
-  update_hacs_manifest:
+  asset:
     name: "Prepare release asset"
     runs-on: "ubuntu-latest"
+    env:
+      TAG: "${{ inputs.tag || github.ref_name }}"
     steps:
-      - name: "Check out repository"
-        uses: "actions/checkout@v3"
+      - name: "Check out the tag"
+        uses: "actions/checkout@v4"
+        with:
+          ref: "${{ inputs.tag || github.ref_name }}"
 
-      - name: "Get version"
-        id: "version"
-        uses: "home-assistant/actions/helpers/version@master"
-
+      # the tag is the version. HACS installs the release asset and reads the
+      # manifest inside it, so the two have to agree: a mismatch shows up as
+      # an update that never settles.
       - name: "Set manifest version number"
         run: |
-          python3 ${{ github.workspace }}/.github/update_hacs_manifest.py \
-            --version ${{ steps.version.outputs.version }}
+          python3 .github/update_hacs_manifest.py --version "${TAG#v}"
 
       - name: "Create zip"
         run: |
           cd custom_components/smartcar
-          zip smartcar.zip -r ./
+          zip -r smartcar.zip ./ -x 'smartcar.zip' '__pycache__/*'
 
+      # gh is first party and already authenticated here. the third party
+      # upload action this replaced was pinned to a moving tag.
       - name: "Upload zip to release"
-        uses: "svenstaro/upload-release-action@v1-release"
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          file: "./custom_components/smartcar/smartcar.zip"
-          asset_name: "smartcar.zip"
-          tag: "${{ github.ref }}"
-          overwrite: true
+        env:
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        run: |
+          gh release upload "${TAG}" \
+            custom_components/smartcar/smartcar.zip --clobber
