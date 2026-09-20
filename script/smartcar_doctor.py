@@ -902,12 +902,22 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Check a Smartcar application and collect a redacted report."
     )
-    parser.add_argument("--client-id", default=os.environ.get("SMARTCAR_CLIENT_ID", ""))
+    # every flag answers to an underscore as well as a hyphen. the two are
+    # easy to mix up, and a diagnostic that refuses to start over punctuation
+    # is a poor diagnostic.
     parser.add_argument(
-        "--client-secret", default=os.environ.get("SMARTCAR_CLIENT_SECRET", "")
+        "--client-id",
+        "--client_id",
+        default=os.environ.get("SMARTCAR_CLIENT_ID", ""),
+    )
+    parser.add_argument(
+        "--client-secret",
+        "--client_secret",
+        default=os.environ.get("SMARTCAR_CLIENT_SECRET", ""),
     )
     parser.add_argument(
         "--free-only",
+        "--free_only",
         action="store_true",
         help="skip every check that costs a call against a vehicle's allowance",
     )
@@ -918,6 +928,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--no-redact",
+        "--no_redact",
         action="store_true",
         help="keep real identifiers and coordinates in the report",
     )
