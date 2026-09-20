@@ -122,9 +122,16 @@ created, none ever gets a value, and nothing raises: no `UpdateFailed`, no
 repair issue, no log above debug. The coordinator's capability read reports
 "cannot answer 0 of 0 signals" and carries on.
 
-**Action:** treat an empty collection as a condition of its own. Setup should
-say that the vehicle has no stored signals, name the likely cause once it is
-known, and not create a full set of permanently unavailable entities.
+The cause is now known, and it is visible for free. The webhook that feeds the
+store carries `isEnabled`, `triggers` and `data`; a disabled webhook, or one
+with both lists empty, collects nothing and produces exactly this. The
+integration already lists webhooks during auto-subscribe, so it has the answer
+in hand at setup and says nothing about it.
+
+**Action:** raise a repair issue when the webhook this instance subscribes to
+is disabled or has no triggers and no data signals, naming what to enable.
+Treat an empty signal collection as a condition of its own rather than creating
+a full set of permanently unavailable entities.
 
 ### 11. Auto-subscribe cannot create the webhook it needs
 

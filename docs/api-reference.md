@@ -273,6 +273,32 @@ what was observed before putting the entity back.
 
 ## Management API
 
+### What a webhook carries
+
+`L-live`, from `GET https://management.api.smartcar.com/v3/webhooks`:
+
+```
+data[].attributes.name           the label from the dashboard
+data[].attributes.isEnabled      false means it never fires, however it is configured
+data[].attributes.autoSubscribe  whether new vehicles are subscribed automatically
+data[].attributes.triggers       list of signal codes that trigger a delivery
+data[].attributes.data           list of signal codes included in a delivery
+data[].attributes.callbackUri    where deliveries are sent
+```
+
+**`triggers` and `data` decide what the signal store ever holds.** A webhook
+with both lists empty collects nothing, so `GET /vehicles/{id}/signals` answers
+`200` with `data: []` and every single signal path answers
+`404 SIGNAL_NOT_FOUND`, even for signals the vehicle supports and the user has
+granted. Observed exactly that way on a live account: an enabled connection, a
+subscribed vehicle, a webhook named and subscribed but `isEnabled: false` with
+two empty lists, and no readable data anywhere.
+
+This is worth stating plainly because every symptom points somewhere else. The
+integration's own requests are correct, the credentials are correct, and the
+failure looks like a broken API rather than an unconfigured webhook.
+
+
 Base `https://management.api.smartcar.com/v3`, same bearer token. **None of
 this is called by the integration.** All rows `S-spec`.
 
