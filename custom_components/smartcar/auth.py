@@ -86,13 +86,16 @@ class AbstractAuth(ABC):
         if self.user_id is not None:
             headers["sc-user-id"] = self.user_id
 
+        # the access token is an application level bearer credential, not a per
+        # vehicle one, and debug logs get pasted into issue reports. keep it out
+        # of the log the same way the webhook management token is kept out.
         _LOGGER.debug(
             "HTTP %s request %s/%s %r headers=%r",
             method,
             self._endpoints[version],
             path,
             kwargs,
-            headers,
+            {**headers, "authorization": "<redacted>"},
         )
 
         return await self._websession.request(

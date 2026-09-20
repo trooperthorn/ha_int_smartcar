@@ -2,5 +2,6 @@
   "filename": "smartcar.zip",
   "name": "Smartcar",
   "render_readme": true,
-  "zip_release": true
+  "zip_release": true,
+  "homeassistant": "2026.9.2"
 }

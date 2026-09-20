@@ -2,7 +2,6 @@ import asyncio
 from functools import partial
 from http import HTTPStatus
 import logging
-from typing import Any
 
 from aiohttp import ClientResponseError
 from homeassistant.components import cloud, webhook
@@ -63,12 +62,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """
     implementation = await async_get_config_entry_implementation(hass, entry)
     version = api_version_for_client_id(implementation.client_id)
-    websession = async_get_clientsession(hass)
-    oauth_session = OAuth2Session(hass, entry, implementation)
     auth = AsyncConfigEntryAuth(
-        websession,
+        async_get_clientsession(hass),
         implementation,
-        oauth_session,
+        OAuth2Session(hass, entry, implementation),
         API_ENDPOINTS,
         user_id=entry.data.get("user_id"),
     )
@@ -127,6 +124,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             vin,
         )
 
+    # capabilities have to be known before the platforms run, because the
+    # platforms decide which entities to create and a vehicle that cannot answer
+    # a signal should not get an entity for it. the v3 signals response answers
+    # capability and carries the current values, so its result is kept and the
+    # first refresh below is skipped: same number of requests as before.
+    refresh_needed = await async_load_capabilities(list(coordinators.values()))
+
     # setup platforms before doing first refresh. this gets the entity registry
     # populated with the desired entities & allows the coordinator to determine
     # what to fetch on the first refresh. (some entities, for instance, are
@@ -165,7 +169,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
 
     await asyncio.gather(
-        *[async_do_first_refresh(coordinator) for coordinator in coordinators.values()]
+        *[async_do_first_refresh(coordinator) for coordinator in refresh_needed]
     )
 
     # log stored scopes once on successful setup
@@ -173,13 +177,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "Using token with scopes: %s", entry.data.get("token", {}).get("scopes")
     )
 
-    entry.async_on_unload(
-        entry.add_update_listener(
-            partial(async_update_listener, initial_data=entry.data)
-        )
+    return True
+
+
+async def async_load_capabilities(
+    coordinators: list[SmartcarVehicleCoordinator],
+) -> list[SmartcarVehicleCoordinator]:
+    """Read each vehicle's capabilities before its entities are created.
+
+    Returns:
+        The coordinators that still need a first refresh, because their
+        capability read did not happen or did not succeed.
+    """
+    loaded = await asyncio.gather(
+        *[coordinator.async_load_capabilities() for coordinator in coordinators]
     )
 
-    return True
+    return [
+        coordinator
+        for coordinator, capabilities_loaded in zip(coordinators, loaded, strict=True)
+        if not capabilities_loaded
+    ]
 
 
 async def async_do_first_refresh(coordinator: SmartcarVehicleCoordinator) -> None:
@@ -217,20 +235,6 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
             pass
 
 
-async def async_update_listener(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    initial_data: dict[str, Any],
-) -> None:
-    """Handle options update."""
-
-    entry_data = {k: v for k, v in entry.data.items() if k != "token"}
-    initial_data = {k: v for k, v in initial_data.items() if k != "token"}
-
-    if entry_data != initial_data:
-        await hass.config_entries.async_reload(entry.entry_id)
-
-
 async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     _LOGGER.debug(
         "Migrating configuration from version %s.%s",
@@ -238,9 +242,9 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
         config_entry.minor_version,
     )
 
-    # prevent rollbacks
-    if config_entry.version > 2:
-        return False
+    # a rollback needs no guard here: core refuses to load an entry whose
+    # version is higher than the flow's VERSION, logs it, and never calls this
+    # function, so the guard that used to live here was unreachable.
 
     if config_entry.version == 1:
         old_data = config_entry.data
@@ -332,6 +336,56 @@ def _inject_requested_scopes_into_entry_data(data: dict, scopes: list[Scope]) ->
     data.setdefault("token", {})["scopes"] = scopes
 
 
+CONNECTIONS_PAGE_SIZE = 100
+CONNECTIONS_PAGE_LIMIT = 50
+
+
+async def _fetch_all_connections(auth: AbstractAuth) -> list[dict]:
+    """Read every page of /connections.
+
+    The endpoint is paginated and defaults to 10 per page. Reading only the
+    first page silently loses vehicles, and it also makes the single-user check
+    decide on a partial set, which would report a multi-user application for an
+    account that simply has more than ten connections.
+
+    Any page request that fails raises, because a partial list is worse than
+    no list: it silently drops vehicles.
+
+    Returns:
+        Every connection resource across all pages.
+    """
+    connections: list[dict] = []
+    page = 1
+
+    while page <= CONNECTIONS_PAGE_LIMIT:
+        response = await auth.request_v3(
+            "get",
+            "connections",
+            params={
+                "page[number]": page,
+                "page[size]": CONNECTIONS_PAGE_SIZE,
+            },
+        )
+        response.raise_for_status()
+        body = await response.json()
+        connections.extend(body.get("data", []))
+
+        total = body.get("meta", {}).get("totalCount")
+
+        if not body.get("data") or total is None or len(connections) >= total:
+            break
+
+        page += 1
+    else:
+        _LOGGER.warning(
+            "Stopped reading connections after %s pages", CONNECTIONS_PAGE_LIMIT
+        )
+
+    _LOGGER.debug("Read %s connections across %s page(s)", len(connections), page)
+
+    return connections
+
+
 async def _store_all_vehicles(
     data: dict,
     auth: AbstractAuth,
@@ -357,12 +411,10 @@ async def _store_all_vehicles(
             vehicle_ids = vehicle_list_data.get("vehicles", [])
         else:
             assert auth.version == "v3"
-            connections_list_resp = await auth.request_v3("get", "connections")
-            connections_list_resp.raise_for_status()
-            connections_list_data = await connections_list_resp.json()
+            connections = await _fetch_all_connections(auth)
             vehicle_ids = [
                 vehicle_id
-                for connection in connections_list_data.get("data", [])
+                for connection in connections
                 if (
                     vehicle_id := connection.get("relationships", {})
                     .get("vehicle", {})
@@ -372,7 +424,7 @@ async def _store_all_vehicles(
             ]
             user_ids = {
                 user_id
-                for connection in connections_list_data.get("data", [])
+                for connection in connections
                 if (
                     user_id := connection.get("relationships", {})
                     .get("user", {})

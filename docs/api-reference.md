@@ -21,7 +21,7 @@ it regenerates from Dashboard, Compatible Vehicles. Keep a copy outside the
 working tree while using it.
 
 Where a row is `C-code` only, this integration is calling something no
-published source describes. There is one such row and it is a defect, not a
+published source describes. There was one such row and it was a defect, not a
 discovery. See "The climate command does not exist".
 
 ## Headline findings
@@ -37,9 +37,9 @@ not exchanged for anything usable. Connect exists solely to put `user_id` in
 the redirect, which then rides on every request as `sc-user-id`. The OAuth
 dance is a user identity harvest wearing an OAuth costume.
 
-**The climate command does not exist.** `switch.py` posts to
+**The climate command does not exist.** The integration used to post to
 `/commands/climate/start` and `/commands/climate/stop`. Neither path is in the
-spec, the prose, or the v2 reference.
+spec, the prose, the v2 reference, or the compatibility matrix.
 
 **Polling fetches everything.** For v3 the coordinator issues a bare
 `GET /vehicles/{id}/signals` with no filter, then discards what it does not
@@ -137,11 +137,12 @@ Base `https://vehicle.api.smartcar.com/v3`. All rows `S-spec`.
 `filter[user.externalId]`, `page[number]` (default 1) and `page[size]`
 (default 10).
 
-**The integration passes none of them.** It reads `data[]` from the first page
-only. An account with more than ten connections would silently lose vehicles,
-and the "exactly one user" check in `_store_all_vehicles` would be deciding on
-a partial set. The single user case is the only supported one, so nobody has
-hit this, but the pagination is unhandled rather than deliberately ignored.
+The integration reads every page, 100 at a time, and stops when the running
+count reaches `meta.totalCount` or after 50 pages. It used to read only the
+first page of ten, which would silently lose vehicles on a larger account and
+would also make the "exactly one user" check in `_store_all_vehicles` decide on
+a partial set, reporting a multi-user application for an account that simply
+has more than ten connections.
 
 The two DELETE endpoints are the clean teardown this integration does not do.
 `async_remove_entry` deletes the cloudhook and nothing else, so removing the
@@ -213,10 +214,13 @@ declares, so the matrix and the spec agree with each other and disagree with
 this integration.
 
 So the standardized v3 climate command was never published. `CLIMATE` is in
-`DEFAULT_ENABLED_ENTITY_DESCRIPTION_KEYS`, so the entity ships enabled and
-every press should fail. Either the path is undocumented and working, in which
-case it needs a probe and a `U-unver` row here, or it is dead and the entity
-should go. Do not assume the first because the code exists.
+`DEFAULT_ENABLED_ENTITY_DESCRIPTION_KEYS`, so the entity shipped enabled and
+every press posted to a path that does not exist.
+
+The climate switch is now created only for a v2 entry, and the v3 command path
+it used to build has been deleted rather than left as unreachable code. If a
+probe ever shows the path working undocumented, add a `U-unver` row here with
+what was observed before putting the entity back.
 
 ## Management API
 
@@ -328,9 +332,10 @@ command finishes `D-docs`.
 A `202` is not a result. The docs are explicit: read the full body before
 deciding whether the command worked.
 
-`async_send_command` calls `raise_for_status()` and sets `success = True`
-without reading the body `C-code`. A slow command that ultimately failed is
-reported to Home Assistant as having succeeded.
+`async_send_command` used to call `raise_for_status()` and set `success = True`
+without reading the body, so a slow command that ultimately failed was reported
+to Home Assistant as having succeeded. The body is now read on every command
+and an error payload in it raises, whatever the status line said.
 
 ## Permissions
 
@@ -359,21 +364,69 @@ unchecked by the user at consent time.
 
 ## Gaps
 
+### Closed
+
 | Gap | Effect | Evidence |
 | --- | --- | --- |
-| Climate command path is not published | The default enabled climate switch should fail on every press | `S-spec` absent, `C-code` present |
-| `202` treated as success without reading the body | Failed long running commands reported as succeeded | `D-docs`, `C-code` |
-| `504` not in the handled command statuses | Gateway timeout escapes as a raw error | `S-spec` |
-| `/connections` read unpaginated and unfiltered | Vehicles beyond the first 10 invisible; user count check reads a partial set | `S-spec` |
+| Climate command path is not published | The default enabled climate switch failed on every press. The entity is no longer created on v3 | `S-spec` and `M-matrix` absent, `C-code` present |
+| `202` treated as success without reading the body | Failed long running commands reported as succeeded. The body is now read and an error in it fails the command | `D-docs`, `C-code` |
+| `504` not in the handled command statuses | Gateway timeout escaped as a raw error | `S-spec` |
+| `/connections` read unpaginated and unfiltered | Vehicles beyond the first 10 invisible; the single-user check read a partial set. All pages are now read | `S-spec` |
+| Entities created from scopes, not from vehicle compatibility | On an ID. Buzz, 23 of 95 signals are supported, so most default enabled entities could never populate. Signals the vehicle reports a COMPATIBILITY error for no longer get an entity | `M-matrix` |
+| A rejected v3 credential raised an assertion | The config flow aborted with an unknown error and no reauth. Rejections now surface as reauth, outages as transient, with Smartcar's own `error` text | `S-spec` |
+| The access token was written to the debug log | Application level bearer credential leaked into logs that get pasted into issues | `C-code` |
+
+### Open
+
+| Gap | Effect | Evidence |
+| --- | --- | --- |
 | Management API never called | Webhook subscribe and unsubscribe are manual dashboard steps | `S-spec` |
 | `DELETE /connections/{id}` never called | Removing the config entry leaves the Smartcar connection live | `S-spec` |
 | `charge/set-limit` floor of 50 not enforced locally | Values under 50 make a round trip only to be rejected | `S-spec` |
 | `resolution.type` ignored | Cannot distinguish retry from reauthenticate | `D-docs` |
-| `powertrainType` never read | EV entities created on combustion vehicles | `S-spec` |
+| `powertrainType` never read | Compatibility gating now covers most of this, but the attribute is still never read | `S-spec` |
 | Charge schedules unimplemented | No scheduled charging through this integration | `S-spec` |
 | Charge port open and close unimplemented | No charge port control | `S-spec` |
-| Entities created from scopes, not from vehicle compatibility | On an ID. Buzz, 23 of 95 signals are supported, so most default enabled entities can never populate | `M-matrix` |
 | 42 signals unmapped | Listed below | `S-spec` |
+
+## Configuring v3, and what goes wrong
+
+Two different credentials from the Smartcar dashboard are involved, and putting
+one where the other belongs is the common failure.
+
+**Home Assistant's Application Credentials dialog wants the API credential.**
+Dashboard, API Credentials tab: a client ID that begins `client_` and its
+secret. This is what signs every API call.
+
+**The config flow separately asks for the Application ID.** Dashboard,
+Configuration. It is used only to build the Connect URL, because Connect
+identifies the application rather than the API credential. The flow refuses to
+continue without it on a v3 entry.
+
+**The Application Management Token is a third thing**, needed only for
+webhooks, and used only as the HMAC key that verifies inbound payloads.
+
+Failure modes, in the order they are worth checking:
+
+- **The entry is treated as v2.** Version is decided by the `client_` prefix on
+  the client ID `C-code`. Paste the Application ID into the Application
+  Credentials dialog and the entry silently becomes a v2 entry, talks to
+  `auth.smartcar.com`, and fails there. A repair issue saying the entry uses a
+  legacy client ID is the tell.
+- **The credential is rejected.** `401 invalid_client` means the ID or secret
+  is wrong; `400 invalid_request` means the request shape was. Both now surface
+  as a reauth carrying Smartcar's own error text. Before, both hit an assertion
+  that the config flow does not catch, so the user saw an unknown error with
+  nothing to act on.
+- **Existing entries keep the credentials they were created with.** Adding new
+  v3 application credentials does not move an entry that already exists; it
+  stays bound to the `auth_implementation` it was created with. Reconfigure the
+  entry, or remove and re-add it.
+- **Nothing updates, but setup succeeded.** With a management token configured
+  the coordinator has no update interval at all: webhooks are the only data
+  source `C-code`. If the webhook URL is not reachable from Smartcar, entities
+  keep their last value and nothing says so. Check the Last Webhook Received
+  sensor.
 
 ## On the SDKs
 

@@ -503,10 +503,21 @@ class SmartcarOptionsFlow(OptionsFlow):
             entry_data.pop(CONF_CLOUDHOOK, None)
 
         if user_input is not None and not errors:
-            self.hass.config_entries.async_update_entry(
+            changed = self.hass.config_entries.async_update_entry(
                 self.config_entry,
                 data=entry_data,
             )
+
+            # this flow writes to entry.data, not entry.options, so
+            # OptionsFlowWithReload would never fire: it reloads on changed
+            # options only. the entry carries no update listener either, by
+            # design, because combining one with the reloads in the config flow
+            # is an error from 2026.12. so the reload is explicit here.
+            if changed:
+                self.hass.config_entries.async_schedule_reload(
+                    self.config_entry.entry_id
+                )
+
             return self.async_create_entry(
                 data={},
                 description_placeholders=description_placeholders,

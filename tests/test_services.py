@@ -73,6 +73,15 @@ def test_has_services(
             "expected_raises": ServiceValidationError,
             "expected_api_calls": 0,
         },
+        {
+            # a 401 starts a reauth and reports no success, so the optimistic
+            # state must not be written: the command did not happen.
+            "call": SERVICE_NAME_LOCK_DOORS,
+            "status": 401,
+            "status_slug": "unauthorized",
+            "expected_state": STATE_UNAVAILABLE,
+            "expected_api_calls": 1,
+        },
     ],
     ids=[
         "lock_doors",
@@ -80,6 +89,7 @@ def test_has_services(
         "lock_doors_no_vin",
         "unreachable",
         "invalid_config_entry",
+        "unauthorized",
     ],
 )
 async def test_door_closure(
