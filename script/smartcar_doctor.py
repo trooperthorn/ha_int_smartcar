@@ -298,8 +298,13 @@ def check_credential_shape(client_id: str, client_secret: str) -> Result:
             )
 
     if client_id.startswith("client_"):
+        # a fingerprint rather than the value: it is safe to put in a report,
+        # and it is the only way to tell "the credential that worked before"
+        # from "a credential of the same shape" across two runs.
         return result.passed(
-            f"v3 API credential (client id begins `client_`, {len(client_id)} chars)",
+            f"v3 API credential (client id begins `client_`, {len(client_id)} "
+            f"chars, id {_fingerprint(client_id)}, secret "
+            f"{_fingerprint(client_secret)})",
             {"version": "v3"},
         )
 
@@ -319,6 +324,15 @@ def check_credential_shape(client_id: str, client_secret: str) -> Result:
         ),
         {"version": "v2"},
     )
+
+
+def _fingerprint(value: str) -> str:
+    """Identify a credential without disclosing it.
+
+    Returns:
+        A short hash, stable across runs.
+    """
+    return hashlib.sha256(value.encode()).hexdigest()[:8]
 
 
 def check_token(client_id: str, client_secret: str) -> tuple[Result, str | None]:
