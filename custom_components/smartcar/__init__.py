@@ -583,6 +583,21 @@ async def _store_all_vehicles(
 
             auth.user_id = data["user_id"] = next(iter(user_ids))
 
+            # what Smartcar actually granted, which is not the list the user
+            # asked for: a scope can be requested and refused, and a vehicle
+            # can lack the capability behind it. Kept so the reconfigure form
+            # can start from reality instead of from a static default.
+            data["granted_permissions"] = sorted(
+                {
+                    permission
+                    for connection in connections
+                    for permission in connection.get("attributes", {}).get(
+                        "permissions", []
+                    )
+                    if isinstance(permission, str)
+                }
+            )
+
             # the connection already describes the car. taking make, model and
             # year from here rather than from a signal response means setup
             # does not depend on the signal store holding anything, and saves
