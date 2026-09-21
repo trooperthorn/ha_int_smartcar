@@ -1,6 +1,6 @@
 {
   "application_credentials": {
-    "description": "Follow the [instructions]({more_info_url}) to configure Smartcar for your vehicle:\n\n1. Go to [Applications]({oauth_creds_url}) and your application from the list.\n1. Choose **Configuration** from the side menu.\n1. Copy the **Client ID**.\n1. Regenerate and copy the the **Client Secret**.\n1. Add `{redirect_url}` under *Authorized redirect URI*."
+    "description": "Follow the [instructions]({more_info_url}) to configure Smartcar for your vehicle:\n\n1. Go to [Applications]({oauth_creds_url}) and your application from the list.\n1. Copy the credential whose **Client ID begins with `client_`**, and its secret. This is the API credential, used by the current v3 API. It is **not** the UUID shown as *Application ID*: that one is asked for in the next step, not here, and entering it here will fail with `oauth_unauthorized`.\n1. On a legacy v2 account there is no `client_` credential. Use the **Client ID** and **Client Secret** from **Configuration** instead.\n1. Regenerate the secret only if you are replacing it everywhere, because regenerating invalidates the previous one.\n1. Add `{redirect_url}` under *Authorized redirect URI*."
   },
   "config": {
     "abort": {
