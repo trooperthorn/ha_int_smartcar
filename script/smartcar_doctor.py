@@ -539,6 +539,60 @@ def describe_webhook(webhook: dict, redact: Redactor) -> Result:
     return result.passed(detail)
 
 
+def check_applications(token: str, redact: Redactor) -> tuple[list[Result], Any]:
+    """Ask the Management API what the application itself declares.
+
+    Free. The open question this answers is whether the permission checkboxes
+    in the config flow need to exist at all: if the application already
+    declares which permissions it is configured for, the integration can ask
+    for those instead of making the user guess, and the guessing is the part
+    that goes wrong.
+
+    `/applications/{id}/secrets` is deliberately not called. It returns
+    credential material and nothing here needs it.
+
+    Returns:
+        The results and the raw body.
+    """
+    base = MANAGEMENT_HOSTS["v3 (spec)"]
+    result = Result("Applications", FREE)
+    status, _, body = http("get", f"{base}/applications", token=token)
+    parsed = parse_json(body)
+
+    if not 200 <= status < 300:
+        return [result.failed(f"HTTP {status}. {body[:200]}")], parsed
+
+    applications = parsed.get("data", []) if isinstance(parsed, dict) else []
+    results = [result.passed(f"HTTP {status}, {len(applications)} application(s)")]
+
+    for application in applications:
+        attributes = application.get("attributes", {})
+
+        if not isinstance(attributes, dict):
+            continue
+
+        detail = Result(f"Application {redact('app', application.get('id'))}", FREE)
+        lists = {
+            key: [item for item in value if isinstance(item, str)]
+            for key, value in attributes.items()
+            if isinstance(value, list)
+        }
+        described = ", ".join(
+            f"{key}={value}"
+            for key, value in sorted(attributes.items())
+            if isinstance(value, (str, bool, int))
+        )
+        collected = ", ".join(
+            f"{key}: {', '.join(sorted(value)) or 'empty'}"
+            for key, value in sorted(lists.items())
+        )
+        results.append(
+            detail.passed(" | ".join(part for part in (described, collected) if part))
+        )
+
+    return results, scrub(parsed, redact)
+
+
 def check_subscriptions(
     token: str, vehicle_id: str, redact: Redactor
 ) -> tuple[Result, Any]:
@@ -1013,6 +1067,12 @@ def main() -> int:
     record(connections_result)
     report["raw"]["connections"] = scrub(pages, redact)
 
+    application_results, application_body = check_applications(token, redact)
+
+    for result in application_results:
+        record(result)
+
+    report["raw"]["applications"] = application_body
     management_results, webhook_bodies = check_management(token, redact)
 
     for result in management_results:

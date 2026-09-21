@@ -295,6 +295,25 @@ class SmartcarOAuth2FlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):
             description_placeholders=description_placeholders,
         )
 
+    def _suggested_scopes(self) -> dict[str, bool]:
+        """Decide which boxes start ticked.
+
+        What Smartcar granted comes first, because it is the only one of these
+        that is a fact rather than an intention. The scopes previously asked
+        for come next, for an entry created before the granted list was kept.
+        A first time setup has neither and falls back to the schema defaults.
+
+        Returns:
+            The suggested values, empty when there is nothing better than the
+            schema defaults to offer.
+        """
+        data = self._initial_data()
+
+        if granted := data.get("granted_permissions"):
+            return dict.fromkeys(granted, True)
+
+        return dict.fromkeys(data.get(CONF_TOKEN, {}).get("scopes", []), True)
+
     async def async_step_scopes(
         self,
         user_input: dict[str, Any] | None = None,
@@ -322,11 +341,7 @@ class SmartcarOAuth2FlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):
                         for scope in CONFIGURABLE_SCOPES
                     }
                 ),
-                dict.fromkeys(
-                    self._initial_data().get(CONF_TOKEN, {}).get("scopes", []), True
-                )
-                if user_input is None
-                else user_input,
+                self._suggested_scopes() if user_input is None else user_input,
             ),
             errors=errors,
             last_step=False,

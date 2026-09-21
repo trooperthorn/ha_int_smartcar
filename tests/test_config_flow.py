@@ -480,6 +480,18 @@ async def _test_full_flow(
             **(
                 {
                     "user_id": "218eda3b-0656-49a8-8f3d-360cdad07334",
+                    # what Smartcar granted, as the connection reported it.
+                    # not the same list as the scopes that were requested.
+                    "granted_permissions": [
+                        "control_charge",
+                        "read_battery",
+                        "read_charge",
+                        "read_location",
+                        "read_odometer",
+                        "read_security",
+                        "read_vehicle_info",
+                        "read_vin",
+                    ],
                 }
                 if client_id_version == "v3"
                 else {}

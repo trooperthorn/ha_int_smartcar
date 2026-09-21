@@ -68,9 +68,11 @@
           "read_location": "Get the vehicle's location",
           "read_odometer": "Get total distance traveled",
           "read_security": "Get details on whether doors, windows & more are enabled",
-          "read_tires": "Get tire pressure details"
+          "read_tires": "Get tire pressure details",
+          "read_diagnostics": "Get diagnostic trouble codes and system health",
+          "read_climate": "Get cabin temperature and climate control status"
         },
-        "description": "Select the permissions you would like to grant",
+        "description": "Select the permissions you would like to grant.\n\nOn a reconfigure these start from what Smartcar has actually granted, which is not always what was asked for. Permissions your vehicle does not support can be granted and still return nothing, so entities for them stay unavailable until the vehicle reports a value. Check your vehicle on Smartcar's compatibility page if you are unsure.",
         "title": "Permission selection"
       }
     }
