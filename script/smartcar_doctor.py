@@ -242,15 +242,26 @@ def check_reachable(url: str) -> Result:
 
     try:
         with socket.create_connection((host, 443), timeout=TIMEOUT) as raw:
+            # the address is worth printing. a resolver that cannot answer for
+            # a host may fall back to appending a local search domain, and a
+            # wildcard in that domain will answer for anything, so a name can
+            # resolve to an address that has nothing to do with the service.
+            # that reads as a working connection unless the address is shown.
+            address = raw.getpeername()[0]
             context = ssl.create_default_context()
 
             with context.wrap_socket(raw, server_hostname=host) as tls:
                 cipher = tls.cipher()
                 version = cipher[1] if cipher else "unknown"
+    except socket.gaierror as err:
+        return result.failed(
+            f"the name did not resolve. {err}. This is local DNS, not "
+            "Smartcar: nothing was sent."
+        )
     except (OSError, ssl.SSLError) as err:
         return result.failed(f"{type(err).__name__}: {err}")
 
-    return result.passed(f"TLS {version}")
+    return result.passed(f"TLS {version} via {address}")
 
 
 def check_credential_shape(client_id: str, client_secret: str) -> Result:
