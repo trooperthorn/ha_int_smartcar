@@ -724,7 +724,11 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
         enabled = len(missing) == 0
 
         if not enabled and verbose:
-            _LOGGER.warning(
+            # a scope the user chose not to grant is a setting, not a problem,
+            # and this fires once per affected entity on every setup and every
+            # reload: twenty warnings for a correctly configured vehicle. the
+            # information is still worth having, at a level that is asked for.
+            _LOGGER.debug(
                 "Skipping `%s` which requires %r, but "
                 "user is missing %r with enabled scopes of %r.",
                 sensor_key,

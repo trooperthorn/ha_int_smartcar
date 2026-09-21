@@ -440,7 +440,7 @@ def check_connections(
 
 
 def check_management(
-    token: str, redact: Redactor
+    token: str, redact: Redactor, callback_url: str = ""
 ) -> tuple[list[Result], dict[str, Any]]:
     """Read the webhook configuration from both Management API hosts.
 
@@ -476,7 +476,9 @@ def check_management(
             # describe before scrubbing, so a webhook id is named `hook_` in
             # both places rather than taking whatever label the scrubber's
             # generic `id` rule reached first.
-            results.extend(describe_webhook(webhook, redact) for webhook in webhooks)
+            results.extend(
+                describe_webhook(webhook, redact, callback_url) for webhook in webhooks
+            )
             bodies[label] = scrub(parsed, redact)
             continue
 
@@ -488,7 +490,7 @@ def check_management(
     return results, bodies
 
 
-def describe_webhook(webhook: dict, redact: Redactor) -> Result:
+def describe_webhook(webhook: dict, redact: Redactor, callback_url: str = "") -> Result:
     """Say what one webhook is set up to collect.
 
     The attribute names are not pinned by anything that has been verified, so
@@ -506,6 +508,20 @@ def describe_webhook(webhook: dict, redact: Redactor) -> Result:
 
     if not isinstance(attributes, dict):
         return result.failed("the webhook carries no attributes")
+
+    # a cloudhook URL is derived from the webhook id Home Assistant generates,
+    # so removing and re-adding the config entry mints a new one and leaves the
+    # dashboard pointing at an address that no longer exists. Nothing reports
+    # that: deliveries simply go nowhere.
+    if callback_url:
+        configured = str(attributes.get("callbackUri") or attributes.get("url") or "")
+
+        if configured.rstrip("/") != callback_url.rstrip("/"):
+            return result.failed(
+                "its callback URL is not the one given. Deliveries go to the "
+                "address configured here, so they are not reaching that Home "
+                "Assistant. See the raw body for what it is set to."
+            )
 
     scalars = {
         key: value
@@ -1002,6 +1018,16 @@ def main() -> int:
         help="keep real identifiers and coordinates in the report",
     )
     parser.add_argument(
+        "--callback-url",
+        "--callback_url",
+        default="",
+        help=(
+            "the webhook URL Home Assistant logged at startup. Given one, each "
+            "webhook is checked against it, which catches a dashboard still "
+            "pointing at a cloudhook from a config entry that has been removed."
+        ),
+    )
+    parser.add_argument(
         "--probe",
         default="",
         help=(
@@ -1073,7 +1099,9 @@ def main() -> int:
         record(result)
 
     report["raw"]["applications"] = application_body
-    management_results, webhook_bodies = check_management(token, redact)
+    management_results, webhook_bodies = check_management(
+        token, redact, args.callback_url
+    )
 
     for result in management_results:
         record(result)
