@@ -271,6 +271,21 @@ def check_credential_shape(client_id: str, client_secret: str) -> Result:
     if not client_id or not client_secret:
         return result.failed("client id or secret is empty")
 
+    # a credential that only fails because of what came along with the paste
+    # is worth naming as that, rather than as a rejection by Smartcar.
+    for name, value in (("client id", client_id), ("client secret", client_secret)):
+        if value != value.strip():
+            return result.failed(
+                f"the {name} has leading or trailing whitespace. That is sent "
+                "as part of the credential and Smartcar will not recognise it."
+            )
+
+        if any(not character.isprintable() for character in value):
+            return result.failed(
+                f"the {name} contains a non printable character, so the paste "
+                "picked up something it should not have."
+            )
+
     if client_id.startswith("client_"):
         return result.passed(
             f"v3 API credential (client id begins `client_`, {len(client_id)} chars)",
