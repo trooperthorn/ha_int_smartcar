@@ -318,7 +318,7 @@ async def test_command_failure_in_the_body_is_a_failure(
     )
 
     with pytest.raises(SmartcarAPIError):
-        await async_send_command(coordinator, "/security/lock", None)
+        await async_send_command(coordinator, "/security/lock", None, command="lock")
 
 
 @pytest.mark.parametrize("vehicle_fixture", ["unknown_make"])
@@ -346,7 +346,10 @@ async def test_command_success_bodies_are_left_alone(
         text=body,
     )
 
-    assert await async_send_command(coordinator, "/security/lock", None) is True
+    assert (
+        await async_send_command(coordinator, "/security/lock", None, command="lock")
+        is True
+    )
 
 
 @pytest.mark.parametrize("vehicle_fixture", ["vw_id_4"])

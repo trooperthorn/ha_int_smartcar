@@ -907,6 +907,8 @@ Lock the doors of a vehicle. In most cases, the `lock.unlock` action should be u
 - `config_entry`: **required** Config entry to use. Example: `1b4a46c6cba0677bbfb5a8c53e8618b0`.
 - `vin`: The VIN of the vehicle to target. If not provided, the first VIN for the config entry will be assumed.
 
+Every command fires a `smartcar_command_result` bus event with its outcome; see [docs/events.md](docs/events.md) for that and the other events this integration fires.
+
 ## Rate Limits & Polling
 
 - Consider setting up [webhooks](#webhooks). With webhooks enabled, polling will no longer occur avoiding most rate limit issues. Additionally, Smartcar is moving away from [their v2 API](https://smartcar.com/docs/api-reference/v2-overview) and polling may not be the best way to use the service.

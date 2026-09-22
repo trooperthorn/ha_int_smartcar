@@ -108,7 +108,7 @@ class SmartcarChargingSwitch(SmartcarEntity[bool, bool], SwitchEntity):
             command = "/charge"
             payload = {"action": "START"}
 
-        await self._async_send_command(command, payload)
+        await self._async_send_command(command, payload, event_command="charge_start")
         self._inject_raw_value(value=True)
         self.async_write_ha_state()
 
@@ -124,7 +124,7 @@ class SmartcarChargingSwitch(SmartcarEntity[bool, bool], SwitchEntity):
             command = "/charge"
             payload = {"action": "STOP"}
 
-        await self._async_send_command(command, payload)
+        await self._async_send_command(command, payload, event_command="charge_stop")
         self._inject_raw_value(value=False)
         self.async_write_ha_state()
 
@@ -147,7 +147,9 @@ class SmartcarClimateSwitch(SmartcarEntity[bool, bool], SwitchEntity):
         self,
         **kwargs: object,  # noqa: ARG002
     ) -> None:
-        await self._async_send_command("/climate", {"action": "START"})
+        await self._async_send_command(
+            "/climate", {"action": "START"}, event_command="climate_start"
+        )
         self._inject_raw_value(value=True)
         self.async_write_ha_state()
 
@@ -155,6 +157,8 @@ class SmartcarClimateSwitch(SmartcarEntity[bool, bool], SwitchEntity):
         self,
         **kwargs: object,  # noqa: ARG002
     ) -> None:
-        await self._async_send_command("/climate", {"action": "STOP"})
+        await self._async_send_command(
+            "/climate", {"action": "STOP"}, event_command="climate_stop"
+        )
         self._inject_raw_value(value=False)
         self.async_write_ha_state()

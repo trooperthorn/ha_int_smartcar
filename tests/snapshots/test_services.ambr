@@ -134,7 +134,11 @@
 # name: test_door_closure[unreachable-unknown_make-v2][error]
   dict({
     'code': 409,
+    'error_code': '409',
+    'error_type': 'http_error',
     'reason': '',
+    'resolution_type': None,
+    'suggested_user_message': '',
   })
 # ---
 # name: test_door_closure[unreachable-unknown_make-v3][api-calls]
@@ -152,6 +156,10 @@
 # name: test_door_closure[unreachable-unknown_make-v3][error]
   dict({
     'code': 409,
+    'error_code': '409',
+    'error_type': 'http_error',
     'reason': '',
+    'resolution_type': None,
+    'suggested_user_message': '',
   })
 # ---

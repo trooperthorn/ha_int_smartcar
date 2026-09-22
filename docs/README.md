@@ -28,3 +28,7 @@ troubleshooting live in the repository [README](../README.md) and
 - [blueprints.md](blueprints.md): every automation and script blueprint this
   repository ships, its inputs, its Smartcar API cost, and a My Home Assistant
   import badge for each. See also [../blueprints](../blueprints).
+- [events.md](events.md): the `smartcar_command_result`,
+  `smartcar_webhook_received`, `smartcar_issue_raised`, and
+  `smartcar_issue_cleared` bus events, field by field, with an example
+  automation.
