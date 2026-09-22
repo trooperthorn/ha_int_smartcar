@@ -718,8 +718,10 @@ def check_signals(
         ), parsed
 
     counts = summarise_signals(signals)
+    total_count = parsed.get("meta", {}).get("totalCount")
     summary = (
-        f"{len(signals)} signal(s): {counts['ok']} with a value, "
+        f"totalCount={total_count}, {len(signals)} signal(s) returned: "
+        f"{counts['ok']} with a value, "
         f"{counts['COMPATIBILITY']} unsupported by this vehicle, "
         f"{counts['VEHICLE_STATE']} unavailable right now, "
         f"{counts['PERMISSION']} not permitted, {counts['other']} other error"

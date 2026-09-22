@@ -18,7 +18,11 @@ from homeassistant.helpers.config_entry_oauth2_flow import (
     async_get_config_entry_implementation,
 )
 from homeassistant.helpers.event import async_track_state_change_event
-from homeassistant.helpers.issue_registry import IssueSeverity, async_create_issue
+from homeassistant.helpers.issue_registry import (
+    IssueSeverity,
+    async_create_issue,
+    async_delete_issue,
+)
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
@@ -43,7 +47,7 @@ from .errors import (
     InvalidAuthError,
     UnsupportedUserConfigurationError,
 )
-from .management import ManagementApi, webhook_id_matching_url
+from .management import ManagementApi, webhook_health, webhook_id_matching_url
 from .polling import PollProfile, presence_transition_wants_poll, resolve_settings
 from .services import async_setup_services
 from .types import APIVersion, SmartcarConfigEntry, SmartcarData
@@ -187,7 +191,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: SmartcarConfigEntry) -> 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     if CONF_WEBHOOK_ID in entry.data:
-        _LOGGER.info(
+        # the URL is not secret, but it is only useful with debug logging on,
+        # same as everything else in the webhook troubleshooting path.
+        _LOGGER.debug(
             "Registering webhook at url: %s",
             (await webhook_url_from_id(hass, entry.data[CONF_WEBHOOK_ID]))[0],
         )
@@ -303,16 +309,52 @@ async def async_subscribe_vehicles(
 
     callback_url, _cloudhook = await webhook_url_from_id(hass, webhook_id)
     webhooks = await management.async_list_webhooks()
+    seen_uris = _seen_callback_uris(webhooks)
+    # the cloudhook/webhook URL is not secret, but it is only useful with
+    # debug logging on, same as everything else in this troubleshooting path.
+    _LOGGER.debug(
+        "Smartcar webhook match: expected callback URL %s, seen: %s",
+        callback_url,
+        seen_uris or "(none configured)",
+    )
     target_webhook = webhook_id_matching_url(webhooks, callback_url)
 
     if target_webhook is None:
         _LOGGER.warning(
-            "No Smartcar webhook is configured with the callback URL %s, so "
-            "vehicles cannot be subscribed automatically. Create one in the "
-            "Smartcar dashboard with that URL",
+            "No Smartcar webhook has the callback URL Home Assistant expects "
+            "(%s), so vehicles cannot be subscribed automatically. The "
+            "webhook(s) on this application currently point at: %s. A "
+            "webhook pointed at another URL (for example the Smartcar "
+            "Connect redirect) will never be verified by this instance",
             callback_url,
+            seen_uris or "(none configured)",
+        )
+        async_delete_issue(hass, DOMAIN, f"webhook_unhealthy_{entry.entry_id}")
+        async_create_issue(
+            hass,
+            DOMAIN,
+            f"no_matching_webhook_{entry.entry_id}",
+            is_fixable=False,
+            is_persistent=True,
+            severity=IssueSeverity.WARNING,
+            translation_key="no_matching_webhook",
+            translation_placeholders={
+                "title": entry.title,
+                "callback_url": callback_url,
+                "seen_callback_uris": seen_uris or "(none configured)",
+            },
         )
         return
+
+    async_delete_issue(hass, DOMAIN, f"no_matching_webhook_{entry.entry_id}")
+    # the Management API's webhook resource (management.yaml) exposes name,
+    # callbackUri, isEnabled, triggers, data, errorCallbackUri and
+    # autoSubscribe, but no verification status field, so a matched-but-
+    # unverified webhook cannot be told apart from a matched-and-verified one
+    # here. the callback URI mismatch above is the detectable half of that
+    # failure mode; a verified-but-otherwise-unhealthy webhook is still
+    # covered by the enabled/triggers/data check below.
+    _check_webhook_health(hass, entry, webhooks, target_webhook)
 
     for vehicle_id in runtime.coordinators:
         if await management.async_subscriptions_for_vehicle(vehicle_id):
@@ -322,6 +364,83 @@ async def async_subscribe_vehicles(
         await management.async_subscribe(
             webhook_id=target_webhook, user_id=user_id, vehicle_id=vehicle_id
         )
+
+
+def _seen_callback_uris(webhooks: list[dict]) -> str:
+    """The callback URIs actually configured on the application's webhooks.
+
+    Surfaced so a mismatch (for example the Smartcar Connect redirect saved
+    into the webhook's own callback URI field, which verifies nothing) is
+    visible without a trip to the dashboard.
+
+    Returns:
+        A comma separated list of the distinct callback URIs seen.
+    """
+    uris = {
+        str(uri)
+        for webhook in webhooks
+        if isinstance(attributes := webhook.get("attributes", {}), dict)
+        and (uri := attributes.get("callbackUri") or attributes.get("url"))
+    }
+
+    return ", ".join(sorted(uris))
+
+
+def _check_webhook_health(
+    hass: HomeAssistant,
+    entry: SmartcarConfigEntry,
+    webhooks: list[dict],
+    target_webhook: str,
+) -> None:
+    """Warn once when the webhook pointing here cannot actually collect data.
+
+    A webhook that is disabled, or has no triggers, or no data signals still
+    passes the "does a webhook exist for this URL" check above, and every
+    entity then stays unknown with nothing in the logs to explain it. This is
+    exactly the failure Sean hit: `isEnabled: false` with empty `triggers`
+    and `data`.
+    """
+    issue_id = f"webhook_unhealthy_{entry.entry_id}"
+    health = webhook_health(webhooks, target_webhook)
+
+    _LOGGER.debug(
+        "Smartcar webhook %s health: enabled=%s, triggers=%s, data=%s",
+        target_webhook,
+        health.is_enabled if health else None,
+        health.trigger_count if health else None,
+        health.data_count if health else None,
+    )
+
+    if health is None or health.is_healthy:
+        async_delete_issue(hass, DOMAIN, issue_id)
+        return
+
+    _LOGGER.warning(
+        "Smartcar webhook %s cannot collect data (enabled=%s, triggers=%s, "
+        "data=%s); entities will stay unknown until it is fixed in the "
+        "Smartcar dashboard",
+        health.webhook_id,
+        health.is_enabled,
+        health.trigger_count,
+        health.data_count,
+    )
+
+    async_create_issue(
+        hass,
+        DOMAIN,
+        issue_id,
+        is_fixable=False,
+        is_persistent=True,
+        severity=IssueSeverity.WARNING,
+        translation_key="webhook_unhealthy",
+        translation_placeholders={
+            "title": entry.title,
+            "webhook_id": health.webhook_id,
+            "is_enabled": str(health.is_enabled),
+            "trigger_count": str(health.trigger_count),
+            "data_count": str(health.data_count),
+        },
+    )
 
 
 async def async_load_capabilities(

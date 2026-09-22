@@ -18,6 +18,7 @@ schedule.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from http import HTTPStatus
 import logging
 from typing import Any
@@ -184,6 +185,62 @@ class ManagementApi:
             return False
 
         return True
+
+
+@dataclass(frozen=True)
+class WebhookHealth:
+    """What the webhook pointing at this instance is actually configured to do.
+
+    A webhook can exist, be verified and point at the right URL, and still
+    collect nothing: disabled, or missing triggers, or missing data signals
+    all mean the same thing to the vehicle owner, an entity that never gets a
+    value, with no error anywhere to explain why.
+    """
+
+    webhook_id: str
+    is_enabled: bool
+    trigger_count: int
+    data_count: int
+
+    @property
+    def is_healthy(self) -> bool:
+        """Whether this webhook can actually fill the signal store.
+
+        Returns:
+            True when the webhook is enabled with at least one trigger and
+            at least one data signal configured.
+        """
+        return self.is_enabled and self.trigger_count > 0 and self.data_count > 0
+
+
+def webhook_health(
+    webhooks: list[dict[str, Any]], webhook_id: str
+) -> WebhookHealth | None:
+    """Evaluate the webhook whose id matches this instance's target webhook.
+
+    Returns:
+        The webhook's health, or None if it is no longer in the list.
+    """
+    for webhook in webhooks:
+        if str(webhook.get("id")) != webhook_id:
+            continue
+
+        attributes = webhook.get("attributes", {})
+
+        if not isinstance(attributes, dict):
+            attributes = {}
+
+        triggers = attributes.get("triggers") or []
+        data = attributes.get("data") or []
+
+        return WebhookHealth(
+            webhook_id=webhook_id,
+            is_enabled=bool(attributes.get("isEnabled")),
+            trigger_count=len(triggers) if isinstance(triggers, list) else 0,
+            data_count=len(data) if isinstance(data, list) else 0,
+        )
+
+    return None
 
 
 def webhook_id_matching_url(

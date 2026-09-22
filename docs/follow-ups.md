@@ -175,3 +175,47 @@ fall on which side. Note also that the sentence above is optimistic about the
 create endpoint: `management.yaml` declares no `POST /webhooks`, only the
 subscription endpoints, so webhook creation is a dashboard-only step and this
 item cannot be closed by calling an API.
+
+**Both items now have a repair-issue fix (webhook health).** For item 10:
+`SmartcarVehicleCoordinator._update_empty_store_issue` raises an
+`empty_signal_store_<entry>_<vehicle>` issue the moment a poll's signal
+collection comes back empty, and clears it on the first poll or webhook
+delivery that carries a signal. Separately, `webhook_health`
+(`management.py`) evaluates the webhook `async_subscribe_vehicles` targets —
+disabled, or an empty `triggers` or `data` list, Sean's original case —
+and raises `webhook_unhealthy_<entry>`, clearing once the webhook is healthy.
+For item 11: when no webhook matches the callback URL at all,
+`async_subscribe_vehicles` now logs the URL Home Assistant expected alongside
+every `callbackUri` actually configured on the application and raises
+`no_matching_webhook_<entry>` naming both — exactly the log line item 11 above
+asked for. The Free-plan signal gating and the webhook-creation form are still
+not implemented.
+
+**Still open, from both items: verification status is not detectable.** The
+2026-09-22 finding that Sean's webhook matched, had triggers and data, and
+still delivered nothing because its callback URI was the Smartcar Connect
+OAuth redirect rather than Home Assistant's webhook endpoint is exactly what
+`no_matching_webhook` now catches, because a webhook pointed at the wrong URL
+never string-matches `webhook_id_matching_url` in the first place. What is
+still impossible to detect is a webhook whose callback URI *does* match, and
+whose triggers/data *are* populated, but that has never completed Smartcar's
+VERIFY handshake for some other reason. `management.yaml`'s webhook resource
+exposes `name`, `callbackUri`, `isEnabled`, `triggers`, `data`,
+`errorCallbackUri` and `autoSubscribe`, and nothing describing verification
+state or delivery history, so that variant cannot be told apart from a healthy
+webhook through the Management API alone.
+
+### 12. API version / credential mismatch has no hard guard
+
+`util.api_version_for_client_id` decides v2 vs v3 from the `client_` prefix on
+the client id alone, and the resolved version is already surfaced in
+`diagnostics.py` (the `"version"` key). What is still missing is a config-flow
+check that rejects an obviously mismatched pairing up front — for example an
+M2M `client_...` id whose token exchange behaves like the legacy
+authorization-code flow, or vice versa — with a clear error instead of the
+opaque 401 that `auth.smartcar.com` or `iam.smartcar.com` currently returns.
+Doing this cheaply would mean inspecting the token response shape (a v3 token
+carries no `refresh_token`) during `application_credentials.py`'s
+`_token_request` override and failing the flow immediately when it disagrees
+with the id-derived version, rather than only surfacing the mismatch in a
+later live audit. Not implemented; flagged here rather than guessed at.
