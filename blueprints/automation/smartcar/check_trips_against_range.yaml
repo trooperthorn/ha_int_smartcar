@@ -183,6 +183,7 @@ actions:
       overhead: !input overhead_percent
       auto_start_enabled: !input auto_start
       compute_script_entity: !input compute_script
+      battery_capacity_entity: !input battery_capacity
       range_km_value: >-
         {{ (states(range_entity) | float(0))
            if units_setting == 'km'

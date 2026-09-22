@@ -108,6 +108,12 @@ max: 10
 
 sequence:
   - variables:
+      origin_zone: !input origin_zone
+      provider: !input provider
+      overhead_percent: !input overhead_percent
+      range_km: !input range_km
+      soc_percent: !input soc_percent
+      current_limit_percent: !input current_limit_percent
       origin_lat: "{{ state_attr(origin_zone, 'latitude') }}"
       origin_lon: "{{ state_attr(origin_zone, 'longitude') }}"
   - choose:
