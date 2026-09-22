@@ -1,0 +1,81 @@
+blueprint:
+  name: Smartcar - charging finished or interrupted
+  description: >-
+    Notifies when charging stops, and says whether it stopped because it
+    finished or because it was interrupted below the charge limit.
+
+
+    Zero Smartcar API calls. This watches the charging switch and the charge
+    limit number, entities that are already populated by webhook or by
+    whatever polling profile is configured, and reacts to their state
+    changes rather than asking Smartcar anything new. Smartcar data can be
+    minutes to a day old between updates, so a very short charging session
+    may be missed entirely if it starts and stops between refreshes; that is
+    a limitation of the data source, not of this automation.
+  domain: automation
+  homeassistant:
+    min_version: 2026.9.0
+  input:
+    charging_switch:
+      name: Charging switch
+      selector:
+        entity:
+          filter:
+            - domain: switch
+              integration: smartcar
+    battery:
+      name: Battery level sensor
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: battery
+    range_sensor:
+      name: Range sensor
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: distance
+    charge_limit:
+      name: Charge limit number
+      description: Used to tell "finished" apart from "interrupted".
+      selector:
+        entity:
+          filter:
+            - domain: number
+              integration: smartcar
+    notify_target:
+      name: Notify action
+      default: notify.persistent_notification
+      selector:
+        text: {}
+
+mode: single
+max_exceptions: 0
+
+triggers:
+  - trigger: state
+    entity_id: !input charging_switch
+    from: "on"
+    to: "off"
+
+conditions: []
+
+actions:
+  - variables:
+      battery_entity: !input battery
+      range_entity: !input range_sensor
+      limit_entity: !input charge_limit
+      battery_value: "{{ states(battery_entity) | float(0) }}"
+      limit_value: "{{ states(limit_entity) | float(100) }}"
+      finished: "{{ battery_value >= (limit_value - 1) }}"
+  - action: !input notify_target
+    data:
+      title: >-
+        {{ 'Charging finished' if finished else 'Charging stopped early' }}
+      message: >-
+        Battery is at {{ battery_value | round(0) }}% with
+        {{ states(range_entity) }} {{ state_attr(range_entity, 'unit_of_measurement') }}
+        of range.
+        {{ '' if finished else 'This is below the ' ~ (limit_value | round(0)) ~ '% charge limit, so charging was interrupted rather than completed.' }}

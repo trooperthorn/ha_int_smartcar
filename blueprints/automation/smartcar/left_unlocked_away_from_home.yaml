@@ -1,0 +1,138 @@
+blueprint:
+  name: Smartcar - left unlocked away from home
+  description: >-
+    Notifies when the car is away from home and unlocked for a while, with a
+    Lock action on the notification.
+
+
+    Reading the lock state costs nothing; it is the entity Home Assistant
+    already has. Locking it is one Smartcar command
+    (`smartcar.lock_doors`), billed from the same 500 calls per vehicle per
+    month allowance as everything else. Because a command can matter more
+    than a reading, this respects an API reserve: if the API calls remaining
+    sensor is below the reserve you set, it still notifies but skips the Lock
+    action and says the reserve is protecting it, rather than silently
+    failing when you tap it.
+  domain: automation
+  homeassistant:
+    min_version: 2026.9.0
+  input:
+    vehicle_tracker:
+      name: Vehicle location
+      selector:
+        entity:
+          filter:
+            - domain: device_tracker
+              integration: smartcar
+    door_lock:
+      name: Door lock
+      selector:
+        entity:
+          filter:
+            - domain: lock
+              integration: smartcar
+    config_entry:
+      name: Smartcar account
+      selector:
+        config_entry:
+          integration: smartcar
+    api_remaining:
+      name: API calls remaining sensor
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              integration: smartcar
+    reserve:
+      name: API call reserve
+      description: >-
+        Below this many calls remaining, the Lock action is left off the
+        notification instead of being offered and then failing.
+      default: 50
+      selector:
+        number:
+          min: 0
+          max: 400
+          step: 5
+    settle:
+      name: Unlocked for
+      default:
+        minutes: 15
+      selector:
+        duration: {}
+    notify_target:
+      name: Notify action
+      default: notify.persistent_notification
+      selector:
+        text: {}
+
+mode: queued
+max: 5
+max_exceptions: 0
+
+triggers:
+  - trigger: state
+    id: unlocked_away
+    entity_id: !input door_lock
+    to: unlocked
+    for: !input settle
+  - trigger: event
+    id: lock_action
+    event_type: mobile_app_notification_action
+    event_data:
+      action: SMARTCAR_LOCK_DOORS
+
+conditions: []
+
+actions:
+  - variables:
+      remaining_entity: !input api_remaining
+      reserve_value: !input reserve
+      config_entry_id: !input config_entry
+      has_budget: >-
+        {{ (states(remaining_entity) | int(0)) > reserve_value }}
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: lock_action
+        sequence:
+          - action: smartcar.lock_doors
+            data:
+              config_entry: !input config_entry
+            continue_on_error: true
+      - conditions:
+          - condition: trigger
+            id: unlocked_away
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: !input vehicle_tracker
+                state: home
+          - condition: template
+            value_template: "{{ has_budget }}"
+        sequence:
+          - action: !input notify_target
+            data:
+              title: Car is unlocked away from home
+              message: The car has been away and unlocked for a while.
+              data:
+                actions:
+                  - action: SMARTCAR_LOCK_DOORS
+                    title: Lock
+      - conditions:
+          - condition: trigger
+            id: unlocked_away
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: !input vehicle_tracker
+                state: home
+        sequence:
+          - action: !input notify_target
+            data:
+              title: Car is unlocked away from home
+              message: >-
+                The car has been away and unlocked for a while. The lock
+                action was left off this notification because the API call
+                reserve ({{ reserve_value }}) is protecting the remaining
+                allowance.

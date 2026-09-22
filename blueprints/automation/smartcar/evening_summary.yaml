@@ -1,0 +1,219 @@
+blueprint:
+  name: Smartcar - evening summary
+  description: >-
+    One notification at a chosen time: battery percent, range, plugged and
+    charging state, and whether tomorrow's calendar trips fit on the current
+    range.
+
+
+    API cost: zero Smartcar reads. It reuses the "Smartcar - compute round
+    trip need" script blueprint for the trip math, the same one the trip
+    check and on-demand charging blueprints use, so all three agree on the
+    numbers. Smartcar data can be minutes to a day old; call
+    `smartcar.refresh_vehicle` (one billed call) beforehand if you want the
+    summary based on a guaranteed-fresh reading rather than whatever last
+    arrived.
+  domain: automation
+  homeassistant:
+    min_version: 2026.9.0
+  input:
+    battery:
+      name: Battery level sensor
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: battery
+    range_sensor:
+      name: Range sensor
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: distance
+    plug_status:
+      name: Plug status
+      selector:
+        entity:
+          filter:
+            - domain: binary_sensor
+              device_class: plug
+    charging_switch:
+      name: Charging switch
+      selector:
+        entity:
+          filter:
+            - domain: switch
+              integration: smartcar
+    charge_limit:
+      name: Charge limit number
+      selector:
+        entity:
+          filter:
+            - domain: number
+              integration: smartcar
+    calendar:
+      name: Calendar
+      default: ""
+      selector:
+        entity:
+          filter:
+            - domain: calendar
+    home_zone:
+      name: Home zone
+      default: zone.home
+      selector:
+        entity:
+          filter:
+            - domain: zone
+    provider:
+      name: Travel-distance provider
+      selector:
+        select:
+          options:
+            - waze_travel_time
+            - google_travel_time
+    waze_region:
+      name: Waze region
+      default: us
+      selector:
+        select:
+          options:
+            - us
+            - na
+            - eu
+            - il
+            - au
+    google_config_entry:
+      name: Google Travel Time account
+      default: ""
+      selector:
+        config_entry:
+          integration: google_travel_time
+    units:
+      name: Range sensor units
+      default: km
+      selector:
+        select:
+          options:
+            - km
+            - mi
+    overhead_percent:
+      name: Overhead percent
+      default: 20
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+    lookahead:
+      name: Lookahead
+      default:
+        hours: 24
+      selector:
+        duration: {}
+    summary_time:
+      name: Summary time
+      default: "21:00:00"
+      selector:
+        time: {}
+    notify_target:
+      name: Notify action
+      default: notify.persistent_notification
+      selector:
+        text: {}
+    compute_script:
+      name: "Compute round trip need script"
+      description: >-
+        The entity_id of the "Smartcar - compute round trip need" script
+        created from that blueprint.
+      selector:
+        entity:
+          filter:
+            - domain: script
+
+mode: single
+max_exceptions: 0
+
+triggers:
+  - trigger: time
+    at: !input summary_time
+
+conditions: []
+
+actions:
+  - variables:
+      calendar_entity: !input calendar
+      range_entity: !input range_sensor
+      battery_entity: !input battery
+      charge_limit_entity: !input charge_limit
+      plug_entity: !input plug_status
+      charging_entity: !input charging_switch
+      units_setting: !input units
+      overhead: !input overhead_percent
+      range_km_value: >-
+        {{ (states(range_entity) | float(0))
+           if units_setting == 'km'
+           else (states(range_entity) | float(0)) * 1.60934 }}
+      battery_value: "{{ states(battery_entity) | float(0) }}"
+      limit_value: "{{ states(charge_limit_entity) | float(100) }}"
+  - if:
+      - condition: template
+        value_template: "{{ calendar_entity not in ['', none] }}"
+    then:
+      - action: calendar.get_events
+        target:
+          entity_id: !input calendar
+        data:
+          duration: !input lookahead
+        response_variable: agenda
+      - variables:
+          located_events: >-
+            {{ (agenda[calendar_entity].events | default([]))
+               | selectattr('location', 'defined')
+               | rejectattr('location', 'in', [none, ''])
+               | list }}
+      - repeat:
+          for_each: "{{ located_events }}"
+          sequence:
+            - action: !input compute_script
+              data:
+                destination: "{{ repeat.item.location }}"
+                origin_zone: !input home_zone
+                provider: !input provider
+                waze_region: !input waze_region
+                google_config_entry: !input google_config_entry
+                overhead_percent: "{{ overhead }}"
+                range_km: "{{ range_km_value }}"
+                soc_percent: "{{ battery_value }}"
+                current_limit_percent: "{{ limit_value }}"
+              response_variable: trip_need
+            - variables:
+                trip_results: >-
+                  {{ (trip_results | default([]))
+                     + [ { 'summary': repeat.item.summary,
+                           'round_trip_km': trip_need.round_trip_km,
+                           'fits': trip_need.fits } ] }}
+    else:
+      - variables:
+          located_events: []
+  - variables:
+      trips_line: >-
+        {% set results = trip_results | default([]) -%}
+        {% if results | count == 0 -%}
+        No trips with a location on the calendar in the lookahead window.
+        {%- else -%}
+        {% for t in results -%}
+        {{ t.summary }}: {{ t.round_trip_km }} km ({{ 'fits' if t.fits else 'does not fit' }}){{ '; ' if not loop.last else '' }}
+        {%- endfor -%}
+        {%- endif %}
+  - action: !input notify_target
+    data:
+      title: Evening summary
+      message: >-
+        Battery {{ battery_value | round(0) }}%, range
+        {{ range_km_value | round(0) }} km.
+        {{ 'Plugged in' if is_state(plug_entity, 'on') else 'Not plugged in' }},
+        {{ 'charging' if is_state(charging_entity, 'on') else 'not charging' }}.
+        {{ trips_line }}

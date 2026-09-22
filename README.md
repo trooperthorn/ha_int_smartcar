@@ -898,6 +898,17 @@ For instance:
 - `homeassistant.update_entity` on [`sensor.<make_model>_battery`](#sensormake_model_battery) and [`sensor.<make_model>_range`](#sensormake_model_range) will make a single batch request that counts as **one** API call because the entities are related.
 - `homeassistant.update_entity` on [`sensor.<make_model>_battery`](#sensormake_model_battery) and [`sensor.<make_model>_odometer`](#sensormake_model_odometer) will make a single batch request that counts as **two** API calls since they are unrelated.
 
+## Blueprints
+
+This repository ships ready-made automation and script blueprints under
+[`blueprints/`](blueprints), for things like checking tomorrow's calendar
+trips against your current range, a plug-in reminder, charging from solar
+surplus, and warning before the monthly API allowance runs out.
+
+See [docs/blueprints.md](docs/blueprints.md) for the full catalogue: every
+blueprint's inputs, what it costs in Smartcar API calls, and a My Home
+Assistant import badge for each.
+
 ## Upgrading from Legacy `v2` API to `v3`
 
 For now, you can continue to use the `v2` API as long as it is supported by Smartcar, but [Smartcar documents the deprecation thusly](https://smartcar.com/docs/getting-started/how-to/m2m/migration-guide#overview):

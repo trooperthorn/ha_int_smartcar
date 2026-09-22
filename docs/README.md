@@ -22,3 +22,6 @@ troubleshooting live in the repository [README](../README.md) and
   the legacy v2.0, what each endpoint returns, which ones this integration
   calls, and the gaps between the two. Every claim is labelled with how it was
   verified.
+- [blueprints.md](blueprints.md): every automation and script blueprint this
+  repository ships, its inputs, its Smartcar API cost, and a My Home Assistant
+  import badge for each. See also [../blueprints](../blueprints).

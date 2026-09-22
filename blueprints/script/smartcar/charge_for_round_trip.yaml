@@ -1,0 +1,135 @@
+blueprint:
+  name: Smartcar - charge for a round trip
+  description: >-
+    Given a destination, works out the charge needed for the round trip and
+    starts charging to that limit. Callable from any automation or dashboard
+    button, or from a notification action.
+
+
+    API cost: zero Smartcar reads (the "compute round trip need" script it
+    calls uses entities and a travel-distance provider, not Smartcar), plus
+    up to two Smartcar commands: `switch.turn_on` on the charging switch and
+    a `number.set_value` on the charge limit, and only when a command is
+    actually needed to change something. Smartcar data can be minutes to a
+    day old; if the battery or range look stale, call
+    `smartcar.refresh_vehicle` (one billed call) first.
+  domain: script
+  homeassistant:
+    min_version: 2026.9.0
+  input:
+    destination:
+      name: Destination
+      selector:
+        text: {}
+    overhead_percent:
+      name: Overhead percent
+      default: 20
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+    origin_zone:
+      name: Starting point zone
+      default: zone.home
+      selector:
+        entity:
+          filter:
+            - domain: zone
+    provider:
+      name: Travel-distance provider
+      selector:
+        select:
+          options:
+            - waze_travel_time
+            - google_travel_time
+    waze_region:
+      name: Waze region
+      default: us
+      selector:
+        select:
+          options:
+            - us
+            - na
+            - eu
+            - il
+            - au
+    google_config_entry:
+      name: Google Travel Time account
+      default: ""
+      selector:
+        config_entry:
+          integration: google_travel_time
+    range_sensor:
+      name: Range sensor
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: distance
+    battery:
+      name: Battery level sensor
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: battery
+    charging_switch:
+      name: Charging switch
+      selector:
+        entity:
+          filter:
+            - domain: switch
+              integration: smartcar
+    charge_limit:
+      name: Charge limit number
+      selector:
+        entity:
+          filter:
+            - domain: number
+              integration: smartcar
+    compute_script:
+      name: "Compute round trip need script"
+      description: >-
+        The entity_id of the "Smartcar - compute round trip need" script
+        created from that blueprint.
+      selector:
+        entity:
+          filter:
+            - domain: script
+
+mode: queued
+max: 3
+
+sequence:
+  - variables:
+      range_sensor: !input range_sensor
+      battery: !input battery
+      charge_limit: !input charge_limit
+  - action: !input compute_script
+    data:
+      destination: !input destination
+      origin_zone: !input origin_zone
+      provider: !input provider
+      waze_region: !input waze_region
+      google_config_entry: !input google_config_entry
+      overhead_percent: !input overhead_percent
+      range_km: "{{ states(range_sensor) | float(0) }}"
+      soc_percent: "{{ states(battery) | float(0) }}"
+      current_limit_percent: "{{ states(charge_limit) | float(0) }}"
+    response_variable: need
+  - if:
+      - condition: template
+        value_template: "{{ not need.fits }}"
+    then:
+      - action: number.set_value
+        target:
+          entity_id: !input charge_limit
+        data:
+          value: "{{ need.needed_percent }}"
+        continue_on_error: true
+      - action: switch.turn_on
+        target:
+          entity_id: !input charging_switch
+        continue_on_error: true

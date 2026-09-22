@@ -1,0 +1,261 @@
+blueprint:
+  name: Smartcar - charge from solar surplus
+  description: >-
+    Watches a solar export or grid power sensor and either reminds you to
+    plug in and start charging when there is surplus to use, or (in "auto"
+    mode) starts and stops the charging switch itself while the car is home
+    and plugged in.
+
+
+    API cost: zero Smartcar reads, the surplus and battery values are read
+    from entities that are already populated. One Smartcar command per start
+    and per stop in "auto" mode, capped at a configurable number of times a
+    day so a cloudy, flickering afternoon cannot spend the monthly allowance
+    on repeated on/off commands. "Remind" mode sends a notification instead
+    and sends no commands at all.
+
+
+    Grid power sensors disagree on sign convention: some report positive
+    while exporting, others report positive while importing (negative while
+    exporting). Pick the one that matches your sensor so "surplus" is
+    computed the right way round.
+  domain: automation
+  homeassistant:
+    min_version: 2026.9.0
+  input:
+    power_sensor:
+      name: Solar export or grid power sensor
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: power
+    sign_convention:
+      name: Sign convention
+      description: >-
+        positive_is_export: the sensor reads positive while sending power to
+        the grid (a dedicated solar export sensor). negative_is_export: the
+        sensor reads positive while importing and negative while exporting
+        (a whole-home grid power sensor).
+      default: positive_is_export
+      selector:
+        select:
+          options:
+            - positive_is_export
+            - negative_is_export
+    surplus_threshold:
+      name: Surplus threshold
+      default: 1500
+      selector:
+        number:
+          min: 0
+          max: 20000
+          step: 100
+          unit_of_measurement: W
+    stop_threshold:
+      name: Stop threshold
+      description: Auto mode turns charging off when surplus drops below this.
+      default: 500
+      selector:
+        number:
+          min: 0
+          max: 20000
+          step: 100
+          unit_of_measurement: W
+    start_duration:
+      name: Surplus must persist for
+      default:
+        minutes: 10
+      selector:
+        duration: {}
+    stop_duration:
+      name: Shortfall must persist for
+      default:
+        minutes: 10
+      selector:
+        duration: {}
+    battery:
+      name: Battery level sensor
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: battery
+    charge_limit:
+      name: Charge limit number
+      description: Compared against its own current value, not a fixed target.
+      selector:
+        entity:
+          filter:
+            - domain: number
+              integration: smartcar
+    plug_status:
+      name: Plug status
+      selector:
+        entity:
+          filter:
+            - domain: binary_sensor
+              device_class: plug
+    vehicle_tracker:
+      name: Vehicle location
+      selector:
+        entity:
+          filter:
+            - domain: device_tracker
+              integration: smartcar
+    charging_switch:
+      name: Charging switch
+      selector:
+        entity:
+          filter:
+            - domain: switch
+              integration: smartcar
+    mode:
+      name: Mode
+      default: remind
+      selector:
+        select:
+          options:
+            - remind
+            - auto
+    command_counter:
+      name: Daily command counter
+      description: >-
+        Optional. A counter helper used to cap commands per day in auto
+        mode. Add a separate automation that resets it at midnight; this
+        blueprint only reads and increments it. Leave blank to not cap.
+      default: ""
+      selector:
+        entity:
+          filter:
+            - domain: counter
+    max_commands_per_day:
+      name: Maximum commands per day
+      default: 4
+      selector:
+        number:
+          min: 1
+          max: 50
+          step: 1
+    notify_target:
+      name: Notify action
+      default: notify.persistent_notification
+      selector:
+        text: {}
+
+mode: queued
+max: 5
+max_exceptions: 0
+
+triggers:
+  - trigger: numeric_state
+    id: surplus_started
+    entity_id: !input power_sensor
+    above: !input surplus_threshold
+    for: !input start_duration
+  - trigger: numeric_state
+    id: surplus_stopped
+    entity_id: !input power_sensor
+    below: !input stop_threshold
+    for: !input stop_duration
+
+conditions: []
+
+actions:
+  - variables:
+      sign: !input sign_convention
+      power_entity: !input power_sensor
+      battery_entity: !input battery
+      limit_entity: !input charge_limit
+      plug_entity: !input plug_status
+      tracker_entity: !input vehicle_tracker
+      charging_entity: !input charging_switch
+      counter_entity: !input command_counter
+      max_commands: !input max_commands_per_day
+      mode_setting: !input mode
+      raw_power: "{{ states(power_entity) | float(0) }}"
+      surplus_w: "{{ raw_power if sign == 'positive_is_export' else raw_power * -1 }}"
+      battery_value: "{{ states(battery_entity) | float(0) }}"
+      limit_value: "{{ states(limit_entity) | float(100) }}"
+      at_home: "{{ is_state(tracker_entity, 'home') }}"
+      below_limit: "{{ battery_value < limit_value }}"
+      not_charging: "{{ not is_state(charging_entity, 'on') }}"
+      budget_ok: >-
+        {{ counter_entity in ['', none]
+           or (states(counter_entity) | int(0)) < max_commands }}
+  - choose:
+      # remind mode: surplus arrived, car home, below limit, not charging
+      - conditions:
+          - condition: trigger
+            id: surplus_started
+          - condition: template
+            value_template: "{{ mode_setting == 'remind' and at_home and below_limit and not_charging }}"
+        sequence:
+          - if:
+              - condition: state
+                entity_id: !input plug_status
+                state: "off"
+            then:
+              - action: !input notify_target
+                data:
+                  title: Solar surplus available, car not plugged in
+                  message: >-
+                    Solar surplus of {{ surplus_w | round(0) }} W, battery at
+                    {{ battery_value | round(0) }} percent, below your
+                    {{ limit_value | round(0) }} percent limit. Plug in to use it.
+            else:
+              - action: !input notify_target
+                data:
+                  title: Solar surplus available
+                  message: >-
+                    Solar surplus of {{ surplus_w | round(0) }} W, battery at
+                    {{ battery_value | round(0) }} percent, below your
+                    {{ limit_value | round(0) }} percent limit.
+                  data:
+                    actions:
+                      - action: SMARTCAR_START_CHARGING
+                        title: Start charging
+      # auto mode start: surplus arrived, home, plugged in, below limit, not charging, budget ok
+      - conditions:
+          - condition: trigger
+            id: surplus_started
+          - condition: template
+            value_template: >-
+              {{ mode_setting == 'auto' and at_home and below_limit
+                 and not_charging and budget_ok }}
+          - condition: state
+            entity_id: !input plug_status
+            state: "on"
+        sequence:
+          - action: switch.turn_on
+            target:
+              entity_id: !input charging_switch
+            continue_on_error: true
+          - if:
+              - condition: template
+                value_template: "{{ counter_entity not in ['', none] }}"
+            then:
+              - action: counter.increment
+                target:
+                  entity_id: !input command_counter
+      # auto mode stop: surplus dropped, currently charging, budget ok
+      - conditions:
+          - condition: trigger
+            id: surplus_stopped
+          - condition: template
+            value_template: "{{ mode_setting == 'auto' and budget_ok }}"
+          - condition: state
+            entity_id: !input charging_switch
+            state: "on"
+        sequence:
+          - action: switch.turn_off
+            target:
+              entity_id: !input charging_switch
+            continue_on_error: true
+          - if:
+              - condition: template
+                value_template: "{{ counter_entity not in ['', none] }}"
+            then:
+              - action: counter.increment
+                target:
+                  entity_id: !input command_counter
