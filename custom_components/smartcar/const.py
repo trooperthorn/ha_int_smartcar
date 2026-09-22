@@ -143,6 +143,7 @@ class EntityDescriptionKey(StrEnum):
     LAST_WEBHOOK_RECEIVED = auto()
     API_CALLS_USED = auto()
     API_CALLS_REMAINING = auto()
+    NEXT_SCHEDULED_POLL = auto()
     # Diagnostics (requires read_diagnostics)
     DIAG_ABS = auto()
     DIAG_MIL = auto()

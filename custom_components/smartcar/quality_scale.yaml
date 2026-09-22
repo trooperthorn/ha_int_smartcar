@@ -153,8 +153,14 @@ rules:
   entity-disabled-by-default:
     status: done
     comment: |
-      Rarely useful entities are disabled by default, and entities the vehicle
-      is incapable of are not created at all.
+      Decided per vehicle rather than from a static list. An entity is enabled
+      when this vehicle's signal store answered for it, with a value or with a
+      VEHICLE_STATE error (`charge-chargerate` while unplugged is a reading,
+      not a defect), and disabled when the signal is absent. A COMPATIBILITY
+      error or a scope that was not granted means no entity is created at all.
+      A signal that starts answering later switches its own entity on, unless
+      the user was the one who switched it off. The static list remains the
+      answer for a v2 entry and for a capability read that did not happen.
   entity-translations:
     status: todo
     comment: |
