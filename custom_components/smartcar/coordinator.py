@@ -23,7 +23,7 @@ from homeassistant.helpers.update_coordinator import (
 )
 from homeassistant.util import dt as dt_util
 
-from . import util
+from . import events, util
 from .auth import AbstractAuth
 from .budget import DEFAULT_MONTHLY_BUDGET, DEFAULT_RESERVE, ApiBudget
 from .cache import SignalCache
@@ -628,6 +628,21 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
             name=f"{DOMAIN}_{vehicle_id}",
             update_interval=self._resolve_update_interval(),
         )
+
+    @property
+    def identifier_key(self) -> str:
+        """The device registry identifier used for this vehicle's device.
+
+        Mirrors `SmartcarEntity.__init__`: a v2 entry with a known VIN is
+        keyed by VIN, everything else by the Smartcar vehicle id.
+
+        Returns:
+            The `(DOMAIN, <this>)` identifier's second element.
+        """
+        if self.version == "v2" and self.vin:
+            return self.vin
+
+        return self.vehicle_id
 
     def _schedule_refresh(self) -> None:
         """Record when the next scheduled poll is due.
@@ -1330,7 +1345,13 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
         Called the moment any data is seen, whether from a poll or a webhook
         delivery, so the issue never outlives the problem it describes.
         """
-        ir.async_delete_issue(self.hass, DOMAIN, self._empty_store_issue_id())
+        events.delete_issue(
+            self.hass,
+            issue_id=self._empty_store_issue_id(),
+            entry_id=self.entry.entry_id,
+            translation_key="empty_signal_store",
+            severity=ir.IssueSeverity.WARNING,
+        )
 
     def _update_empty_store_issue(self, *, has_signals: bool) -> None:
         """Track whether this vehicle's Smartcar signal store has ever filled.
@@ -1361,10 +1382,10 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
         model = details.get("model")
         vehicle_name = f"{make} {model}" if make and model else self.vehicle_id
 
-        ir.async_create_issue(
+        events.create_issue(
             self.hass,
-            DOMAIN,
-            self._empty_store_issue_id(),
+            issue_id=self._empty_store_issue_id(),
+            entry_id=self.entry.entry_id,
             is_fixable=False,
             is_persistent=True,
             severity=ir.IssueSeverity.WARNING,

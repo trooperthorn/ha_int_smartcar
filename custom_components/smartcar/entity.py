@@ -3,6 +3,7 @@ import datetime as dt
 from enum import Enum
 from http import HTTPStatus
 import logging
+import time
 from typing import Any, Literal, Self, cast
 
 from aiohttp import ClientError, ClientResponse, ClientResponseError
@@ -17,7 +18,7 @@ from homeassistant.helpers.restore_state import (
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from . import const as smartcar_const, util
+from . import const as smartcar_const, events, util
 from .const import DOMAIN, EntityDescriptionKey
 from .coordinator import DATAPOINT_ENTITY_KEY_MAP, SmartcarVehicleCoordinator
 from .types import SmartcarAPIError
@@ -200,12 +201,17 @@ class SmartcarEntity[ValueT, RawValueT](
         subpath: str,
         payload: dict[str, Any] | None,
         *,
+        event_command: str,
         method: str = "post",
         **kwargs: object,  # noqa: ARG002
     ) -> None:
         try:
             success = await async_send_command(
-                self.coordinator, subpath, payload, method=method
+                self.coordinator,
+                subpath,
+                payload,
+                command=event_command,
+                method=method,
             )
         except SmartcarAPIError as err:
             raise HomeAssistantError(
@@ -351,6 +357,8 @@ async def _async_raise_for_streamed_error(
 
     status = error.get("status") or resp.status
     detail = error.get("detail") or error.get("title") or code
+    resolution = error.get("resolution")
+    resolution_type = resolution.get("type") if isinstance(resolution, dict) else None
 
     _LOGGER.warning(
         "Command %s for %s (VIN: %s) returned HTTP %s but reported %s/%s: %s",
@@ -363,7 +371,14 @@ async def _async_raise_for_streamed_error(
         detail,
     )
 
-    raise SmartcarAPIError(int(status), f"{code}: {detail}")
+    raise SmartcarAPIError(
+        int(status),
+        f"{code}: {detail}",
+        error_type=str(error_type),
+        error_code=str(code),
+        resolution_type=resolution_type,
+        suggested_user_message=str(detail),
+    )
 
 
 async def async_send_command(
@@ -371,8 +386,24 @@ async def async_send_command(
     subpath: str,
     payload: dict[str, Any] | None,
     *,
+    command: str,
     method: str = "post",
 ) -> bool:
+    """Send a command and report the outcome on `smartcar_command_result`.
+
+    The event fires exactly once per call, from a `finally` block, whatever
+    outcome the `try` below settles on: a clean success, an HTTP-level
+    failure, or a `202` whose streamed body reports a failure the status line
+    did not.
+
+    Raises:
+        SmartcarAPIError: If the status or the streamed body reports one of
+            the codes this integration treats as retryable/reportable.
+        ClientResponseError: For any other HTTP failure status.
+
+    Returns:
+        True if the command succeeded.
+    """
     _LOGGER.info(
         "Sending %s request for %s (VIN: %s)",
         subpath,
@@ -381,6 +412,12 @@ async def async_send_command(
     )
     success = False
     version = coordinator.auth.version
+    http_status: int | None = None
+    error_type: str | None = None
+    error_code: str | None = None
+    resolution_type: str | None = None
+    suggested_user_message: str | None = None
+    started_at = time.monotonic()
 
     if version == "v3":
         subpath = f"/commands{subpath}"
@@ -397,6 +434,7 @@ async def async_send_command(
             context=f"Command {subpath} for {coordinator.vehicle_id} (VIN : {coordinator.vin}",
         )
         resp.raise_for_status()
+        http_status = resp.status
 
         # commands are billed from the same per-vehicle monthly allowance as
         # reads, so they are counted whatever the outcome: Smartcar charges for
@@ -405,7 +443,19 @@ async def async_send_command(
 
         await _async_raise_for_streamed_error(resp, subpath, coordinator)
         success = True
+    except SmartcarAPIError as err:
+        http_status = err.code
+        error_type = err.error_type
+        error_code = err.error_code
+        resolution_type = err.resolution_type
+        suggested_user_message = err.suggested_user_message
+        raise
     except ClientResponseError as err:
+        http_status = err.status
+        error_type = "http_error"
+        error_code = str(err.status)
+        suggested_user_message = err.message
+
         if err.status == HTTPStatus.UNAUTHORIZED:
             _LOGGER.warning(
                 "Auth error %s sending %s request for %s (VIN: %s)",
@@ -424,8 +474,30 @@ async def async_send_command(
             ERROR_STATUS_UPSTREAM,
             ERROR_STATUS_GATEWAY_TIMEOUT,
         }:
-            raise SmartcarAPIError(err.status, err.message) from err
+            raise SmartcarAPIError(
+                err.status,
+                err.message,
+                error_type=error_type,
+                error_code=error_code,
+                suggested_user_message=err.message,
+            ) from err
         else:
             raise
+    finally:
+        events.fire_command_result(
+            coordinator.hass,
+            entry_id=coordinator.entry.entry_id,
+            vehicle_id=coordinator.vehicle_id,
+            vin=coordinator.vin,
+            identifier_key=coordinator.identifier_key,
+            command=command,
+            success=success,
+            took_ms=int((time.monotonic() - started_at) * 1000),
+            http_status=http_status,
+            error_type=error_type,
+            error_code=error_code,
+            resolution_type=resolution_type,
+            suggested_user_message=suggested_user_message,
+        )
 
     return success

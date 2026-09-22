@@ -1,0 +1,218 @@
+blueprint:
+  name: Smartcar - command and issue feedback
+  description: >-
+    Closes the loop on Smartcar commands and problems: a notification the
+    moment a lock, unlock, charge start/stop, or charge limit command
+    succeeds or fails, and a notification when this integration raises or
+    clears one of its own repair issues (an unhealthy webhook, no matching
+    webhook, or an empty signal store).
+
+
+    Command and issue notifications each use their own tag, so a later
+    success replaces an earlier failure instead of stacking, and a cleared
+    issue removes the notification the raised issue posted.
+
+
+    Sends no API calls of its own: this only listens for the
+    `smartcar_command_result`, `smartcar_webhook_received`, and
+    `smartcar_issue_raised`/`smartcar_issue_cleared` events this integration
+    already fires.
+  domain: automation
+  homeassistant:
+    min_version: 2026.9.0
+  input:
+    vehicle_device:
+      name: Vehicle device
+      description: The Smartcar vehicle device this automation watches.
+      selector:
+        device:
+          filter:
+            - integration: smartcar
+    config_entry:
+      name: Smartcar account
+      selector:
+        config_entry:
+          integration: smartcar
+    notify_devices:
+      name: Phones to notify
+      description: >-
+        One or more mobile app devices. Each is notified through its own
+        `notify.mobile_app_<device name>` action, so the household is not
+        limited to a single phone.
+      selector:
+        device:
+          filter:
+            - integration: mobile_app
+          multiple: true
+    notification_channel:
+      name: Notification channel
+      default: Smartcar
+      selector:
+        text: {}
+    notification_importance:
+      name: Notification importance for a failed command or a raised issue
+      default: high
+      selector:
+        select:
+          options:
+            - min
+            - low
+            - default
+            - high
+            - max
+    notification_icon:
+      name: Notification icon
+      default: "mdi:car-connected"
+      selector:
+        text: {}
+    issue_click_action:
+      name: Issue click action
+      description: Where tapping a repair issue notification opens.
+      default: /config/repairs
+      selector:
+        text: {}
+
+mode: queued
+max: 10
+max_exceptions: 0
+
+triggers:
+  - trigger: event
+    id: command_result
+    event_type: smartcar_command_result
+  - trigger: event
+    id: issue_raised
+    event_type: smartcar_issue_raised
+  - trigger: event
+    id: issue_cleared
+    event_type: smartcar_issue_cleared
+
+conditions:
+  - condition: template
+    value_template: >-
+      {{ trigger.id != 'command_result' or
+         device_id(trigger.event.data.device_id) == (vehicle_device | string) }}
+  - condition: template
+    value_template: >-
+      {{ trigger.id in ['issue_raised', 'issue_cleared'] or
+         trigger.event.data.entry_id == config_entry or
+         (trigger.id == 'command_result' and
+          trigger.event.data.entry_id == config_entry) }}
+
+variables:
+  vehicle_device: !input vehicle_device
+  config_entry: !input config_entry
+  notify_actions: >-
+    {{ (notify_devices | default([]))
+       | map('device_attr', 'name')
+       | map('slugify')
+       | map('regex_replace', '^', 'notify.mobile_app_')
+       | list }}
+  notify_devices: !input notify_devices
+  command_titles:
+    lock: Doors locked
+    unlock: Doors unlocked
+    charge_start: Charging started
+    charge_stop: Charging stopped
+    set_charge_limit: Charge limit set
+    climate_start: Climate started
+    climate_stop: Climate stopped
+  command_tags:
+    lock: smartcar_pending_lock
+    unlock: smartcar_pending_lock
+    charge_start: smartcar_pending_charge
+    charge_stop: smartcar_pending_charge
+    set_charge_limit: smartcar_pending_charge_limit
+    climate_start: smartcar_pending_climate
+    climate_stop: smartcar_pending_climate
+
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: command_result
+          - condition: template
+            value_template: "{{ trigger.event.data.success }}"
+        sequence:
+          - repeat:
+              for_each: "{{ notify_actions }}"
+              sequence:
+                - action: "{{ repeat.item }}"
+                  data:
+                    title: >-
+                      {{ command_titles.get(trigger.event.data.command,
+                         trigger.event.data.command ~ ' succeeded') }}
+                    message: Command completed successfully.
+                    data:
+                      tag: "smartcar_cmd_{{ trigger.event.data.command }}"
+                      channel: !input notification_channel
+                      importance: default
+                      notification_icon: !input notification_icon
+                - action: "{{ repeat.item }}"
+                  data:
+                    message: clear_notification
+                    data:
+                      tag: >-
+                        {{ command_tags.get(trigger.event.data.command,
+                           'smartcar_pending_' ~ trigger.event.data.command) }}
+      - conditions:
+          - condition: trigger
+            id: command_result
+          - condition: template
+            value_template: "{{ not trigger.event.data.success }}"
+        sequence:
+          - repeat:
+              for_each: "{{ notify_actions }}"
+              sequence:
+                - action: "{{ repeat.item }}"
+                  data:
+                    title: >-
+                      {{ trigger.event.data.command }} failed:
+                      {{ trigger.event.data.suggested_user_message
+                         or trigger.event.data.error_code
+                         or 'unknown error' }}
+                    message: >-
+                      {{ trigger.event.data.suggested_user_message
+                         or trigger.event.data.error_code
+                         or 'The command did not complete.' }}
+                    data:
+                      tag: "smartcar_cmd_{{ trigger.event.data.command }}"
+                      channel: !input notification_channel
+                      importance: !input notification_importance
+                      notification_icon: !input notification_icon
+                - action: "{{ repeat.item }}"
+                  data:
+                    message: clear_notification
+                    data:
+                      tag: >-
+                        {{ command_tags.get(trigger.event.data.command,
+                           'smartcar_pending_' ~ trigger.event.data.command) }}
+      - conditions:
+          - condition: trigger
+            id: issue_raised
+        sequence:
+          - repeat:
+              for_each: "{{ notify_actions }}"
+              sequence:
+                - action: "{{ repeat.item }}"
+                  data:
+                    title: Smartcar needs attention
+                    message: "{{ trigger.event.data.translation_key }}"
+                    data:
+                      tag: "smartcar_issue_{{ trigger.event.data.issue_id }}"
+                      channel: !input notification_channel
+                      importance: !input notification_importance
+                      notification_icon: !input notification_icon
+                      clickAction: !input issue_click_action
+      - conditions:
+          - condition: trigger
+            id: issue_cleared
+        sequence:
+          - repeat:
+              for_each: "{{ notify_actions }}"
+              sequence:
+                - action: "{{ repeat.item }}"
+                  data:
+                    message: clear_notification
+                    data:
+                      tag: "smartcar_issue_{{ trigger.event.data.issue_id }}"

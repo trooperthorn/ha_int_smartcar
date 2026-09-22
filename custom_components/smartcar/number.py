@@ -100,7 +100,9 @@ class SmartcarChargeLimitNumber(
             command = "/charge/limit"
             payload = {"limit": (raw_value := value / 100.0)}
 
-        await self._async_send_command(command, payload)
+        await self._async_send_command(
+            command, payload, event_command="set_charge_limit"
+        )
         non_global_or_conditional_limits = [
             value
             for value in self._extract_raw_value() or []

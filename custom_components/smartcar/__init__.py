@@ -18,15 +18,11 @@ from homeassistant.helpers.config_entry_oauth2_flow import (
     async_get_config_entry_implementation,
 )
 from homeassistant.helpers.event import async_track_state_change_event
-from homeassistant.helpers.issue_registry import (
-    IssueSeverity,
-    async_create_issue,
-    async_delete_issue,
-)
+from homeassistant.helpers.issue_registry import IssueSeverity
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from . import util
+from . import events, util
 from .auth import AbstractAuth
 from .auth_impl import AccessTokenAuthImpl, AsyncConfigEntryAuth
 from .budget import ApiBudget
@@ -210,10 +206,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: SmartcarConfigEntry) -> 
         _LOGGER.debug("Webhooks are not enabled")
 
     if auth.version == "v2":
-        async_create_issue(
+        events.create_issue(
             hass,
-            DOMAIN,
-            f"legacy_client_id_{entry.entry_id}",
+            issue_id=f"legacy_client_id_{entry.entry_id}",
+            entry_id=entry.entry_id,
             is_fixable=True,
             is_persistent=True,
             severity=IssueSeverity.WARNING,
@@ -331,11 +327,17 @@ async def async_subscribe_vehicles(
             callback_url,
             seen_uris or "(none configured)",
         )
-        async_delete_issue(hass, DOMAIN, f"webhook_unhealthy_{entry.entry_id}")
-        async_create_issue(
+        events.delete_issue(
             hass,
-            DOMAIN,
-            f"no_matching_webhook_{entry.entry_id}",
+            issue_id=f"webhook_unhealthy_{entry.entry_id}",
+            entry_id=entry.entry_id,
+            translation_key="webhook_unhealthy",
+            severity=IssueSeverity.WARNING,
+        )
+        events.create_issue(
+            hass,
+            issue_id=f"no_matching_webhook_{entry.entry_id}",
+            entry_id=entry.entry_id,
             is_fixable=False,
             is_persistent=True,
             severity=IssueSeverity.WARNING,
@@ -348,7 +350,13 @@ async def async_subscribe_vehicles(
         )
         return
 
-    async_delete_issue(hass, DOMAIN, f"no_matching_webhook_{entry.entry_id}")
+    events.delete_issue(
+        hass,
+        issue_id=f"no_matching_webhook_{entry.entry_id}",
+        entry_id=entry.entry_id,
+        translation_key="no_matching_webhook",
+        severity=IssueSeverity.WARNING,
+    )
     # the Management API's webhook resource (management.yaml) exposes name,
     # callbackUri, isEnabled, triggers, data, errorCallbackUri and
     # autoSubscribe, but no verification status field, so a matched-but-
@@ -414,7 +422,13 @@ def _check_webhook_health(
     )
 
     if health is None or health.is_healthy:
-        async_delete_issue(hass, DOMAIN, issue_id)
+        events.delete_issue(
+            hass,
+            issue_id=issue_id,
+            entry_id=entry.entry_id,
+            translation_key="webhook_unhealthy",
+            severity=IssueSeverity.WARNING,
+        )
         return
 
     _LOGGER.warning(
@@ -427,10 +441,10 @@ def _check_webhook_health(
         health.data_count,
     )
 
-    async_create_issue(
+    events.create_issue(
         hass,
-        DOMAIN,
-        issue_id,
+        issue_id=issue_id,
+        entry_id=entry.entry_id,
         is_fixable=False,
         is_persistent=True,
         severity=IssueSeverity.WARNING,

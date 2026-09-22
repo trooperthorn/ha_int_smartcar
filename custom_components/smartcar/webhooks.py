@@ -12,7 +12,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
-from . import util
+from . import events, util
 from .const import CONF_APPLICATION_MANAGEMENT_TOKEN
 from .coordinator import SmartcarVehicleCoordinator, _is_integrated
 from .types import SmartcarData
@@ -58,7 +58,7 @@ def update_meta_coordinator_data[F: Callable[..., Any], ReturnT](fn: F) -> F:
 
 @update_meta_coordinator_data
 async def handle_webhook(
-    hass: HomeAssistant,  # noqa: ARG001
+    hass: HomeAssistant,
     webhook_id: str,  # noqa: ARG001
     request: web.Request,
     *,
@@ -191,10 +191,47 @@ async def handle_webhook(
     # delivery that gets this far is a live one.
     coordinator.note_live_webhook()
 
+    _fire_webhook_received(hass, coordinator, message, errors)
     _handle_webhook_errors(coordinator, errors)
     _handle_webhook_signals(coordinator, signals)
 
     return web.Response(status=HTTPStatus.NO_CONTENT)
+
+
+def _fire_webhook_received(
+    hass: HomeAssistant,
+    coordinator: SmartcarVehicleCoordinator,
+    message: dict,
+    errors: list[dict],
+) -> None:
+    """Fire `smartcar_webhook_received` for a signed, validated delivery."""
+    meta = message.get("meta", {})
+    trigger_codes: list[str] = [
+        str(trigger_signal.get("code"))
+        for trigger in message.get("triggers", [])
+        if isinstance(trigger, dict)
+        and isinstance(trigger_signal := trigger.get("signal"), dict)
+        and trigger_signal.get("code") is not None
+    ]
+    error_codes = [
+        f"{error.get('type')}:{error.get('code')}"
+        for error in errors
+        if isinstance(error, dict) and error.get("type") and error.get("code")
+    ]
+
+    events.fire_webhook_received(
+        hass,
+        entry_id=coordinator.entry.entry_id,
+        vehicle_id=coordinator.vehicle_id,
+        identifier_key=coordinator.identifier_key,
+        event_type=str(message.get("eventType")),
+        mode=meta.get("mode"),
+        delivery_id=meta.get("deliveryId"),
+        sequence=meta.get("sequence"),
+        signal_count=meta.get("signalCount"),
+        trigger_codes=trigger_codes,
+        error_codes=error_codes,
+    )
 
 
 def _log_webhook_summary(message: dict) -> None:

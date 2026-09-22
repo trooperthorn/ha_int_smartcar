@@ -452,3 +452,29 @@ data is stale in the sense of being wrong, only in the sense of being a
 snapshot. Call `smartcar.refresh_vehicle` (one billed call, or `force: true`
 to spend the reserve) before anything that needs a guaranteed-current
 reading, such as confirming a lock right after leaving the car.
+
+### Command and issue feedback
+
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fraw.githubusercontent.com%2Ftrooperthorn%2Fha_int_smartcar%2Fmain%2Fblueprints%2Fautomation%2Fsmartcar%2Fcommand_and_issue_feedback.yaml)
+
+File: [`blueprints/automation/smartcar/command_and_issue_feedback.yaml`](../blueprints/automation/smartcar/command_and_issue_feedback.yaml)
+
+Listens for this integration's own `smartcar_command_result`,
+`smartcar_issue_raised`, and `smartcar_issue_cleared` bus events (see
+[events.md](events.md)) for one vehicle, and notifies every phone you pick
+without a separate `notify_target` input per phone: each device you choose
+is notified through its own derived `notify.mobile_app_<device name>`
+action. A successful command notifies with a short confirmation title
+("Doors locked", "Charging started", "Charge limit set", and so on) and
+clears the matching pending-action tag the other Smartcar blueprints use
+while a command is in flight; a failed command notifies with the reason
+Smartcar gave. A raised repair issue notifies at high importance with a
+click action into **Settings → Repairs**; a cleared one removes that
+notification.
+
+**Cost:** zero Smartcar API calls. It only reacts to events this
+integration already fires.
+
+Inputs: vehicle device, Smartcar account (config entry), one or more phone
+devices to notify, notification channel, notification importance for a
+failure or a raised issue, notification icon, issue click action.

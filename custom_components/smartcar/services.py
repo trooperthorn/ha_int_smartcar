@@ -127,7 +127,7 @@ async def _send_security_command(
         command = "/security"
         payload = {"action": action}
 
-    if await async_send_command(coordinator, command, payload):
+    if await async_send_command(coordinator, command, payload, command=action.lower()):
         inject_raw_value(
             coordinator,
             cast("SmartcarEntityDescription", description),

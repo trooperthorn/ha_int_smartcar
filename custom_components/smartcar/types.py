@@ -40,3 +40,7 @@ class SmartcarAPIError(Exception):
 
     code: int
     reason: str
+    error_type: str | None = None
+    error_code: str | None = None
+    resolution_type: str | None = None
+    suggested_user_message: str | None = None
