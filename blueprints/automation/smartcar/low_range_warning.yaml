@@ -1,0 +1,110 @@
+blueprint:
+  name: Smartcar - low range warning
+  description: >-
+    Notifies when the range drops below a threshold, either at a fixed
+    evening time or whenever the car leaves home, and includes the nearest
+    upcoming calendar trip if one has a location.
+
+
+    Zero Smartcar API calls: it reacts to the range sensor and reads the
+    calendar directly, both of which are free. Smartcar range data can be
+    minutes to a day old, so a warning right after driving may lag reality;
+    call `smartcar.refresh_vehicle` (one billed call) to force a fresh
+    reading before trusting a number that matters.
+  domain: automation
+  homeassistant:
+    min_version: 2026.9.0
+  input:
+    range_sensor:
+      name: Range sensor
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: distance
+    threshold:
+      name: Warn below this range
+      default: 40
+      selector:
+        number:
+          min: 0
+          max: 500
+          step: 5
+          unit_of_measurement: km
+    vehicle_tracker:
+      name: Vehicle location
+      description: Also triggers a check whenever the car leaves home.
+      selector:
+        entity:
+          filter:
+            - domain: device_tracker
+              integration: smartcar
+    evening_time:
+      name: Evening check time
+      default: "18:00:00"
+      selector:
+        time: {}
+    calendar:
+      name: Calendar
+      description: Optional. Its nearest upcoming located event is included.
+      default: ""
+      selector:
+        entity:
+          filter:
+            - domain: calendar
+    notify_target:
+      name: Notify action
+      default: notify.persistent_notification
+      selector:
+        text: {}
+
+mode: single
+max_exceptions: 0
+
+triggers:
+  - trigger: time
+    at: !input evening_time
+  - trigger: state
+    entity_id: !input vehicle_tracker
+    from: home
+
+conditions:
+  - condition: numeric_state
+    entity_id: !input range_sensor
+    below: !input threshold
+
+actions:
+  - variables:
+      range_entity: !input range_sensor
+      calendar_entity: !input calendar
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ calendar_entity not in ['', none] }}"
+        sequence:
+          - action: calendar.get_events
+            target:
+              entity_id: "{{ calendar_entity }}"
+            data:
+              duration:
+                hours: 72
+            response_variable: upcoming
+    default:
+      - variables:
+          upcoming:
+            "{{ calendar_entity }}":
+              events: []
+  - variables:
+      next_event: >-
+        {{ (upcoming[calendar_entity].events | default([]))[0]
+           if calendar_entity not in ['', none]
+              and (upcoming[calendar_entity].events | default([]) | count) > 0
+           else none }}
+  - action: !input notify_target
+    data:
+      title: Range is low
+      message: >-
+        {{ states(range_entity) }}
+        {{ state_attr(range_entity, 'unit_of_measurement') }} of range left.
+        {{ ('Next trip: ' ~ next_event.summary ~ ' to ' ~ next_event.location)
+           if next_event is not none and next_event.location else '' }}

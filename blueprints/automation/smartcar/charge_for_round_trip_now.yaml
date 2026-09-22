@@ -1,0 +1,57 @@
+blueprint:
+  name: Smartcar - charge for a round trip now
+  description: >-
+    On-demand version: fires from a mobile_app notification action, or run it
+    directly from the automation's own "Run" button, to compute the charge
+    needed for one destination and start charging to that limit right away.
+
+
+    This calls the "Smartcar - charge for a round trip" script blueprint to
+    do the actual computation and commands, so see that blueprint's
+    description for the exact API cost (zero reads, up to two commands, only
+    when a command is actually needed).
+  domain: automation
+  homeassistant:
+    min_version: 2026.9.0
+  input:
+    destination:
+      name: Destination
+      selector:
+        text: {}
+    charge_script:
+      name: "Charge for a round trip script"
+      description: >-
+        The entity_id of the "Smartcar - charge for a round trip" script
+        created from that blueprint.
+      selector:
+        entity:
+          filter:
+            - domain: script
+    notification_action_id:
+      name: Notification action ID
+      description: >-
+        The action ID a notification's action button carries. Send a
+        notification elsewhere with an action of this ID (for example
+        "Set limit to X" from the trip-check blueprint) to fire this
+        automation from it.
+      default: SMARTCAR_CHARGE_FOR_TRIP
+      selector:
+        text: {}
+
+mode: queued
+max: 3
+max_exceptions: 0
+
+triggers:
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: !input notification_action_id
+
+conditions: []
+
+actions:
+  - action: !input charge_script
+    data:
+      destination: !input destination
+    continue_on_error: true

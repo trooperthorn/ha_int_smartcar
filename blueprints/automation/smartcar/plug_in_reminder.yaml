@@ -1,0 +1,90 @@
+blueprint:
+  name: Smartcar - plug-in reminder
+  description: >-
+    Notifies you when the car comes home with a low battery and stays
+    unplugged for a while, so it is not still low the next time you need it.
+
+
+    Zero Smartcar API calls. The plug status and battery level are read from
+    entities Home Assistant already has; nothing here asks Smartcar for
+    anything. Smartcar data can be minutes to a day old between webhook
+    pushes, so if the plug status still looks wrong after you have actually
+    plugged in, call `smartcar.refresh_vehicle` (one billed call, or pass
+    `force: true` if the reserve is otherwise protecting it) to confirm.
+  domain: automation
+  homeassistant:
+    min_version: 2026.9.0
+  input:
+    vehicle_tracker:
+      name: Vehicle location
+      selector:
+        entity:
+          filter:
+            - domain: device_tracker
+              integration: smartcar
+    battery:
+      name: Battery level sensor
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: battery
+    plug_status:
+      name: Plug status
+      selector:
+        entity:
+          filter:
+            - domain: binary_sensor
+              device_class: plug
+    threshold:
+      name: Notify below this battery level
+      default: 50
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 5
+          unit_of_measurement: "%"
+    settle:
+      name: Unplugged for
+      description: How long the car must sit home and unplugged before reminding.
+      default:
+        minutes: 30
+      selector:
+        duration: {}
+    notify_target:
+      name: Notify action
+      default: notify.persistent_notification
+      selector:
+        text: {}
+
+mode: single
+max_exceptions: 0
+
+triggers:
+  - trigger: state
+    entity_id: !input plug_status
+    to: "off"
+    for: !input settle
+
+conditions:
+  - condition: state
+    entity_id: !input vehicle_tracker
+    state: home
+  - condition: numeric_state
+    entity_id: !input battery
+    below: !input threshold
+
+actions:
+  - variables:
+      battery_entity: !input battery
+  - action: !input notify_target
+    data:
+      title: Car is home and not plugged in
+      message: >-
+        Battery is at {{ states(battery_entity) }}% and the car has been home
+        and unplugged for a while.
+      data:
+        actions:
+          - action: SMARTCAR_REFRESH
+            title: Refresh status

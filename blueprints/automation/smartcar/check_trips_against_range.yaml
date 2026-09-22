@@ -1,0 +1,278 @@
+blueprint:
+  name: Smartcar - check tomorrow's trips against range
+  description: >-
+    At an evening check time, reads a calendar for events in the lookahead
+    window that have a location, works out the round trip distance to each
+    one and the same-day total, and compares both to the current range. When
+    a trip does not fit, it sends an actionable notification with "Start
+    charging" and "Set limit to N%" actions, and can optionally start
+    charging automatically.
+
+
+    API cost: zero Smartcar reads. Range, battery level and charge limit
+    come from entities that are already populated by webhook or polling, and
+    the travel distance comes from Waze or Google, not Smartcar. The only
+    Smartcar cost is the command sent if you tap "Start charging" or "Set
+    limit", or if auto-start is on: one command per action taken. Because
+    Smartcar data can be minutes to a day old, a range figure right after a
+    drive may be stale; call `smartcar.refresh_vehicle` (one billed call) to
+    force a fresh reading if the evaluation matters and the car just moved.
+
+
+    Units: the range and battery capacity sensors may report kilometers or
+    miles depending on your unit system. Set the units input to match the
+    range sensor so the math is not run against mismatched units.
+
+
+    This runs at the evaluation time only. Home Assistant's calendar trigger
+    fires on an event's start time, not on creation or edit, so there is no
+    reliable built-in way to re-run this the moment a trip gets added to the
+    calendar; if you want that, add a second automation that calls
+    `automation.trigger` on this one whenever your calendar integration's own
+    "event added" signal (if it has one) fires.
+  domain: automation
+  homeassistant:
+    min_version: 2026.9.0
+  input:
+    calendar:
+      name: Calendar
+      selector:
+        entity:
+          filter:
+            - domain: calendar
+    range_sensor:
+      name: Range sensor
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: distance
+    battery:
+      name: Battery level sensor
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: battery
+    battery_capacity:
+      name: Battery capacity sensor
+      description: Optional. Not used in the calculation, only shown for context.
+      default: ""
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: energy_storage
+    charging_switch:
+      name: Charging switch
+      selector:
+        entity:
+          filter:
+            - domain: switch
+              integration: smartcar
+    charge_limit:
+      name: Charge limit number
+      selector:
+        entity:
+          filter:
+            - domain: number
+              integration: smartcar
+    home_zone:
+      name: Home zone
+      default: zone.home
+      selector:
+        entity:
+          filter:
+            - domain: zone
+    provider:
+      name: Travel-distance provider
+      selector:
+        select:
+          options:
+            - waze_travel_time
+            - google_travel_time
+    waze_region:
+      name: Waze region
+      default: us
+      selector:
+        select:
+          options:
+            - us
+            - na
+            - eu
+            - il
+            - au
+    google_config_entry:
+      name: Google Travel Time account
+      default: ""
+      selector:
+        config_entry:
+          integration: google_travel_time
+    units:
+      name: Range sensor units
+      default: km
+      selector:
+        select:
+          options:
+            - km
+            - mi
+    overhead_percent:
+      name: Overhead percent
+      default: 20
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+    lookahead:
+      name: Lookahead
+      default:
+        hours: 24
+      selector:
+        duration: {}
+    evaluation_time:
+      name: Evaluation time
+      default: "18:00:00"
+      selector:
+        time: {}
+    notify_target:
+      name: Notify action
+      default: notify.persistent_notification
+      selector:
+        text: {}
+    auto_start:
+      name: Auto start charging
+      description: >-
+        When on, a trip that does not fit also starts charging and raises
+        the limit automatically, instead of waiting for the notification's
+        action button.
+      default: false
+      selector:
+        boolean: {}
+    compute_script:
+      name: "Compute round trip need script"
+      description: >-
+        The entity_id of the "Smartcar - compute round trip need" script
+        created from that blueprint. Used per event to get each trip's
+        distance and needed charge.
+      selector:
+        entity:
+          filter:
+            - domain: script
+
+mode: single
+max_exceptions: 0
+
+triggers:
+  - trigger: time
+    id: evaluation_time
+    at: !input evaluation_time
+
+conditions: []
+
+actions:
+  - variables:
+      calendar_entity: !input calendar
+      range_entity: !input range_sensor
+      battery_entity: !input battery
+      charge_limit_entity: !input charge_limit
+      charging_switch_entity: !input charging_switch
+      home_zone_entity: !input home_zone
+      units_setting: !input units
+      overhead: !input overhead_percent
+      auto_start_enabled: !input auto_start
+      compute_script_entity: !input compute_script
+      battery_capacity_entity: !input battery_capacity
+      range_km_value: >-
+        {{ (states(range_entity) | float(0))
+           if units_setting == 'km'
+           else (states(range_entity) | float(0)) * 1.60934 }}
+      battery_value: "{{ states(battery_entity) | float(0) }}"
+      limit_value: "{{ states(charge_limit_entity) | float(100) }}"
+  - action: calendar.get_events
+    target:
+      entity_id: !input calendar
+    data:
+      duration: !input lookahead
+    response_variable: agenda
+  - variables:
+      located_events: >-
+        {{ (agenda[calendar_entity].events | default([]))
+           | selectattr('location', 'defined')
+           | rejectattr('location', 'in', [none, ''])
+           | list }}
+  - repeat:
+      for_each: "{{ located_events }}"
+      sequence:
+        - action: !input compute_script
+          data:
+            destination: "{{ repeat.item.location }}"
+            origin_zone: !input home_zone
+            provider: !input provider
+            waze_region: !input waze_region
+            google_config_entry: !input google_config_entry
+            overhead_percent: "{{ overhead }}"
+            range_km: "{{ range_km_value }}"
+            soc_percent: "{{ battery_value }}"
+            current_limit_percent: "{{ limit_value }}"
+          response_variable: trip_need
+        - variables:
+            trip_results: >-
+              {{ (trip_results | default([]))
+                 + [ { 'summary': repeat.item.summary,
+                       'location': repeat.item.location,
+                       'round_trip_km': trip_need.round_trip_km,
+                       'fits': trip_need.fits,
+                       'needed_percent': trip_need.needed_percent } ] }}
+  - variables:
+      daily_total_km: >-
+        {{ trip_results | default([]) | map(attribute='round_trip_km')
+           | sum(0) }}
+      daily_fits: "{{ daily_total_km <= range_km_value }}"
+      worst_trip: >-
+        {{ (trip_results | default([]) | rejectattr('fits') | list | first)
+           if (trip_results | default([]) | rejectattr('fits') | list | count) > 0
+           else none }}
+      max_needed_percent: >-
+        {{ (trip_results | default([]) | map(attribute='needed_percent') | max)
+           if (trip_results | default([]) | count) > 0 else 0 }}
+  - if:
+      - condition: template
+        value_template: "{{ worst_trip is not none or not daily_fits }}"
+    then:
+      - action: !input notify_target
+        data:
+          title: Trip may not fit on current range
+          message: >-
+            {% if worst_trip is not none -%}
+            Trip to {{ worst_trip.location }} needs
+            {{ worst_trip.round_trip_km }} km with {{ overhead }} percent
+            margin; range is {{ range_km_value | round(0) }} km; battery
+            {{ battery_value | round(0) }} percent.
+            {%- else -%}
+            Tomorrow's trips total {{ daily_total_km | round(0) }} km with
+            {{ overhead }} percent margin, more than the
+            {{ range_km_value | round(0) }} km range; battery
+            {{ battery_value | round(0) }} percent.
+            {%- endif %}
+          data:
+            actions:
+              - action: SMARTCAR_START_CHARGING
+                title: Start charging
+              - action: SMARTCAR_SET_LIMIT
+                title: "Set limit to {{ max_needed_percent }}%"
+      - if:
+          - condition: template
+            value_template: "{{ auto_start_enabled }}"
+        then:
+          - action: number.set_value
+            target:
+              entity_id: !input charge_limit
+            data:
+              value: "{{ max_needed_percent }}"
+            continue_on_error: true
+          - action: switch.turn_on
+            target:
+              entity_id: !input charging_switch
+            continue_on_error: true

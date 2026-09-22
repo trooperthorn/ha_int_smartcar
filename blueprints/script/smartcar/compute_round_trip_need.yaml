@@ -1,0 +1,170 @@
+blueprint:
+  name: Smartcar - compute round trip need
+  description: >-
+    Works out whether a one-way destination is reachable and back on the
+    current range, and if not, how much state of charge would be needed.
+
+
+    This makes no Smartcar API call at all. It calls a travel-distance
+    provider (Waze or Google) for the distance, then does the rest with plain
+    arithmetic against the range and battery level you already have as
+    entities. The blueprints "check tomorrow's trips against range", "charge
+    for a round trip now" and "evening summary" all call this instead of
+    repeating the calculation, so a fix here fixes all three.
+
+
+    Returns a response with `distance_km`, `round_trip_km`, `fits` and
+    `needed_percent`. `needed_percent` is capped at 100 and never returned
+    below the current charge limit, so acting on it never lowers a limit that
+    was already set higher for another reason.
+  domain: script
+  homeassistant:
+    min_version: 2026.9.0
+  input:
+    destination:
+      name: Destination
+      description: An address, place name or "lat,lon" string.
+      selector:
+        text: {}
+    origin_zone:
+      name: Starting point zone
+      description: Usually home. Its coordinates are the trip's starting point.
+      default: zone.home
+      selector:
+        entity:
+          filter:
+            - domain: zone
+    provider:
+      name: Travel-distance provider
+      selector:
+        select:
+          options:
+            - waze_travel_time
+            - google_travel_time
+    waze_region:
+      name: Waze region
+      description: Only used when the provider is waze_travel_time.
+      default: us
+      selector:
+        select:
+          options:
+            - us
+            - na
+            - eu
+            - il
+            - au
+    google_config_entry:
+      name: Google Travel Time account
+      description: Only used when the provider is google_travel_time.
+      default: ""
+      selector:
+        config_entry:
+          integration: google_travel_time
+    overhead_percent:
+      name: Overhead percent
+      description: >-
+        Safety margin added to the round trip to cover detours, climate use
+        and cold-weather range loss.
+      default: 20
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+    range_km:
+      name: Current range
+      description: The vehicle's current range, already converted to kilometers.
+      selector:
+        number:
+          min: 0
+          max: 2000
+          step: 1
+          unit_of_measurement: km
+    soc_percent:
+      name: Current battery level
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+    current_limit_percent:
+      name: Current charge limit
+      description: >-
+        The vehicle's charge limit number entity's current value, if known.
+        needed_percent is never returned below this, so the result never asks
+        for less charge than is already configured.
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+
+mode: parallel
+max: 10
+
+sequence:
+  - variables:
+      origin_zone: !input origin_zone
+      provider: !input provider
+      overhead_percent: !input overhead_percent
+      range_km: !input range_km
+      soc_percent: !input soc_percent
+      current_limit_percent: !input current_limit_percent
+      origin_lat: "{{ state_attr(origin_zone, 'latitude') }}"
+      origin_lon: "{{ state_attr(origin_zone, 'longitude') }}"
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ provider == 'waze_travel_time' }}"
+        sequence:
+          - action: waze_travel_time.get_travel_times
+            data:
+              origin: "{{ origin_lat }},{{ origin_lon }}"
+              destination: !input destination
+              region: !input waze_region
+              units: metric
+            response_variable: route_response
+          - variables:
+              distance_km: >-
+                {{ (route_response.routes[0].distance | float(0))
+                   if route_response.routes | count > 0 else 0 }}
+      - conditions:
+          - condition: template
+            value_template: "{{ provider == 'google_travel_time' }}"
+        sequence:
+          - action: google_travel_time.get_travel_times
+            data:
+              config_entry_id: !input google_config_entry
+              origin: "{{ origin_lat }},{{ origin_lon }}"
+              destination: !input destination
+              mode: driving
+              units: metric
+            response_variable: route_response
+          - variables:
+              distance_km: >-
+                {{ ((route_response.routes[0].distance_meters | float(0)) / 1000)
+                   if route_response.routes | count > 0 else 0 }}
+  - variables:
+      round_trip_km: >-
+        {{ (2 * distance_km * (1 + ((overhead_percent | float(0)) / 100)))
+           | round(1) }}
+      range_value: "{{ range_km | float(0) }}"
+      soc_value: "{{ soc_percent | float(0) }}"
+      fits: "{{ range_value > 0 and round_trip_km <= range_value }}"
+      raw_needed: >-
+        {{ ((soc_value * round_trip_km / range_value) | round(0, 'ceil'))
+           if range_value > 0 else 100 }}
+      needed_percent: >-
+        {{ [[raw_needed, current_limit_percent | float(0)] | max, 100] | min | int }}
+  - variables:
+      result:
+        distance_km: "{{ distance_km | round(1) }}"
+        round_trip_km: "{{ round_trip_km }}"
+        fits: "{{ fits }}"
+        needed_percent: "{{ needed_percent }}"
+  - stop: "done"
+    response_variable: result
