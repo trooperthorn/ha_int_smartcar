@@ -138,8 +138,41 @@ blueprint:
           max: 50
           step: 1
     notify_target:
-      name: Notify action
-      default: notify.persistent_notification
+      name: Notify action (deprecated)
+      description: >-
+        Optional legacy notify action, for example notify.mobile_app_phone.
+        Still called if set, for existing automations. New setups should use
+        Notify devices below instead.
+      default: ""
+      selector:
+        text: {}
+    notify_devices:
+      name: Notify devices
+      description: >-
+        Mobile app devices to notify. Each device's notify action is derived
+        as notify.mobile_app_<device name, slugified>.
+      default: []
+      selector:
+        device:
+          filter:
+            - integration: mobile_app
+          multiple: true
+    also_persistent:
+      name: Also create a persistent notification
+      description: >-
+        In addition to the devices above, also raises a persistent_notification
+        with the same title and message. On by default so a fresh import
+        behaves like the old default of notify.persistent_notification did.
+      default: true
+      selector:
+        boolean: {}
+    open_app_package:
+      name: Vehicle app package (optional)
+      description: >-
+        When set, adds an "Open app" action that opens this Android package
+        via an app:// URI, per the Companion app's actionable-notification
+        URI forms.
+      default: ""
       selector:
         text: {}
     start_charging_action_id:
@@ -216,6 +249,11 @@ conditions: []
 
 actions:
   - variables:
+      notify_target: !input notify_target
+      notify_devices: !input notify_devices
+      also_persistent: !input also_persistent
+      open_app_package: !input open_app_package
+      start_charging_action_id_value: !input start_charging_action_id
       sign: !input sign_convention
       power_entity: !input power_sensor
       battery_entity: !input battery
@@ -243,11 +281,25 @@ actions:
           - condition: trigger
             id: charging_now_on
         sequence:
-          - action: !input notify_target
-            data:
-              message: clear_notification
-              data:
-                tag: !input notification_tag
+          - repeat:
+              for_each: "{{ notify_devices }}"
+              sequence:
+                - action: >-
+                    notify.mobile_app_{{
+                      device_attr(repeat.item, 'name') | slugify }}
+                  data:
+                    message: clear_notification
+                    data:
+                      tag: !input notification_tag
+          - if:
+              - condition: template
+                value_template: "{{ notify_target | trim != '' }}"
+            then:
+              - action: !input notify_target
+                data:
+                  message: clear_notification
+                  data:
+                    tag: !input notification_tag
       # remind mode: surplus arrived, car home, below limit, not charging
       - conditions:
           - condition: trigger
@@ -257,42 +309,111 @@ actions:
               {{ mode_setting == 'remind' and at_home and below_limit
                  and not_charging }}
         sequence:
+          - variables:
+              app_actions: >-
+                {{ [{'action': 'URI', 'title': 'Open app',
+                     'uri': 'app://' ~ open_app_package}]
+                   if open_app_package | trim != '' else [] }}
           - if:
               - condition: state
                 entity_id: !input plug_status
                 state: "off"
             then:
-              - action: !input notify_target
-                data:
-                  title: Solar surplus available, car not plugged in
-                  message: >-
+              - variables:
+                  notify_title: Solar surplus available, car not plugged in
+                  notify_message: >-
                     Solar surplus of {{ surplus_w | round(0) }} W, battery at
                     {{ battery_value | round(0) }} percent, below your
                     {{ limit_value | round(0) }} percent limit. Plug in to
                     use it.
-                  data:
-                    tag: !input notification_tag
-                    channel: !input notification_channel
-                    importance: !input notification_importance
-                    notification_icon: !input notification_icon
-                    clickAction: !input click_action
+              - repeat:
+                  for_each: "{{ notify_devices }}"
+                  sequence:
+                    - action: >-
+                        notify.mobile_app_{{
+                          device_attr(repeat.item, 'name') | slugify }}
+                      data:
+                        title: "{{ notify_title }}"
+                        message: "{{ notify_message }}"
+                        data:
+                          tag: !input notification_tag
+                          channel: !input notification_channel
+                          importance: !input notification_importance
+                          notification_icon: !input notification_icon
+                          clickAction: !input click_action
+                          actions: "{{ app_actions }}"
+              - if:
+                  - condition: template
+                    value_template: "{{ notify_target | trim != '' }}"
+                then:
+                  - action: !input notify_target
+                    data:
+                      title: "{{ notify_title }}"
+                      message: "{{ notify_message }}"
+                      data:
+                        tag: !input notification_tag
+                        channel: !input notification_channel
+                        importance: !input notification_importance
+                        notification_icon: !input notification_icon
+                        clickAction: !input click_action
+                        actions: "{{ app_actions }}"
+              - if:
+                  - condition: template
+                    value_template: "{{ also_persistent }}"
+                then:
+                  - action: notify.persistent_notification
+                    data:
+                      title: "{{ notify_title }}"
+                      message: "{{ notify_message }}"
             else:
-              - action: !input notify_target
-                data:
-                  title: Solar surplus available
-                  message: >-
+              - variables:
+                  notify_title: Solar surplus available
+                  notify_message: >-
                     Solar surplus of {{ surplus_w | round(0) }} W, battery at
                     {{ battery_value | round(0) }} percent, below your
                     {{ limit_value | round(0) }} percent limit.
-                  data:
-                    tag: !input notification_tag
-                    channel: !input notification_channel
-                    importance: !input notification_importance
-                    notification_icon: !input notification_icon
-                    clickAction: !input click_action
-                    actions:
-                      - action: !input start_charging_action_id
-                        title: Start charging
+                  surplus_actions: >-
+                    {{ [{'action': start_charging_action_id_value,
+                         'title': 'Start charging'}] + app_actions }}
+              - repeat:
+                  for_each: "{{ notify_devices }}"
+                  sequence:
+                    - action: >-
+                        notify.mobile_app_{{
+                          device_attr(repeat.item, 'name') | slugify }}
+                      data:
+                        title: "{{ notify_title }}"
+                        message: "{{ notify_message }}"
+                        data:
+                          tag: !input notification_tag
+                          channel: !input notification_channel
+                          importance: !input notification_importance
+                          notification_icon: !input notification_icon
+                          clickAction: !input click_action
+                          actions: "{{ surplus_actions }}"
+              - if:
+                  - condition: template
+                    value_template: "{{ notify_target | trim != '' }}"
+                then:
+                  - action: !input notify_target
+                    data:
+                      title: "{{ notify_title }}"
+                      message: "{{ notify_message }}"
+                      data:
+                        tag: !input notification_tag
+                        channel: !input notification_channel
+                        importance: !input notification_importance
+                        notification_icon: !input notification_icon
+                        clickAction: !input click_action
+                        actions: "{{ surplus_actions }}"
+              - if:
+                  - condition: template
+                    value_template: "{{ also_persistent }}"
+                then:
+                  - action: notify.persistent_notification
+                    data:
+                      title: "{{ notify_title }}"
+                      message: "{{ notify_message }}"
       # auto mode start: surplus arrived, home, plugged in, below limit,
       # not charging, budget ok
       - conditions:

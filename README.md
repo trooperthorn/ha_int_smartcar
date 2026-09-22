@@ -952,13 +952,23 @@ See [docs/blueprints.md](docs/blueprints.md) for the full catalogue: every
 blueprint's inputs, what it costs in Smartcar API calls, and a My Home
 Assistant import badge for each.
 
-Notifying blueprints share a common set of Android Companion app inputs
-(tag, channel, importance, icon, click action, and an optional
-text-to-speech announcement), documented in
+Notifying blueprints pick recipients with a Notify devices input (a
+multi-select of `mobile_app` devices), optionally also raise a
+`persistent_notification`, and share a common set of Android Companion app
+content inputs (tag, channel, importance, icon, click action, and an
+optional text-to-speech announcement), documented in
 [docs/blueprints.md#android-notification-options](docs/blueprints.md#android-notification-options).
-Where a blueprint already knows the notified condition has cleared, it also
-clears the notification instead of leaving it stale on the phone. These
-fields are ignored on iOS, so the blueprints work there unchanged.
+The old free-text notify action input still works if set, for automations
+created before Notify devices existed. Where a blueprint already knows the
+notified condition has cleared, it also clears the notification instead of
+leaving it stale on the phone. These fields are ignored on iOS, so the
+blueprints work there unchanged.
+
+Companion also lets you skip notifications for some of this: the "Refresh,
+wait for fresh data, then act" and "Charge for a round trip" scripts can be
+pinned as quick-settings tiles or widgets, and the door lock, charging
+switch and battery sensor can be added as Android Auto favourites. See
+[docs/blueprints.md#android-quick-actions](docs/blueprints.md#android-quick-actions).
 
 ## Upgrading from Legacy `v2` API to `v3`
 
