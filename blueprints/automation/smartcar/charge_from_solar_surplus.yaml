@@ -142,6 +142,55 @@ blueprint:
       default: notify.persistent_notification
       selector:
         text: {}
+    start_charging_action_id:
+      name: "Start charging action ID"
+      description: >-
+        The action ID sent with the "Start charging" notification button.
+        Must be unique per vehicle if this blueprint is used for more than
+        one car.
+      default: SMARTCAR_START_CHARGING
+      selector:
+        text: {}
+    notification_tag:
+      name: Notification tag
+      description: >-
+        A stable, per-vehicle tag so a repeat of this notification replaces
+        the previous one instead of stacking. Use a different value per
+        vehicle if this blueprint is used for more than one car.
+      default: smartcar_solar_surplus
+      selector:
+        text: {}
+    notification_channel:
+      name: Notification channel
+      default: Smartcar
+      selector:
+        text: {}
+    notification_importance:
+      name: Notification importance
+      default: default
+      selector:
+        select:
+          options:
+            - min
+            - low
+            - default
+            - high
+            - max
+    notification_icon:
+      name: Notification icon
+      default: "mdi:solar-power"
+      selector:
+        text: {}
+    click_action:
+      name: Click action
+      description: >-
+        Where tapping the notification body opens. A Home Assistant path
+        such as "/config/devices/device/<id>" for the vehicle's device
+        page, or "entityId:sensor.xxx" for an entity's more-info dialog.
+        Leave blank for the default behavior.
+      default: ""
+      selector:
+        text: {}
 
 mode: queued
 max: 5
@@ -158,6 +207,10 @@ triggers:
     entity_id: !input power_sensor
     below: !input stop_threshold
     for: !input stop_duration
+  - trigger: state
+    id: charging_now_on
+    entity_id: !input charging_switch
+    to: "on"
 
 conditions: []
 
@@ -184,6 +237,17 @@ actions:
         {{ counter_entity in ['', none]
            or (states(counter_entity) | int(0)) < max_commands }}
   - choose:
+      # any mode: charging just started, clear a stale "surplus available"
+      # reminder if one is showing
+      - conditions:
+          - condition: trigger
+            id: charging_now_on
+        sequence:
+          - action: !input notify_target
+            data:
+              message: clear_notification
+              data:
+                tag: !input notification_tag
       # remind mode: surplus arrived, car home, below limit, not charging
       - conditions:
           - condition: trigger
@@ -206,6 +270,12 @@ actions:
                     {{ battery_value | round(0) }} percent, below your
                     {{ limit_value | round(0) }} percent limit. Plug in to
                     use it.
+                  data:
+                    tag: !input notification_tag
+                    channel: !input notification_channel
+                    importance: !input notification_importance
+                    notification_icon: !input notification_icon
+                    clickAction: !input click_action
             else:
               - action: !input notify_target
                 data:
@@ -215,8 +285,13 @@ actions:
                     {{ battery_value | round(0) }} percent, below your
                     {{ limit_value | round(0) }} percent limit.
                   data:
+                    tag: !input notification_tag
+                    channel: !input notification_channel
+                    importance: !input notification_importance
+                    notification_icon: !input notification_icon
+                    clickAction: !input click_action
                     actions:
-                      - action: SMARTCAR_START_CHARGING
+                      - action: !input start_charging_action_id
                         title: Start charging
       # auto mode start: surplus arrived, home, plugged in, below limit,
       # not charging, budget ok

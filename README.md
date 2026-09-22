@@ -943,6 +943,14 @@ See [docs/blueprints.md](docs/blueprints.md) for the full catalogue: every
 blueprint's inputs, what it costs in Smartcar API calls, and a My Home
 Assistant import badge for each.
 
+Notifying blueprints share a common set of Android Companion app inputs
+(tag, channel, importance, icon, click action, and an optional
+text-to-speech announcement), documented in
+[docs/blueprints.md#android-notification-options](docs/blueprints.md#android-notification-options).
+Where a blueprint already knows the notified condition has cleared, it also
+clears the notification instead of leaving it stale on the phone. These
+fields are ignored on iOS, so the blueprints work there unchanged.
+
 ## Upgrading from Legacy `v2` API to `v3`
 
 For now, you can continue to use the `v2` API as long as it is supported by Smartcar, but [Smartcar documents the deprecation thusly](https://smartcar.com/docs/getting-started/how-to/m2m/migration-guide#overview):

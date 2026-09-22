@@ -160,6 +160,76 @@ blueprint:
         entity:
           filter:
             - domain: script
+    start_charging_action_id:
+      name: "Start charging action ID"
+      description: >-
+        The action ID sent with the "Start charging" notification button.
+        Must be unique per vehicle if this blueprint is used for more than
+        one car, otherwise both notifications fire the same action.
+      default: SMARTCAR_START_CHARGING
+      selector:
+        text: {}
+    set_limit_action_id:
+      name: "Set limit action ID"
+      description: >-
+        The action ID sent with the "Set limit" notification button. Must
+        be unique per vehicle if this blueprint is used for more than one
+        car.
+      default: SMARTCAR_SET_LIMIT
+      selector:
+        text: {}
+    notification_tag:
+      name: Notification tag
+      description: >-
+        A stable, per-vehicle tag so a repeat of this notification replaces
+        the previous one instead of stacking. Use a different value per
+        vehicle if this blueprint is used for more than one car.
+      default: smartcar_trip_check
+      selector:
+        text: {}
+    notification_channel:
+      name: Notification channel
+      description: >-
+        Android notification channel. Set sound and importance for this
+        channel from the phone's own notification settings.
+      default: Smartcar
+      selector:
+        text: {}
+    notification_importance:
+      name: Notification importance
+      default: high
+      selector:
+        select:
+          options:
+            - min
+            - low
+            - default
+            - high
+            - max
+    notification_icon:
+      name: Notification icon
+      default: "mdi:car-electric"
+      selector:
+        text: {}
+    click_action:
+      name: Click action
+      description: >-
+        Where tapping the notification body (not an action button) opens.
+        A Home Assistant path such as "/config/devices/device/<id>" for the
+        vehicle's device page, or "entityId:sensor.xxx" to open that
+        entity's more-info dialog. Leave blank for the default behavior.
+      default: ""
+      selector:
+        text: {}
+    announce_tts:
+      name: Also announce with text-to-speech
+      description: >-
+        When on, also sends the notification text to the same notify
+        action as a spoken TTS command, in addition to the normal
+        notification.
+      default: false
+      selector:
+        boolean: {}
 
 mode: single
 max_exceptions: 0
@@ -182,6 +252,7 @@ actions:
       units_setting: !input units
       overhead: !input overhead_percent
       auto_start_enabled: !input auto_start
+      announce_tts: !input announce_tts
       compute_script_entity: !input compute_script
       battery_capacity_entity: !input battery_capacity
       range_km_value: >-
@@ -237,6 +308,19 @@ actions:
       max_needed_percent: >-
         {{ (trip_results | default([]) | map(attribute='needed_percent') | max)
            if (trip_results | default([]) | count) > 0 else 0 }}
+  - variables:
+      trip_message: >-
+        {% if worst_trip is not none -%}
+        Trip to {{ worst_trip.location }} needs
+        {{ worst_trip.round_trip_km }} km with {{ overhead }} percent
+        margin; range is {{ range_km_value | round(0) }} km; battery
+        {{ battery_value | round(0) }} percent.
+        {%- else -%}
+        Tomorrow's trips total {{ daily_total_km | round(0) }} km with
+        {{ overhead }} percent margin, more than the
+        {{ range_km_value | round(0) }} km range; battery
+        {{ battery_value | round(0) }} percent.
+        {%- endif %}
   - if:
       - condition: template
         value_template: "{{ worst_trip is not none or not daily_fits }}"
@@ -244,23 +328,17 @@ actions:
       - action: !input notify_target
         data:
           title: Trip may not fit on current range
-          message: >-
-            {% if worst_trip is not none -%}
-            Trip to {{ worst_trip.location }} needs
-            {{ worst_trip.round_trip_km }} km with {{ overhead }} percent
-            margin; range is {{ range_km_value | round(0) }} km; battery
-            {{ battery_value | round(0) }} percent.
-            {%- else -%}
-            Tomorrow's trips total {{ daily_total_km | round(0) }} km with
-            {{ overhead }} percent margin, more than the
-            {{ range_km_value | round(0) }} km range; battery
-            {{ battery_value | round(0) }} percent.
-            {%- endif %}
+          message: "{{ trip_message }}"
           data:
+            tag: !input notification_tag
+            channel: !input notification_channel
+            importance: !input notification_importance
+            notification_icon: !input notification_icon
+            clickAction: !input click_action
             actions:
-              - action: SMARTCAR_START_CHARGING
+              - action: !input start_charging_action_id
                 title: Start charging
-              - action: SMARTCAR_SET_LIMIT
+              - action: !input set_limit_action_id
                 title: "Set limit to {{ max_needed_percent }}%"
       - if:
           - condition: template
@@ -276,3 +354,18 @@ actions:
             target:
               entity_id: !input charging_switch
             continue_on_error: true
+      - if:
+          - condition: template
+            value_template: "{{ announce_tts }}"
+        then:
+          - action: !input notify_target
+            data:
+              message: TTS
+              data:
+                tts_text: "{{ trip_message }}"
+    else:
+      - action: !input notify_target
+        data:
+          message: clear_notification
+          data:
+            tag: !input notification_tag

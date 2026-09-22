@@ -57,34 +57,106 @@ blueprint:
       default: notify.persistent_notification
       selector:
         text: {}
+    refresh_action_id:
+      name: Refresh status action ID
+      description: >-
+        The action ID sent with the "Refresh status" button. Must be unique
+        per vehicle if this blueprint is used for more than one car.
+      default: SMARTCAR_REFRESH
+      selector:
+        text: {}
+    notification_tag:
+      name: Notification tag
+      description: >-
+        A stable, per-vehicle tag so a repeat of this notification replaces
+        the previous one instead of stacking. Use a different value per
+        vehicle if this blueprint is used for more than one car.
+      default: smartcar_plug_in_reminder
+      selector:
+        text: {}
+    notification_channel:
+      name: Notification channel
+      default: Smartcar
+      selector:
+        text: {}
+    notification_importance:
+      name: Notification importance
+      default: default
+      selector:
+        select:
+          options:
+            - min
+            - low
+            - default
+            - high
+            - max
+    notification_icon:
+      name: Notification icon
+      default: "mdi:car-electric"
+      selector:
+        text: {}
+    click_action:
+      name: Click action
+      description: >-
+        Where tapping the notification body opens. A Home Assistant path
+        such as "/config/devices/device/<id>" for the vehicle's device
+        page, or "entityId:sensor.xxx" for an entity's more-info dialog.
+        Leave blank for the default behavior.
+      default: ""
+      selector:
+        text: {}
 
 mode: single
 max_exceptions: 0
 
 triggers:
   - trigger: state
+    id: unplugged_settled
     entity_id: !input plug_status
     to: "off"
     for: !input settle
+  - trigger: state
+    id: plugged_in
+    entity_id: !input plug_status
+    to: "on"
 
-conditions:
-  - condition: state
-    entity_id: !input vehicle_tracker
-    state: home
-  - condition: numeric_state
-    entity_id: !input battery
-    below: !input threshold
+conditions: []
 
 actions:
   - variables:
       battery_entity: !input battery
-  - action: !input notify_target
-    data:
-      title: Car is home and not plugged in
-      message: >-
-        Battery is at {{ states(battery_entity) }}% and the car has been home
-        and unplugged for a while.
-      data:
-        actions:
-          - action: SMARTCAR_REFRESH
-            title: Refresh status
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: plugged_in
+        sequence:
+          - action: !input notify_target
+            data:
+              message: clear_notification
+              data:
+                tag: !input notification_tag
+      - conditions:
+          - condition: trigger
+            id: unplugged_settled
+          - condition: state
+            entity_id: !input vehicle_tracker
+            state: home
+          - condition: numeric_state
+            entity_id: !input battery
+            below: !input threshold
+        sequence:
+          - action: !input notify_target
+            data:
+              title: Car is home and not plugged in
+              message: >-
+                Battery is at {{ states(battery_entity) }}% and the car has
+                been home and unplugged for a while.
+              data:
+                tag: !input notification_tag
+                channel: !input notification_channel
+                importance: !input notification_importance
+                notification_icon: !input notification_icon
+                clickAction: !input click_action
+                actions:
+                  - action: !input refresh_action_id
+                    title: Refresh status

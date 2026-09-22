@@ -65,6 +65,65 @@ blueprint:
       default: notify.persistent_notification
       selector:
         text: {}
+    lock_action_id:
+      name: Lock action ID
+      description: >-
+        The action ID sent with the "Lock" notification button, and the
+        one this blueprint listens for. Must be unique per vehicle if this
+        blueprint is used for more than one car, otherwise tapping "Lock"
+        on one car's notification also fires the other car's automation.
+      default: SMARTCAR_LOCK_DOORS
+      selector:
+        text: {}
+    notification_tag:
+      name: Notification tag
+      description: >-
+        A stable, per-vehicle tag so a repeat of this notification replaces
+        the previous one instead of stacking. Use a different value per
+        vehicle if this blueprint is used for more than one car.
+      default: smartcar_left_unlocked
+      selector:
+        text: {}
+    notification_channel:
+      name: Notification channel
+      default: Smartcar
+      selector:
+        text: {}
+    notification_importance:
+      name: Notification importance
+      default: high
+      selector:
+        select:
+          options:
+            - min
+            - low
+            - default
+            - high
+            - max
+    notification_icon:
+      name: Notification icon
+      default: "mdi:lock-open-variant"
+      selector:
+        text: {}
+    click_action:
+      name: Click action
+      description: >-
+        Where tapping the notification body opens. A Home Assistant path
+        such as "/config/devices/device/<id>" for the vehicle's device
+        page, or "entityId:sensor.xxx" for an entity's more-info dialog.
+        Leave blank for the default behavior.
+      default: ""
+      selector:
+        text: {}
+    announce_tts:
+      name: Also announce with text-to-speech
+      description: >-
+        When on, also sends the notification text to the same notify
+        action as a spoken TTS command, in addition to the normal
+        notification.
+      default: false
+      selector:
+        boolean: {}
 
 mode: queued
 max: 5
@@ -76,11 +135,15 @@ triggers:
     entity_id: !input door_lock
     to: unlocked
     for: !input settle
+  - trigger: state
+    id: locked
+    entity_id: !input door_lock
+    to: locked
   - trigger: event
     id: lock_action
     event_type: mobile_app_notification_action
     event_data:
-      action: SMARTCAR_LOCK_DOORS
+      action: !input lock_action_id
 
 conditions: []
 
@@ -89,6 +152,7 @@ actions:
       remaining_entity: !input api_remaining
       reserve_value: !input reserve
       config_entry_id: !input config_entry
+      announce_tts: !input announce_tts
       has_budget: >-
         {{ (states(remaining_entity) | int(0)) > reserve_value }}
   - choose:
@@ -102,6 +166,15 @@ actions:
             continue_on_error: true
       - conditions:
           - condition: trigger
+            id: locked
+        sequence:
+          - action: !input notify_target
+            data:
+              message: clear_notification
+              data:
+                tag: !input notification_tag
+      - conditions:
+          - condition: trigger
             id: unlocked_away
           - condition: not
             conditions:
@@ -111,14 +184,31 @@ actions:
           - condition: template
             value_template: "{{ has_budget }}"
         sequence:
+          - variables:
+              unlocked_message: >-
+                The car has been away and unlocked for a while.
           - action: !input notify_target
             data:
               title: Car is unlocked away from home
-              message: The car has been away and unlocked for a while.
+              message: "{{ unlocked_message }}"
               data:
+                tag: !input notification_tag
+                channel: !input notification_channel
+                importance: !input notification_importance
+                notification_icon: !input notification_icon
+                clickAction: !input click_action
                 actions:
-                  - action: SMARTCAR_LOCK_DOORS
+                  - action: !input lock_action_id
                     title: Lock
+          - if:
+              - condition: template
+                value_template: "{{ announce_tts }}"
+            then:
+              - action: !input notify_target
+                data:
+                  message: TTS
+                  data:
+                    tts_text: "{{ unlocked_message }}"
       - conditions:
           - condition: trigger
             id: unlocked_away
@@ -136,3 +226,9 @@ actions:
                 action was left off this notification because the API call
                 reserve ({{ reserve_value }}) is protecting the remaining
                 allowance.
+              data:
+                tag: !input notification_tag
+                channel: !input notification_channel
+                importance: !input notification_importance
+                notification_icon: !input notification_icon
+                clickAction: !input click_action
