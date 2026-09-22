@@ -67,21 +67,12 @@ REQUIRED_SCOPES = [
     Scope.READ_VIN,
 ]
 
-CONFIGURABLE_SCOPES = [scope for scope in Scope if scope not in REQUIRED_SCOPES]
-
-DEFAULT_SCOPES = [
-    Scope.READ_BATTERY,
-    Scope.READ_CHARGE,
-    Scope.READ_LOCATION,
-    Scope.READ_ODOMETER,
-    Scope.READ_SECURITY,
-    Scope.READ_VEHICLE_INFO,
-    Scope.READ_VIN,
-    Scope.CONTROL_CHARGE,
-    Scope.READ_DIAGNOSTICS,
-    Scope.READ_CLIMATE,
-    Scope.CONTROL_CLIMATE,
-]
+# Every permission this integration knows how to use. v3 Connect is sent no
+# `scope` at all, because a scope in the Connect URL overrides the dashboard's
+# Vehicle Access configuration, which is the one place the user can see and
+# change what they are granting. v2 Connect has no dashboard equivalent, so it
+# asks for everything and lets Smartcar's consent screen decide.
+ALL_SCOPES = list(Scope)
 
 
 class EntityDescriptionKey(StrEnum):

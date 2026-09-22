@@ -41,6 +41,7 @@ from . import populate_entry_data, vehicle_vins_in_use
 from .auth_impl import AccessTokenAuthImpl
 from .budget import DEFAULT_MONTHLY_BUDGET, DEFAULT_RESERVE
 from .const import (
+    ALL_SCOPES,
     API_ENDPOINTS,
     CONF_APPLICATION_ID,
     CONF_APPLICATION_MANAGEMENT_TOKEN,
@@ -55,17 +56,14 @@ from .const import (
     CONF_POLL_ON_LEAVE_HOME,
     CONF_POLL_PROFILE,
     CONF_PRESENCE_ENTITIES,
-    CONFIGURABLE_SCOPES,
     DEFAULT_NAME,
-    DEFAULT_SCOPES,
     DOMAIN,
-    REQUIRED_SCOPES,
     SMARTCAR_MODE,
-    Scope,
 )
 from .errors import (
     EmptyVehicleListError,
     InvalidAuthError,
+    MissingRequiredPermissionsError,
     UnsupportedUserConfigurationError,
 )
 from .polling import (
@@ -180,9 +178,8 @@ class SmartcarOAuth2FlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):
 
     DOMAIN = DOMAIN
     VERSION = 2
-    MINOR_VERSION = 1
+    MINOR_VERSION = 2
     entry_data: dict[str, Any] | None = None
-    scope_data: dict[str, Any] | None = None
 
     @staticmethod
     @callback
@@ -206,10 +203,23 @@ class SmartcarOAuth2FlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):
 
         assert self.entry_data is not None
 
-        return {
-            "mode": SMARTCAR_MODE,
-            "scope": " ".join(self.requested_scopes),
-        } | (
+        is_v3 = (
+            api_version_for_client_id(
+                cast("LocalOAuth2Implementation", self.flow_impl).client_id
+            )
+            == "v3"
+        )
+
+        return (
+            {"mode": SMARTCAR_MODE}
+            # v3 sends no `scope`. Smartcar documents it as optional, and a
+            # scope here overrides the application's Vehicle Access
+            # configuration, so sending one takes the decision away from the
+            # dashboard and from the consent screen and hides it in code.
+            # v2 has no dashboard equivalent, so it asks for everything the
+            # integration knows and lets the consent screen decide.
+            | ({} if is_v3 else {"scope": " ".join(ALL_SCOPES)})
+        ) | (
             {
                 # for v3, smartcar shifted to what they refer to as application-
                 # level access tokens. they use oauth to describe their auth
@@ -230,10 +240,7 @@ class SmartcarOAuth2FlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):
                 #     correct end-user in multi-user app configurations).
                 "client_id": self.entry_data.get(CONF_APPLICATION_ID, ""),
             }
-            if api_version_for_client_id(
-                cast("LocalOAuth2Implementation", self.flow_impl).client_id
-            )
-            == "v3"
+            if is_v3
             else {}
         )
 
@@ -244,22 +251,6 @@ class SmartcarOAuth2FlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):
         if self.source == SOURCE_RECONFIGURE:
             result = self._get_reconfigure_entry().data
         return result
-
-    @property
-    def selected_scopes(self) -> list[Scope]:
-        assert self.scope_data
-
-        return sorted(
-            [
-                cast("Scope", scope)
-                for scope, selected in self.scope_data.items()
-                if selected
-            ]
-        )
-
-    @property
-    def requested_scopes(self) -> list[Scope]:
-        return REQUIRED_SCOPES + self.selected_scopes
 
     async def async_step_webhooks(
         self,
@@ -280,7 +271,7 @@ class SmartcarOAuth2FlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):
         if user_input is not None and not errors:
             self.entry_data = {**user_input}
             self.entry_data.pop(CONF_USE_WEBHOOKS, None)
-            return await self.async_step_scopes()
+            return await self.async_step_auth()
 
         return self.async_show_form(
             step_id="webhooks",
@@ -295,66 +286,11 @@ class SmartcarOAuth2FlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):
             description_placeholders=description_placeholders,
         )
 
-    def _suggested_scopes(self) -> dict[str, bool]:
-        """Decide which boxes start ticked.
-
-        What Smartcar granted comes first, because it is the only one of these
-        that is a fact rather than an intention. The scopes previously asked
-        for come next, for an entry created before the granted list was kept.
-        A first time setup has neither and falls back to the schema defaults.
-
-        Returns:
-            The suggested values, empty when there is nothing better than the
-            schema defaults to offer.
-        """
-        data = self._initial_data()
-
-        if granted := data.get("granted_permissions"):
-            return dict.fromkeys(granted, True)
-
-        return dict.fromkeys(data.get(CONF_TOKEN, {}).get("scopes", []), True)
-
-    async def async_step_scopes(
-        self,
-        user_input: dict[str, Any] | None = None,
-    ) -> ConfigFlowResult:
-        """Handle the scopes selection step.
-
-        Returns:
-            The config flow result.
-        """
-        errors: dict[str, str] = {}
-
-        if user_input is not None:
-            self.scope_data = user_input
-
-            if self.selected_scopes:
-                return await self.async_step_auth()
-            errors["base"] = "no_scopes"
-
-        return self.async_show_form(
-            step_id="scopes",
-            data_schema=self.add_suggested_values_to_schema(
-                vol.Schema(
-                    {
-                        vol.Optional(str(scope), default=scope in DEFAULT_SCOPES): bool
-                        for scope in CONFIGURABLE_SCOPES
-                    }
-                ),
-                self._suggested_scopes() if user_input is None else user_input,
-            ),
-            errors=errors,
-            last_step=False,
-        )
-
     async def async_step_auth(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         # add in the start of our customized flow if that hasn't been done yet
-        if self.source == SOURCE_REAUTH:
-            if self.scope_data is None:
-                return await self.async_step_scopes()
-        elif self.entry_data is None:
+        if self.entry_data is None:
             return await self.async_step_webhooks()
         return await super().async_step_auth(user_input)
 
@@ -364,8 +300,8 @@ class SmartcarOAuth2FlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Handle reconfiguration of an existing entry.
 
-        Replays the customized flow (webhooks then scopes) before re-running
-        the OAuth authorization so permissions can be changed after setup.
+        Replays the webhooks step before re-running the OAuth authorization,
+        so the Smartcar consent screen can be used to change permissions.
 
         Returns:
             The config flow result.
@@ -414,14 +350,18 @@ class SmartcarOAuth2FlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):
         description_placeholders = {**BASE_DESCRIPTION_PLACEHOLDERS}
 
         try:
-            await populate_entry_data(
-                data,
-                auth,
-                self.requested_scopes,
-            )
+            await populate_entry_data(data, auth)
         except EmptyVehicleListError:
             _LOGGER.exception("No vehicles returned")
             return self.async_abort(reason="no_vehicles")
+        except MissingRequiredPermissionsError as err:
+            _LOGGER.error(  # noqa: TRY400
+                "Smartcar did not grant %s", ", ".join(err.missing)
+            )
+            return self.async_abort(
+                reason="missing_required_permissions",
+                description_placeholders={"permissions": ", ".join(err.missing)},
+            )
         except UnsupportedUserConfigurationError:
             _LOGGER.exception(
                 "Unsupported user configuration detected; expected single user"

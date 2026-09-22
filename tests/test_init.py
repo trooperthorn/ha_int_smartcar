@@ -468,7 +468,7 @@ async def test_migration(
     # check change in config entry and verify most recent version
     if expect_migrated:
         assert config_entry.version == 2
-        assert config_entry.minor_version == 1
+        assert config_entry.minor_version == 2
         assert config_entry.data == snapshot(name="config_entry_data")
         # an entry that predates the polling options keeps the six hour cadence
         # it already had, rather than silently adopting the new default

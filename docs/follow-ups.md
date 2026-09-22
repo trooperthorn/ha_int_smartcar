@@ -79,13 +79,16 @@ A live run showed `GET /connections` already carries
 `attributes.permissions`: the scopes Smartcar actually granted. The integration
 makes that call at setup and reads only the ids out of it.
 
-Half of this is now done: setup identifies a vehicle from the connection and
-tolerates a missing VIN signal, so an empty signal store no longer stops it.
+Setup identifies a vehicle from the connection and tolerates a missing VIN
+signal, so an empty signal store no longer stops it.
 
-What remains is `permissions`. Entity gating still uses the scopes the config
-flow asked for rather than the ones Smartcar granted, and they are not the same
-list. `powertrainType` is read but not yet used to keep combustion entities off
-a BEV.
+`permissions` is now done too. The permission checkboxes are gone, v3 Connect
+is sent no `scope` so the dashboard's Vehicle Access configuration decides, and
+`attributes.permissions` is stored as the granted list and used for entity
+gating and the skip logs. Existing entries are migrated on their next setup.
+
+What remains is `powertrainType`: it is read but not yet used to keep
+combustion entities off a BEV.
 
 ### 7. `resolution.type` in error bodies is ignored
 
