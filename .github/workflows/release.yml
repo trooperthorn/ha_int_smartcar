@@ -1,0 +1,175 @@
+# A merge to main is the release trigger; see docs/releasing.md. The release
+# carries the HACS archive smartcar.zip with an SPDX SBOM, checksums, and
+# build provenance and SBOM attestations, so an install can be verified
+# against this workflow run.
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    uses: ./.github/workflows/test.yml
+    permissions:
+      contents: read
+
+  validate:
+    uses: ./.github/workflows/validate.yml
+    permissions:
+      contents: read
+
+  release:
+    if: github.ref == 'refs/heads/main'
+    needs: [tests, validate]
+    runs-on: ubuntu-latest
+    permissions:
+      attestations: write
+      contents: write
+      id-token: write
+    steps:
+      - name: Check out the exact main commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Resolve and validate the release version
+        id: version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(python3 scripts/build_release_artifacts.py --validate-only)"
+          PREFIX="$(python3 -c 'import json; print(json.load(open(".release.json")).get("tag_prefix", "v"))')"
+          TAG="${PREFIX}${VERSION}"
+          printf 'version=%s\n' "$VERSION" >> "$GITHUB_OUTPUT"
+          printf 'tag=%s\n' "$TAG" >> "$GITHUB_OUTPUT"
+
+          RELEASE_DRAFT="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --json isDraft --jq .isDraft 2>/dev/null || true)"
+          if [ "$RELEASE_DRAFT" = "false" ]; then
+            echo "Published release $TAG already exists; nothing to do."
+            printf 'publish=false\n' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$RELEASE_DRAFT" = "true" ]; then
+            echo "Resuming incomplete draft release $TAG."
+          fi
+          if git rev-parse --verify --quiet "refs/tags/$TAG" >/dev/null; then
+            TAG_COMMIT="$(git rev-list -n 1 "$TAG")"
+            if [ "$TAG_COMMIT" != "$GITHUB_SHA" ]; then
+              echo "::error::Tag $TAG points to $TAG_COMMIT, not $GITHUB_SHA"
+              exit 1
+            fi
+          fi
+          printf 'publish=true\n' >> "$GITHUB_OUTPUT"
+
+      # HACS users already track the asset name smartcar.zip, so the archive
+      # keeps that name and the contents of custom_components/smartcar as its
+      # root, matching what the previous hand-driven workflow produced.
+      - name: Build deterministic HACS archive
+        if: steps.version.outputs.publish == 'true'
+        run: python3 scripts/build_release_artifacts.py --output dist/smartcar.zip
+
+      - name: Generate the archive SBOM
+        if: steps.version.outputs.publish == 'true'
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        with:
+          file: dist/smartcar.zip
+          format: spdx-json
+          output-file: dist/smartcar.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+          dependency-snapshot: false
+
+      - name: Generate release checksums
+        if: steps.version.outputs.publish == 'true'
+        working-directory: dist
+        run: sha256sum smartcar.zip smartcar.spdx.json > SHA256SUMS
+
+      - name: Attest build provenance
+        if: steps.version.outputs.publish == 'true'
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: dist/smartcar.zip
+
+      - name: Attest the archive SBOM
+        if: steps.version.outputs.publish == 'true'
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: dist/smartcar.zip
+          sbom-path: dist/smartcar.spdx.json
+
+      # Immutable releases lock their tag and assets at publication, so the
+      # sequence is: tag, draft, attach, publish. A failed run resumes the
+      # draft; a published release is never touched.
+      - name: Stage immutable tag and draft release
+        if: steps.version.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! git rev-parse --verify --quiet "refs/tags/$TAG" >/dev/null; then
+            gh api --method POST "/repos/${GITHUB_REPOSITORY}/git/refs" \
+              --field "ref=refs/tags/$TAG" --field "sha=$GITHUB_SHA" >/dev/null
+          fi
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            IS_DRAFT="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" \
+              --json isDraft --jq .isDraft)"
+            if [ "$IS_DRAFT" != "true" ]; then
+              echo "::error::Release $TAG was published during this run."
+              exit 1
+            fi
+          else
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" --title "$TAG" --generate-notes \
+              --verify-tag --draft
+          fi
+          gh release upload "$TAG" \
+            dist/smartcar.zip \
+            dist/smartcar.spdx.json \
+            dist/SHA256SUMS \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber
+
+      - name: Publish and lock the complete release
+        if: steps.version.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
+
+      - name: Publish verification instructions
+        if: steps.version.outputs.publish == 'true'
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          {
+            echo '### Release verification'
+            echo
+            echo "Published \`$TAG\` from \`$GITHUB_SHA\`."
+            echo "HACS installs \`smartcar.zip\`."
+            echo
+            echo '```bash'
+            echo "gh release download $TAG -R $GITHUB_REPOSITORY \\"
+            echo "  -p smartcar.zip -p SHA256SUMS"
+            echo 'sha256sum --check SHA256SUMS --ignore-missing'
+            echo "gh attestation verify smartcar.zip -R $GITHUB_REPOSITORY"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
