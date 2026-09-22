@@ -18,6 +18,9 @@ troubleshooting live in the repository [README](../README.md) and
   correct and still shows nothing.
 - [follow-ups.md](follow-ups.md): gaps found while building features, with what
   each one blocks.
+- [known-issues.md](known-issues.md): what is known to be wrong, what is
+  believed but not observed, and what only the repository owner can do. Read
+  this first when picking the repository up.
 - [../script/smartcar_doctor.py](../script/smartcar_doctor.py): a standalone
   check of the credentials, the hosts and one vehicle's capabilities, written
   for the machine where the problem is rather than for a test environment.
