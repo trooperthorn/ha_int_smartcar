@@ -76,6 +76,9 @@ actions:
         {{ 'Charging finished' if finished else 'Charging stopped early' }}
       message: >-
         Battery is at {{ battery_value | round(0) }}% with
-        {{ states(range_entity) }} {{ state_attr(range_entity, 'unit_of_measurement') }}
-        of range.
-        {{ '' if finished else 'This is below the ' ~ (limit_value | round(0)) ~ '% charge limit, so charging was interrupted rather than completed.' }}
+        {{ states(range_entity) }}
+        {{ state_attr(range_entity, 'unit_of_measurement') }} of range.
+        {% if not finished %}
+        This is below the {{ limit_value | round(0) }}% charge limit, so
+        charging was interrupted rather than completed.
+        {% endif %}

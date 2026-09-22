@@ -226,7 +226,9 @@ actions:
                        'fits': trip_need.fits,
                        'needed_percent': trip_need.needed_percent } ] }}
   - variables:
-      daily_total_km: "{{ trip_results | default([]) | map(attribute='round_trip_km') | sum(0) }}"
+      daily_total_km: >-
+        {{ trip_results | default([]) | map(attribute='round_trip_km')
+           | sum(0) }}
       daily_fits: "{{ daily_total_km <= range_km_value }}"
       worst_trip: >-
         {{ (trip_results | default([]) | rejectattr('fits') | list | first)
@@ -244,9 +246,10 @@ actions:
           title: Trip may not fit on current range
           message: >-
             {% if worst_trip is not none -%}
-            Trip to {{ worst_trip.location }} needs {{ worst_trip.round_trip_km }}
-            km with {{ overhead }} percent margin; range is
-            {{ range_km_value | round(0) }} km; battery {{ battery_value | round(0) }} percent.
+            Trip to {{ worst_trip.location }} needs
+            {{ worst_trip.round_trip_km }} km with {{ overhead }} percent
+            margin; range is {{ range_km_value | round(0) }} km; battery
+            {{ battery_value | round(0) }} percent.
             {%- else -%}
             Tomorrow's trips total {{ daily_total_km | round(0) }} km with
             {{ overhead }} percent margin, more than the

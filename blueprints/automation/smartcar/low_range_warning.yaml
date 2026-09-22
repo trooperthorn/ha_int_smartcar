@@ -91,7 +91,9 @@ actions:
             response_variable: upcoming
     default:
       - variables:
-          upcoming: { "{{ calendar_entity }}": { events: [] } }
+          upcoming:
+            "{{ calendar_entity }}":
+              events: []
   - variables:
       next_event: >-
         {{ (upcoming[calendar_entity].events | default([]))[0]

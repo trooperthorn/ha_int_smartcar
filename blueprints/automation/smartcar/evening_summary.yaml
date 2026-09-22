@@ -205,7 +205,9 @@ actions:
         No trips with a location on the calendar in the lookahead window.
         {%- else -%}
         {% for t in results -%}
-        {{ t.summary }}: {{ t.round_trip_km }} km ({{ 'fits' if t.fits else 'does not fit' }}){{ '; ' if not loop.last else '' }}
+        {% set fit_word = 'fits' if t.fits else 'does not fit' -%}
+        {% set sep = '; ' if not loop.last else '' -%}
+        {{ t.summary }}: {{ t.round_trip_km }} km ({{ fit_word }}){{ sep }}
         {%- endfor -%}
         {%- endif %}
   - action: !input notify_target

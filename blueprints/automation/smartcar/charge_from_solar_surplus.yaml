@@ -189,7 +189,9 @@ actions:
           - condition: trigger
             id: surplus_started
           - condition: template
-            value_template: "{{ mode_setting == 'remind' and at_home and below_limit and not_charging }}"
+            value_template: >-
+              {{ mode_setting == 'remind' and at_home and below_limit
+                 and not_charging }}
         sequence:
           - if:
               - condition: state
@@ -202,7 +204,8 @@ actions:
                   message: >-
                     Solar surplus of {{ surplus_w | round(0) }} W, battery at
                     {{ battery_value | round(0) }} percent, below your
-                    {{ limit_value | round(0) }} percent limit. Plug in to use it.
+                    {{ limit_value | round(0) }} percent limit. Plug in to
+                    use it.
             else:
               - action: !input notify_target
                 data:
@@ -215,7 +218,8 @@ actions:
                     actions:
                       - action: SMARTCAR_START_CHARGING
                         title: Start charging
-      # auto mode start: surplus arrived, home, plugged in, below limit, not charging, budget ok
+      # auto mode start: surplus arrived, home, plugged in, below limit,
+      # not charging, budget ok
       - conditions:
           - condition: trigger
             id: surplus_started
