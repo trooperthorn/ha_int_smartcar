@@ -37,6 +37,26 @@ blueprint:
       default: SMARTCAR_CHARGE_FOR_TRIP
       selector:
         text: {}
+    reply_action_id:
+      name: "Charge-to reply action ID"
+      description: >-
+        The action ID of the "Charge to..." reply action. Must match the
+        same input on the "Smartcar - check tomorrow's trips against range"
+        blueprint's notification for its reply text to reach this
+        automation.
+      default: SMARTCAR_REPLY_CHARGE_TO
+      selector:
+        text: {}
+    charge_limit:
+      name: Charge limit number
+      description: >-
+        Set directly from the reply's typed percentage, clamped to 50-100,
+        instead of going through the charge script.
+      selector:
+        entity:
+          filter:
+            - domain: number
+              integration: smartcar
 
 mode: queued
 max: 3
@@ -44,14 +64,36 @@ max_exceptions: 0
 
 triggers:
   - trigger: event
+    id: run_trip
     event_type: mobile_app_notification_action
     event_data:
       action: !input notification_action_id
+  - trigger: event
+    id: reply_charge_to
+    event_type: mobile_app_notification_action
+    event_data:
+      action: !input reply_action_id
 
 conditions: []
 
 actions:
-  - action: !input charge_script
-    data:
-      destination: !input destination
-    continue_on_error: true
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: reply_charge_to
+        sequence:
+          - variables:
+              reply_percent: >-
+                {{ [[trigger.event.data.reply_text | int(0), 50] | max, 100]
+                   | min }}
+          - action: number.set_value
+            target:
+              entity_id: !input charge_limit
+            data:
+              value: "{{ reply_percent }}"
+            continue_on_error: true
+    default:
+      - action: !input charge_script
+        data:
+          destination: !input destination
+        continue_on_error: true

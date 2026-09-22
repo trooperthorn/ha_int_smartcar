@@ -41,6 +41,39 @@ blueprint:
       default: 300
       selector:
         duration: {}
+    request_location_first:
+      name: Request a location update first
+      description: >-
+        When on, asks the Companion app on each notify device for a fresh
+        location (message: request_location_update) and waits before
+        spending the billed refresh, then re-checks that the person is
+        still away. This catches a phone that has already wandered back
+        inside the settle window, at the cost of a location push instead
+        of a wasted API call.
+      default: false
+      selector:
+        boolean: {}
+    notify_devices:
+      name: Notify devices
+      description: >-
+        Mobile app devices asked for a location update when the option
+        above is on. Each device's notify action is derived as
+        notify.mobile_app_<device name, slugified>.
+      default: []
+      selector:
+        device:
+          filter:
+            - integration: mobile_app
+          multiple: true
+    location_wait:
+      name: Location update wait
+      description: >-
+        How long to wait after requesting a location update before
+        re-checking presence.
+      default:
+        seconds: 15
+      selector:
+        duration: {}
 
 mode: single
 max_exceptions: 0
@@ -56,6 +89,29 @@ conditions:
     value_template: "{{ trigger.to_state.state not in ['unknown', 'unavailable'] }}"
 
 actions:
+  - variables:
+      request_location_first: !input request_location_first
+      notify_devices: !input notify_devices
+  - if:
+      - condition: template
+        value_template: "{{ request_location_first }}"
+    then:
+      - repeat:
+          for_each: "{{ notify_devices }}"
+          sequence:
+            - action: >-
+                notify.mobile_app_{{
+                  device_attr(repeat.item, 'name') | slugify }}
+              data:
+                message: request_location_update
+              continue_on_error: true
+      - delay: !input location_wait
+  - condition: template
+    value_template: >-
+      {{ (not request_location_first)
+         or (trigger.entity_id not in ['', none]
+             and states(trigger.entity_id)
+             not in ['home', 'unknown', 'unavailable']) }}
   - action: smartcar.refresh_vehicle
     data:
       config_entry: !input config_entry
