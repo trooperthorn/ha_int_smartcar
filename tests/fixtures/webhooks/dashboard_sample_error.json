@@ -1,0 +1,49 @@
+{
+  "eventId": "3c3772e6-3fcd-42a2-8547-37f24512cf2e",
+  "eventType": "VEHICLE_ERROR",
+  "data": {
+    "user": {
+      "id": "df2677d5-9bab-4fd4-b0a2-6b9654a8aab2",
+      "externalId": "user-external-id-123"
+    },
+    "vehicle": {
+      "id": "be21818d-fb7e-4057-8764-9f5cf48cb849",
+      "make": "TESLA",
+      "model": "Model 3",
+      "year": 2020,
+      "mode": "test",
+      "powertrainType": "BEV"
+    },
+    "errors": [
+      {
+        "type": "COMPATIBILITY",
+        "code": "VEHICLE_NOT_CAPABLE",
+        "description": "The vehicle is incapable of performing your request.",
+        "docURL": "https://smartcar.com/docs/errors/api-errors/compatibility-errors#vehicle-not-capable",
+        "resolution": {"type": null},
+        "suggestedUserMessage": "Your car is unable to perform this request.",
+        "state": "ERROR",
+        "signals": [
+          {"name": "StateOfCharge", "group": "TractionBattery", "code": "tractionbattery-stateofcharge"},
+          {"name": "VIN", "group": "VehicleIdentification", "code": "vehicleidentification-vin"},
+          {"name": "IsLocked", "group": "Closure", "code": "closure-islocked"},
+          {"name": "IsAsleep", "group": "ConnectivityStatus", "code": "connectivitystatus-isasleep"},
+          {"name": "IsOnline", "group": "ConnectivityStatus", "code": "connectivitystatus-isonline"},
+          {"name": "TraveledDistance", "group": "Odometer", "code": "odometer-traveleddistance"},
+          {"name": "Nickname", "group": "VehicleIdentification", "code": "vehicleidentification-nickname"},
+          {"name": "Permissions", "group": "VehicleUserAccount", "code": "vehicleuseraccount-permissions"},
+          {"name": "Role", "group": "VehicleUserAccount", "code": "vehicleuseraccount-role"}
+        ]
+      }
+    ]
+  },
+  "meta": {
+    "version": "4.0",
+    "applicationId": "app_00000000-0000-0000-0000-000000000000",
+    "webhookId": "wh_00000000-0000-0000-0000-000000000000",
+    "webhookName": "Home Assistant",
+    "deliveryId": "a0516635-2c31-427c-b1c4-f4f8e9ae0568",
+    "deliveredAt": 1790080005043,
+    "mode": "TEST"
+  }
+}

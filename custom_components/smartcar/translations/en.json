@@ -109,6 +109,18 @@
     "polling_without_webhook": {
       "title": "Smartcar is polling without a webhook subscription",
       "description": "{title} is polling the Smartcar API on a schedule. Without a webhook subscription Smartcar only refreshes vehicle data about once every 24 hours, so scheduled polling spends the 500 calls per vehicle per month allowance without producing newer data.\n\nSubscribing the vehicle to a webhook gives updates as often as the manufacturer allows, and costs nothing from the allowance. See {docs_url}."
+    },
+    "webhook_unhealthy": {
+      "title": "Smartcar webhook cannot collect data",
+      "description": "{title}'s webhook ({webhook_id}) is configured but cannot fill the vehicle's signal store, so every entity will stay unknown with no error to explain why.\n\nCurrent state: enabled={is_enabled}, triggers={trigger_count}, data signals={data_count}.\n\nIn the Smartcar dashboard, open this webhook under Integrations and: turn the Enabled toggle on, add at least one trigger (for example a state change on state of charge), and add at least one data signal (for example tractionbattery-stateofcharge). This issue clears itself once the webhook is healthy."
+    },
+    "no_matching_webhook": {
+      "title": "No Smartcar webhook points at this Home Assistant",
+      "description": "{title} has no Smartcar webhook configured with the callback URL Home Assistant expects ({callback_url}), so scheduled polling is the only source of data for this vehicle. Without a webhook, Smartcar refreshes vehicle data about once every 24 hours.\n\nCallback URI currently configured on this application's webhook(s): {seen_callback_uris}. A webhook pointed at a different URL, such as the Smartcar Connect redirect, will never verify.\n\nIn the Smartcar dashboard, open Integrations, set the webhook's callback URI to {callback_url}, save, and let it re-verify. Then add at least one trigger and one data signal to get updates as often as the manufacturer allows."
+    },
+    "empty_signal_store": {
+      "title": "Smartcar has not collected any data yet",
+      "description": "{title} has a subscribed webhook but {vehicle_name}'s signal store is still empty (no signals collected). This is expected briefly after first subscribing; it usually fills within a few minutes to a few hours depending on the vehicle.\n\nIf this persists, check that the vehicle is actually subscribed to the webhook under Vehicles > Webhook Subscriptions in the Smartcar dashboard. This issue clears itself once the first signal arrives."
     }
   },
   "options": {

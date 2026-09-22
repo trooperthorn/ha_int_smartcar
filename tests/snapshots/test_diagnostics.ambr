@@ -121,9 +121,18 @@
       'unique_id': 'a1d50709-3502-4faa-ba43-a5c7565e6a09',
       'version': 2,
     }),
+    'last_webhook_meta': None,
     'metadata': dict({
     }),
+    'signal_store': dict({
+      'a1d50709-3502-4faa-ba43-a5c7565e6a09': dict({
+        'totalCount': None,
+        'unmappedCodes': list([
+        ]),
+      }),
+    }),
     'version': 'v2',
+    'webhook_health': None,
     'webhook_url': None,
   })
 # ---
@@ -268,9 +277,18 @@
       'unique_id': 'a1d50709-3502-4faa-ba43-a5c7565e6a09',
       'version': 2,
     }),
+    'last_webhook_meta': None,
     'metadata': dict({
     }),
+    'signal_store': dict({
+      'a1d50709-3502-4faa-ba43-a5c7565e6a09': dict({
+        'totalCount': None,
+        'unmappedCodes': list([
+        ]),
+      }),
+    }),
     'version': 'v2',
+    'webhook_health': None,
     'webhook_url': None,
   })
 # ---
@@ -317,13 +335,22 @@
       'unique_id': 'a1d50709-3502-4faa-ba43-a5c7565e6a09',
       'version': 2,
     }),
+    'last_webhook_meta': None,
     'metadata': dict({
       'last_webhook_request_raw': 'invalid_json',
       'last_webhook_response': dict({
         'status': 204,
       }),
     }),
+    'signal_store': dict({
+      'a1d50709-3502-4faa-ba43-a5c7565e6a09': dict({
+        'totalCount': None,
+        'unmappedCodes': list([
+        ]),
+      }),
+    }),
     'version': 'v2',
+    'webhook_health': None,
     'webhook_url': 'http://10.10.10.10:8123/api/webhook/smartcar_test',
   })
 # ---
@@ -369,6 +396,15 @@
       'title': 'Mock Title',
       'unique_id': 'db745230-7f7c-4791-bcaa-185facf371be',
       'version': 2,
+    }),
+    'last_webhook_meta': dict({
+      'deliveredAt': 1765157664581,
+      'mode': 'LIVE',
+      'signalCount': 30,
+      'triggerCodes': list([
+        'tractionbattery-stateofcharge',
+        'tractionbattery-range',
+      ]),
     }),
     'metadata': dict({
       'last_webhook_request': dict({
@@ -905,7 +941,15 @@
         'status': 204,
       }),
     }),
+    'signal_store': dict({
+      'db745230-7f7c-4791-bcaa-185facf371be': dict({
+        'totalCount': None,
+        'unmappedCodes': list([
+        ]),
+      }),
+    }),
     'version': 'v2',
+    'webhook_health': None,
     'webhook_url': 'http://10.10.10.10:8123/api/webhook/smartcar_test',
   })
 # ---
@@ -951,6 +995,15 @@
       'title': 'Mock Title',
       'unique_id': 'db745230-7f7c-4791-bcaa-185facf371be',
       'version': 2,
+    }),
+    'last_webhook_meta': dict({
+      'deliveredAt': 1765157664581,
+      'mode': 'LIVE',
+      'signalCount': 30,
+      'triggerCodes': list([
+        'tractionbattery-stateofcharge',
+        'tractionbattery-range',
+      ]),
     }),
     'metadata': dict({
       'last_webhook_request': dict({
@@ -1488,7 +1541,15 @@
         'status': 401,
       }),
     }),
+    'signal_store': dict({
+      'db745230-7f7c-4791-bcaa-185facf371be': dict({
+        'totalCount': None,
+        'unmappedCodes': list([
+        ]),
+      }),
+    }),
     'version': 'v2',
+    'webhook_health': None,
     'webhook_url': 'http://10.10.10.10:8123/api/webhook/smartcar_test',
   })
 # ---

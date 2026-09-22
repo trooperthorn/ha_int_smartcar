@@ -89,8 +89,14 @@ async def handle_webhook(
     app_token: str = config_entry.data[CONF_APPLICATION_MANAGEMENT_TOKEN]
     signature = request.headers.get("SC-Signature")
     data = message.get("data", {})
+    meta = message.get("meta", {})
+    delivery_id = meta.get("deliveryId")
 
     if message.get("eventType") == "VERIFY":
+        # never log the management token or the computed challenge response;
+        # that a challenge was answered is all a troubleshooting session
+        # needs to know.
+        _LOGGER.debug("Answered Smartcar VERIFY challenge (deliveryId=%s)", delivery_id)
         return web.json_response(
             {"challenge": util.hmac_sha256_hexdigest(app_token, data["challenge"])}
         )
@@ -103,7 +109,15 @@ async def handle_webhook(
     if signature is None or not hmac.compare_digest(
         util.hmac_sha256_hexdigest(app_token, body), signature
     ):
-        _LOGGER.error("ignoring message with invalid signature")
+        # the delivery id is the only detail worth keeping here: it is not
+        # secret, and it is the one thing that lets Sean match a rejected
+        # delivery in these logs against the same delivery in the Smartcar
+        # dashboard. never log the signature header or the token used to
+        # compute the expected one.
+        _LOGGER.warning(
+            "Ignoring webhook message with an invalid signature (deliveryId=%s)",
+            delivery_id,
+        )
         return web.json_response(
             {
                 "error": {
@@ -113,6 +127,8 @@ async def handle_webhook(
             },
             status=HTTPStatus.UNAUTHORIZED,
         )
+
+    _log_webhook_summary(message)
 
     # respond to test mode payloads to aid with setup
     if message.get("meta", {}).get("mode") == "TEST":
@@ -171,10 +187,66 @@ async def handle_webhook(
             status=HTTPStatus.CONFLICT,
         )
 
+    # mode=TEST deliveries returned earlier without reaching here, so any
+    # delivery that gets this far is a live one.
+    coordinator.note_live_webhook()
+
     _handle_webhook_errors(coordinator, errors)
     _handle_webhook_signals(coordinator, signals)
 
     return web.Response(status=HTTPStatus.NO_CONTENT)
+
+
+def _log_webhook_summary(message: dict) -> None:
+    """Log one structured line describing a signed, validated delivery.
+
+    This is the line a troubleshooting session actually wants: what kind of
+    event this was, which vehicle, which triggers fired, and (for an error
+    delivery) what Smartcar said was wrong, all in one place instead of
+    scattered across the raw body dump above it.
+    """
+    data = message.get("data", {})
+    meta = message.get("meta", {})
+    event_type = message.get("eventType")
+    vehicle_id = data.get("vehicle", {}).get("id")
+    trigger_codes = [
+        trigger_signal.get("code")
+        for trigger in message.get("triggers", [])
+        if isinstance(trigger, dict)
+        and isinstance(trigger_signal := trigger.get("signal"), dict)
+    ]
+
+    _LOGGER.debug(
+        "Webhook delivery: eventType=%s mode=%s version=%s deliveryId=%s "
+        "sequence=%s signalCount=%s vehicle=%s triggers=%s",
+        event_type,
+        meta.get("mode"),
+        meta.get("version"),
+        meta.get("deliveryId"),
+        meta.get("sequence"),
+        meta.get("signalCount"),
+        vehicle_id,
+        trigger_codes,
+    )
+
+    if event_type == "VEHICLE_ERROR":
+        for error in data.get("errors", []):
+            if not isinstance(error, dict):
+                continue
+
+            error_signal_codes = [
+                signal.get("code")
+                for signal in error.get("signals", [])
+                if isinstance(signal, dict)
+            ]
+
+            _LOGGER.debug(
+                "Webhook error: type=%s code=%s resolution=%s signals=%s",
+                error.get("type"),
+                error.get("code"),
+                error.get("resolution", {}).get("type"),
+                error_signal_codes,
+            )
 
 
 def _handle_webhook_errors(
@@ -203,9 +275,23 @@ def _handle_webhook_signals(
     coordinator: SmartcarVehicleCoordinator,
     signals: list[dict],
 ) -> None:
+    if signals:
+        # a VEHICLE_STATE delivery with at least one signal is proof the
+        # store is no longer empty, whatever the trigger (including the
+        # FIRST_DELIVERY that opens a fresh subscription).
+        coordinator.clear_empty_store_issue()
+
     with coordinator.create_updated_data() as (add, updated_data):
         for signal in signals:
-            add.from_signal_attributes(signal)
+            try:
+                add.from_signal_attributes(signal)
+            except Exception:
+                # one malformed signal (an unexpected shape, a bad timestamp)
+                # must not lose every other signal in the same VEHICLE_STATE
+                # delivery; log it and keep going.
+                _LOGGER.exception(
+                    "Ignoring malformed signal in webhook payload: %r", signal
+                )
 
         if add.addition_made:
             coordinator.async_set_updated_data(updated_data)

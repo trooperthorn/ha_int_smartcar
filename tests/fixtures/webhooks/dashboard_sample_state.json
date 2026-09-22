@@ -1,0 +1,112 @@
+{
+  "eventId": "b15e1ada-1163-49f6-a714-bc05d8b74067",
+  "eventType": "VEHICLE_STATE",
+  "data": {
+    "user": {
+      "id": "f3fc39e5-408d-4a5e-9488-441a6299e9b4",
+      "externalId": "user-external-id-123"
+    },
+    "vehicle": {
+      "id": "bd77cd6e-20ce-4c46-8cb6-00aca8d1da51",
+      "make": "Tesla",
+      "model": "Model 3",
+      "year": 2020,
+      "mode": "test",
+      "powertrainType": "BEV"
+    },
+    "signals": [
+      {
+        "code": "tractionbattery-stateofcharge",
+        "name": "StateOfCharge",
+        "group": "TractionBattery",
+        "body": {"value": 78, "unit": "percent"},
+        "status": {"value": "SUCCESS"},
+        "meta": {"oemUpdatedAt": 1790080005073, "retrievedAt": 1790080005073}
+      },
+      {
+        "code": "vehicleidentification-vin",
+        "name": "VIN",
+        "group": "VehicleIdentification",
+        "body": {"value": "5YJSA1CN5DFP00101"},
+        "status": {"value": "SUCCESS"},
+        "meta": {"oemUpdatedAt": 0, "retrievedAt": 0}
+      },
+      {
+        "code": "closure-islocked",
+        "name": "IsLocked",
+        "group": "Closure",
+        "body": {"value": true},
+        "status": {"value": "SUCCESS"},
+        "meta": {"oemUpdatedAt": 1790080005073, "retrievedAt": 1790080005073}
+      },
+      {
+        "code": "connectivitystatus-isasleep",
+        "name": "IsAsleep",
+        "group": "ConnectivityStatus",
+        "body": {"value": false},
+        "status": {"value": "SUCCESS"},
+        "meta": {"oemUpdatedAt": 1790080005073, "retrievedAt": 1790080005073}
+      },
+      {
+        "code": "connectivitystatus-isonline",
+        "name": "IsOnline",
+        "group": "ConnectivityStatus",
+        "body": {"value": true},
+        "status": {"value": "SUCCESS"},
+        "meta": {"oemUpdatedAt": 1790080005073, "retrievedAt": 1790080005073}
+      },
+      {
+        "code": "odometer-traveleddistance",
+        "name": "TraveledDistance",
+        "group": "Odometer",
+        "body": {"value": 78432, "unit": "km"},
+        "status": {"value": "SUCCESS"},
+        "meta": {"oemUpdatedAt": 1790080005073, "retrievedAt": 1790080005073}
+      },
+      {
+        "code": "vehicleidentification-nickname",
+        "name": "Nickname",
+        "group": "VehicleIdentification",
+        "body": {"value": "QueenLiz"},
+        "status": {"value": "SUCCESS"},
+        "meta": {"oemUpdatedAt": 1790080005073, "retrievedAt": 1790080005073}
+      },
+      {
+        "code": "vehicleuseraccount-permissions",
+        "name": "Permissions",
+        "group": "VehicleUserAccount",
+        "body": {"values": ["vehicle_cmds", "vehicle_device_data"]},
+        "status": {"value": "SUCCESS"},
+        "meta": {"oemUpdatedAt": 1790080005073, "retrievedAt": 1790080005073}
+      },
+      {
+        "code": "vehicleuseraccount-role",
+        "name": "Role",
+        "group": "VehicleUserAccount",
+        "body": {"value": "Driver"},
+        "status": {"value": "SUCCESS"},
+        "meta": {"oemUpdatedAt": 1790080005073, "retrievedAt": 1790080005073}
+      }
+    ]
+  },
+  "triggers": [
+    {"type": "SIGNAL_UPDATED", "signal": {"name": "IsLocked", "code": "closure-islocked", "group": "Closure"}},
+    {"type": "SIGNAL_UPDATED", "signal": {"name": "IsAsleep", "code": "connectivitystatus-isasleep", "group": "ConnectivityStatus"}},
+    {"type": "SIGNAL_UPDATED", "signal": {"name": "IsOnline", "code": "connectivitystatus-isonline", "group": "ConnectivityStatus"}},
+    {"type": "SIGNAL_UPDATED", "signal": {"name": "TraveledDistance", "code": "odometer-traveleddistance", "group": "Odometer"}},
+    {"type": "SIGNAL_UPDATED", "signal": {"name": "Nickname", "code": "vehicleidentification-nickname", "group": "VehicleIdentification"}},
+    {"type": "SIGNAL_UPDATED", "signal": {"name": "Permissions", "code": "vehicleuseraccount-permissions", "group": "VehicleUserAccount"}},
+    {"type": "SIGNAL_UPDATED", "signal": {"name": "Role", "code": "vehicleuseraccount-role", "group": "VehicleUserAccount"}}
+  ],
+  "meta": {
+    "version": "4.0",
+    "applicationId": "app_00000000-0000-0000-0000-000000000000",
+    "webhookId": "wh_00000000-0000-0000-0000-000000000000",
+    "webhookName": "Home Assistant",
+    "deliveryId": "958fd776-24eb-41bf-beca-6a2ef3b5a6c1",
+    "deliveredAt": 1790080005074,
+    "mode": "TEST",
+    "sequence": 1790080005044,
+    "signalCount": 9
+  }
+}

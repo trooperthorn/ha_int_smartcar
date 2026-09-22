@@ -15,7 +15,7 @@ from aiohttp import ClientError, ClientResponseError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import entity_registry as er, issue_registry as ir
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
@@ -601,6 +601,11 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
         self.settings = resolve_settings(dict(entry.options))
         self._event_polls_today = 0
         self._event_poll_day: dt.date | None = None
+        self._live_webhook_seen = False
+        # the most recent poll's shape, kept for diagnostics: what the store
+        # actually held, and which codes it returned that map to no entity.
+        self.last_poll_total_count: int | None = None
+        self.last_poll_unmapped_codes: list[str] = []
 
         super().__init__(
             hass,
@@ -873,6 +878,11 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
             len(self.incapable_codes),
             len(signal_data.get("data", [])),
         )
+        _LOGGER.debug(
+            "Coordinator %s: unsupported codes: %s",
+            self.name,
+            sorted(self.incapable_codes),
+        )
 
         # the response is a complete update, so keep it rather than throwing it
         # away and asking again moments later.
@@ -1142,6 +1152,116 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
 
             return updated_data
 
+    def note_live_webhook(self) -> None:
+        """Log once when the first non-TEST webhook delivery arrives.
+
+        `mode=TEST` deliveries (a dashboard "Send test event") prove the path
+        works but say nothing about the real subscription; this is the line
+        that confirms Smartcar is actually pushing this vehicle's data.
+        """
+        if self._live_webhook_seen:
+            return
+
+        self._live_webhook_seen = True
+        _LOGGER.info("Coordinator %s: first live webhook delivery received", self.name)
+
+    def _empty_store_issue_id(self) -> str:
+        return f"empty_signal_store_{self.entry.entry_id}_{self.vehicle_id}"
+
+    def clear_empty_store_issue(self) -> None:
+        """Clear the "no signals collected yet" issue for this vehicle.
+
+        Called the moment any data is seen, whether from a poll or a webhook
+        delivery, so the issue never outlives the problem it describes.
+        """
+        ir.async_delete_issue(self.hass, DOMAIN, self._empty_store_issue_id())
+
+    def _update_empty_store_issue(self, *, has_signals: bool) -> None:
+        """Track whether this vehicle's Smartcar signal store has ever filled.
+
+        Only a poll of the whole store (`GET /vehicles/{id}/signals`) is
+        trustworthy evidence of emptiness: a single webhook delivery with no
+        signals just means nothing changed, not that the store is empty. So
+        this is only ever called with the result of a poll.
+        """
+        if has_signals:
+            was_empty = (
+                ir.async_get(self.hass).async_get_issue(
+                    DOMAIN, self._empty_store_issue_id()
+                )
+                is not None
+            )
+            self.clear_empty_store_issue()
+
+            if was_empty:
+                _LOGGER.info(
+                    "Coordinator %s: signal store is no longer empty", self.name
+                )
+
+            return
+
+        details = self.entry.data.get("vehicles", {}).get(self.vehicle_id, {})
+        make = details.get("make")
+        model = details.get("model")
+        vehicle_name = f"{make} {model}" if make and model else self.vehicle_id
+
+        ir.async_create_issue(
+            self.hass,
+            DOMAIN,
+            self._empty_store_issue_id(),
+            is_fixable=False,
+            is_persistent=True,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key="empty_signal_store",
+            translation_placeholders={
+                "title": self.entry.title,
+                "vehicle_name": vehicle_name,
+            },
+        )
+
+    def _log_poll_summary(
+        self, signals: list[dict[str, Any]], total: int | None
+    ) -> None:
+        """Log what a `GET /vehicles/{id}/signals` poll actually contained.
+
+        The point of this line is answering "why is my entity still unknown"
+        without a packet capture: which codes came back, which of those map
+        to an entity at all, and which came back with an error status rather
+        than a value.
+        """
+        mapped_count = 0
+        unmapped_codes: list[str] = []
+        error_codes: list[str] = []
+
+        for signal in signals:
+            attributes = signal.get("attributes", {})
+            code = attributes.get("code")
+
+            if not code:
+                continue
+
+            if code in DATAPOINT_CODE_MAP:
+                mapped_count += 1
+            else:
+                unmapped_codes.append(code)
+
+            if attributes.get("status", {}).get("value") == "ERROR":
+                error_codes.append(code)
+
+        self.last_poll_total_count = total
+        self.last_poll_unmapped_codes = unmapped_codes
+
+        _LOGGER.debug(
+            "Coordinator %s: poll totalCount=%s returned=%s mapped=%s "
+            "unmapped=%s errored=%s",
+            self.name,
+            total,
+            len(signals),
+            mapped_count,
+            unmapped_codes,
+            error_codes,
+        )
+
     def _merge_signal_data(self, signal_data: dict[str, Any]) -> dict[str, Any]:
         """Merge data response data from a v3 vehicle signals request.
 
@@ -1150,6 +1270,9 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
         """
         signals = signal_data.get("data", [])
         total = signal_data.get("meta", {}).get("totalCount")
+
+        self._update_empty_store_issue(has_signals=bool(signals))
+        self._log_poll_summary(signals, total)
 
         # the signals response is JSON:API shaped and advertises paging, but no
         # page parameter is documented on this endpoint. in every capture the
@@ -1237,6 +1360,8 @@ class _DataAdder:
             )
 
             body = {"value": None}
+
+        _normalize_body_values_key(code, body)
 
         if body.get("unit") == "percent":
             _handle_percent_unit_conversion(code, body)
@@ -1414,6 +1539,27 @@ def _parse_signal_timestamp(value: str | float | None) -> dt.datetime | None:
 def _is_integrated(signal: dict) -> bool:
     code: str | None = signal.get("code")
     return code in DATAPOINT_CODE_MAP
+
+
+# the OpenAPI spec's own example bodies for these two codes use a signal-name
+# keyed array (`doors`, `windows`) where every other multi-item signal, and
+# every live payload actually observed, uses the generic `values` key that
+# entity descriptions (`closure-doors.values`, `closure-windows.values`) read.
+# accept either so a body shaped like the spec's example does not leave the
+# entity stuck unknown.
+_SIGNAL_BODY_ALTERNATE_VALUES_KEY = {
+    "closure-doors": "doors",
+    "closure-windows": "windows",
+}
+
+
+def _normalize_body_values_key(code: str | None, body: dict[str, Any]) -> None:
+    if (
+        "values" not in body
+        and (alternate := _SIGNAL_BODY_ALTERNATE_VALUES_KEY.get(code or ""))
+        and alternate in body
+    ):
+        body["values"] = body.pop(alternate)
 
 
 def _handle_percent_unit_conversion(code: str | None, body: dict[str, Any]) -> None:

@@ -21,6 +21,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.helpers import issue_registry as ir
 from multidict import CIMultiDict, CIMultiDictProxy
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -863,7 +864,120 @@ async def test_no_matching_webhook_is_explained(
         await async_subscribe_vehicles(hass, mock_config_entry)
 
     assert not subscribe.called
-    assert "No Smartcar webhook is configured with the callback URL" in caplog.text
+    assert "No Smartcar webhook has the callback URL Home Assistant expects" in (
+        caplog.text
+    )
+    assert "https://x/y" in caplog.text
+
+    issue_registry = ir.async_get(hass)
+    issue = issue_registry.async_get_issue(
+        DOMAIN, f"no_matching_webhook_{mock_config_entry.entry_id}"
+    )
+    assert issue is not None
+    assert issue.translation_placeholders is not None
+    assert issue.translation_placeholders["seen_callback_uris"] == "https://x/y"
+
+
+@pytest.mark.parametrize("vehicle_fixture", ["vw_id_4"])
+@pytest.mark.parametrize("client_id_version", ["v3"])
+async def test_matched_but_disabled_webhook_raises_a_repair_issue(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    vehicle: dict,
+) -> None:
+    """Sean's exact bug: the webhook matches but collects nothing.
+
+    `isEnabled: false` with empty `triggers` and `data` passes the "does a
+    webhook exist for this URL" check and then silently subscribes the
+    vehicle to a webhook that will never deliver anything.
+    """
+    await setup_integration(hass, mock_config_entry)
+
+    hass.config_entries.async_update_entry(
+        mock_config_entry,
+        data={
+            **mock_config_entry.data,
+            "user_id": "user_1",
+            CONF_WEBHOOK_ID: mock_config_entry.data.get(CONF_WEBHOOK_ID, "wh_local"),
+        },
+    )
+
+    runtime = mock_config_entry.runtime_data
+    callback_url, _ = await webhook_url_from_id(
+        hass, mock_config_entry.data[CONF_WEBHOOK_ID]
+    )
+    issue_id = f"webhook_unhealthy_{mock_config_entry.entry_id}"
+
+    with (
+        patch.object(
+            runtime.management,
+            "async_list_webhooks",
+            AsyncMock(
+                return_value=[
+                    {
+                        "id": "wh_1",
+                        "attributes": {
+                            "callbackUri": callback_url,
+                            "isEnabled": False,
+                            "triggers": [],
+                            "data": [],
+                        },
+                    }
+                ]
+            ),
+        ),
+        patch.object(
+            runtime.management,
+            "async_subscriptions_for_vehicle",
+            AsyncMock(return_value=[]),
+        ),
+        patch.object(
+            runtime.management, "async_subscribe", AsyncMock(return_value=True)
+        ),
+    ):
+        await async_subscribe_vehicles(hass, mock_config_entry)
+
+    issue_registry = ir.async_get(hass)
+    issue = issue_registry.async_get_issue(DOMAIN, issue_id)
+    assert issue is not None
+    assert issue.translation_placeholders == {
+        "title": mock_config_entry.title,
+        "webhook_id": "wh_1",
+        "is_enabled": "False",
+        "trigger_count": "0",
+        "data_count": "0",
+    }
+
+    # once the webhook becomes healthy the issue must clear itself, rather
+    # than stay stuck describing a problem that is already fixed.
+    with (
+        patch.object(
+            runtime.management,
+            "async_list_webhooks",
+            AsyncMock(
+                return_value=[
+                    {
+                        "id": "wh_1",
+                        "attributes": {
+                            "callbackUri": callback_url,
+                            "isEnabled": True,
+                            "triggers": ["closure-islocked"],
+                            "data": ["closure-islocked"],
+                        },
+                    }
+                ]
+            ),
+        ),
+        patch.object(
+            runtime.management,
+            "async_subscriptions_for_vehicle",
+            AsyncMock(return_value=[{"id": "sub_1"}]),
+        ),
+        patch.object(runtime.management, "async_subscribe", AsyncMock()),
+    ):
+        await async_subscribe_vehicles(hass, mock_config_entry)
+
+    assert issue_registry.async_get_issue(DOMAIN, issue_id) is None
 
 
 @pytest.mark.parametrize("vehicle_fixture", ["vw_id_4"])

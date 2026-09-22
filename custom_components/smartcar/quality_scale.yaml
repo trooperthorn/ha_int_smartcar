@@ -175,7 +175,15 @@ rules:
   repair-issues:
     status: done
     comment: |
-      A legacy v2 client id raises a fixable repair issue.
+      A legacy v2 client id raises a fixable repair issue. Non-fixable
+      informational issues cover the webhook health problems that leave every
+      entity silently unknown: a webhook that matches this instance's
+      callback URL but is disabled or has no triggers/data configured
+      (webhook_unhealthy), no webhook matching this instance's callback URL
+      at all (no_matching_webhook, naming the URL expected and the URLs
+      actually seen), and a vehicle's signal store answering empty
+      (empty_signal_store). All three clear themselves once the condition
+      that raised them is gone.
   stale-devices:
     status: todo
     comment: |
