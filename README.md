@@ -51,33 +51,85 @@ Installation through [HACS][hacs] is the preferred installation method.
 
 ## Setup
 
-Configuration is done via the Home Assistant UI after installation.
+Setup has three parts, and they must be done in this order:
 
-1. Navigate to "Settings" &rarr; "Devices & Services"
-1. Click "+ Add Integration"
-1. Search for and select &rarr; "Smartcar"
+1. [Smartcar Dashboard configuration](#smartcar-dashboard-configuration) - collect three values and register one redirect URI.
+2. [Home Assistant configuration flow](#configuration-flow) - paste those values and authorize the vehicle.
+3. [Webhooks](#webhooks) - paste the URL Home Assistant prints back into the dashboard, then verify.
+
+Nothing works until all three are done. A vehicle that is connected but not subscribed to a verified webhook produces entities that are created and never get a value, and no error anywhere. See [docs/communication.md](docs/communication.md) for why.
+
+### Smartcar Dashboard Configuration
+
+Everything in this section is in the [Smartcar dashboard][smartcar-dashboard], inside your application, on the **Configuration** tab. Open it in a second browser tab and keep it open: the Home Assistant config flow asks for these values one screen at a time.
+
+There are **three** values to collect, and they are not interchangeable:
+
+| Value | Where it is | What it is for | Goes into |
+| --- | --- | --- | --- |
+| **Client ID** and **Client Secret** (API credentials) | Configuration &rarr; _API credentials_ | The application token used for every data read and command | Home Assistant's _Application Credentials_ dialog |
+| **Application ID** | Configuration &rarr; _Application details_ | Identifies the application to Smartcar Connect during authorization | The config flow's _Application ID_ field |
+| **Application Management Token** | Configuration &rarr; _API credentials_, at the very bottom of the page | The HMAC key that signs webhook deliveries. Nothing else. | The _Application Management Token_ field in the config flow and in Configure |
+
+#### Redirect URIs
+
+In _Application details_, find **Redirect URIs** and make sure the list contains exactly this value:
+
+```text
+https://my.home-assistant.io/redirect/oauth
+```
+
+- This is **not a placeholder**. It is Home Assistant's standard OAuth redirect, used by every Home Assistant integration that authorizes through an external service, and it is correct even though it is not your own instance's address. Use it verbatim unless you have removed `default_config:` from your configuration and disabled the [My Home Assistant integration](https://www.home-assistant.io/integrations/my/).
+- **Do not use this URL anywhere else in the dashboard.** In particular it is **not** the webhook callback URI. Pasting it into a webhook callback field is the single most common way this setup fails, and the failure is silent: see [the three wrong callback values](#the-three-wrong-callback-values).
+- Adding a redirect URI takes effect immediately. If the authorization step later reports a redirect mismatch, it is because this value differs by even one character.
+
+#### Legacy credentials vs API credentials
+
+The Configuration tab shows two credential pairs, and choosing the wrong one silently puts the integration on the deprecated v2 API:
+
+- **Legacy credentials** give a **Legacy Client ID** that is a plain UUID. That UUID is the same value as the Application ID, which is exactly why people paste it into the wrong box. It drives the old authorization-code flow against the v2 API.
+- **API credentials** give a **Client ID that begins with `client_`**, plus a **Client Secret**. You may hold up to **three** secrets at once, which is what lets you rotate one without downtime. This is the pair the integration wants.
+
+The integration decides which API version to use purely by looking at the prefix: an ID beginning `client_` selects v3, anything else selects v2. So a Client ID without the `client_` prefix does not produce an error, it produces a v2 entry. If you are unsure which you entered, open the integration's diagnostics: the resolved API version is reported there.
+
+Copy a Client Secret when it is created. The dashboard shows it once.
+
+#### Vehicle Access signal selection
+
+Still under Configuration, open **Vehicle access**. This is where you choose which signal groups your application is allowed to request. Enable every group you want, keeping in mind that on the Free plan most groups are locked behind **Upgrade** (see [Plan notes](#plan-notes)).
+
+The important warning on this page is easy to miss:
+
+> **Changing the signal selection only affects new connections.** A vehicle that is already connected keeps the signal set it was connected with.
+
+So if you enable a signal group after your car is already connected, you must disconnect the vehicle and re-run Smartcar Connect before that group does anything. Get this page right before you authorize.
+
+### Configuration Flow
+
+Once the dashboard side is ready, add the integration in Home Assistant.
+
+1. Navigate to _Settings_ &rarr; _Devices & Services_
+1. Click _+ Add Integration_
+1. Search for and select &rarr; _Smartcar_
 
 Or you can use the My Home Assistant Button below.
 
 [![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)][config-flow-start]
 
-Follow the instructions to configure the integration.
-
-### Configuration Flow
-
-Initially, you will have the option to enable [webhooks](#webhooks). If desired, follow the instructions to enter the required data. Once the configuration is complete, you can complete the required [webhook setup steps](#webhooks).
-
 #### Authorization Data Entry
 
-1. Choose a name for your credentials and enter the **Client ID** and **Client Secret** which can be found in the [Smartcar dashboard][smartcar-dashboard] under _Configuration_ &rarr; _API credentials_.
-1. **Crucially, set the "Redirect URIs"** in the Smartcar settings for your application. You need to add **exactly** the URI your Home Assistant instance uses for OAuth callbacks.
-   - Most users will simply use the **My Home Assistant** URI: `https://my.home-assistant.io/redirect/oauth`
-     > Note: This is not a placeholder. It is the URI that must be used unless you’ve disabled or removed the `default_config:` line from your configuration and disabled the [My Home Assistant Integration](https://www.home-assistant.io/integrations/my/).
-   - Add **only** the correct URI for your setup.
-1. Continue to the next step.
-1. Enter your _Application ID_ which can be found in the [Smartcar dashboard][smartcar-dashboard] under _Configuration_ &rarr; _Application details_.
-1. If you plan to use webhooks, also enter your _Application management token_ which can be found in the [Smartcar dashboard][smartcar-dashboard] under _Configuration_ &rarr; _API credentials_.
-1. Select the **Permissions** you want Home Assistant to be able to access. To enable all entities in this integration, select all relevant permissions:
+1. **Application Credentials dialog.** The first time you add Smartcar, Home Assistant asks for credentials. Give the credential set a name you will recognize (for example `Smartcar v3`), then enter:
+   - **Client ID**: the **API credentials** Client ID, the one that **begins with `client_`**. Not the Application ID, and not the Legacy Client ID.
+   - **Client Secret**: the matching API credentials secret.
+
+   These are stored under [Application Credentials][ha-application-credentials] and can be reused by later entries.
+
+1. **Smartcar configuration screen.** This screen asks for:
+   - **Application ID**: the UUID from Configuration &rarr; _Application details_. This is required for v3 and is a **different field from the Client ID**, even though it looks identical to the Legacy Client ID.
+   - **Use webhooks**: turn this on. It is Smartcar's preferred delivery method and, on v3, the only thing that keeps the signal store filled.
+   - **Application Management Token**: the token from the bottom of _API credentials_. Only provide it when _Use webhooks_ is on; the flow rejects it otherwise with "Do not provide application management token unless using webhooks". Leaving it out while webhooks are on fails with "Missing application management token".
+
+1. **Permission selection.** Tick the permissions Home Assistant should request. To enable every entity this integration offers, select all of them:
    - Get total distance traveled
    - Get the vehicle's location
    - Get EV/PHEV battery level, capacity & current range
@@ -86,72 +138,220 @@ Initially, you will have the option to enable [webhooks](#webhooks). If desired,
    - Get engine oil health
    - Get tire pressure details
    - Get fuel tank level
+   - Get diagnostic trouble codes and system health
+   - Get cabin temperature and climate control status
    - Control charging (start/stop & target charge)
    - Lock or unlock vehicle
 
-   \* _Functionality for all permissions depends on car support_
+   Two things to know about this screen:
+   - **Plan-locked scopes.** On the Free plan, groups such as Charge, Location, Climate, Diagnostics and Wheel are not available to your application at all. You can still tick the matching permission and Smartcar can still grant it, but no webhook will ever be able to carry those signals. Entities for them are created and stay unavailable. Untick them if you would rather not see unavailable entities.
+   - **Vehicle support.** A permission your car does not implement can also be granted and still return nothing.
 
-1. Continue to the [next section](#authorization-via-smartcar-connect) which explains the steps to authorize your vehicle via [Smartcar connect](https://smartcar.com/docs/connect/what-is-connect).
+   On a **reconfigure**, this screen starts from what Smartcar has actually granted rather than what was originally asked for, so it is a reliable way to see your real scope set.
+
+1. Continue to the [next section](#authorization-via-smartcar-connect) which explains the steps to authorize your vehicle via [Smartcar Connect](https://smartcar.com/docs/connect/what-is-connect).
 
 #### Authorization via Smartcar Connect
 
-1. You will be redirected to the Smartcar website (or a new tab will open).
-1. Log in using the credentials for your **vehicle's connected services account** (e.g., your Volkswagen ID, FordPass account, Tesla account), **NOT** your Smartcar developer account credentials.
-1. Review the permissions requested by Home Assistant (these should match the scopes you selected when creating the Smartcar application).
-1. **Grant access** to allow Home Assistant to connect to your vehicle(s) via Smartcar.
-1. You should be redirected back to Home Assistant.
+1. Home Assistant shows a **Connect** link. Clicking it **opens Smartcar Connect in a new browser tab**; the original Home Assistant tab stays open and waits. Do not close it, and do not reload it while Connect is running.
+1. Log in using the credentials for your **vehicle's connected services account** (for example your Volkswagen ID, FordPass account, or Tesla account), **NOT** your Smartcar developer account credentials.
+1. Review the permissions requested and press **Allow**.
+1. Connect hands back to `https://my.home-assistant.io/redirect/oauth`, which forwards to your instance and closes the loop. Return to the original Home Assistant tab; it should have advanced.
+
+Connect runs once. The only value the integration keeps from it is the Smartcar **user ID**, which becomes the `sc-user-id` header on every later request. If a request ever fails with `missing userId`, re-running Connect is the fix.
 
 #### Setup Complete
 
-If successful, the integration will be added, and Home Assistant will create devices and entities for your connected vehicle(s). From here:
+If successful, the integration will be added, and Home Assistant will create devices and entities for your connected vehicle(s). The final screen prints the **webhook URL**. Copy it now; the next section needs it.
 
+From here:
+
+- Complete the [webhook setup](#webhooks). Without it, on v3, there is nothing to read.
 - Enable entities you want to access after understanding [the impact on rate limits](#rate-limits--polling) if you're using polling.
 - Consider creating a [customized polling setup](#customized-polling) via automations.
 
 ### Webhooks
 
-**Important:** In order for webhooks to update entities, your Home Assistant instance must be accessible from the internet, either via Home Assistant Cloud or another method, and you must provide a valid Home Assistant URL in your [network settings](https://my.home-assistant.io/redirect/network/). See the [Remote Access documentation][ha-remote-access] for more information.
+On the v3 API this is not optional decoration. `GET /vehicles/{id}/signals` reads a server-side store, and the only thing that fills that store is a webhook that is verified, is enabled, carries data signals, and has your vehicle subscribed to it. Until that is true the endpoint answers with an empty result, every entity stays blank, and nothing raises an error.
 
-**Signal & Sensor Availability:** Please remember that sensor availability is based on which [signals](https://smartcar.com/docs/api-reference/signals/schema) are available, some of which are only available for **[paying Smartcar customers](https://smartcar.com/pricing#pricing)**.
+**Prerequisite:** your Home Assistant instance must be reachable from the internet, either through Home Assistant Cloud or another method. Without Home Assistant Cloud you must set _Settings_ &rarr; _System_ &rarr; _Network_ &rarr; **Internet URL** (see the [Remote Access documentation][ha-remote-access]), or the integration has no URL to print.
 
-These steps are for setting up a webhook in [Smartcar's dashboard][smartcar-dashboard]. Before starting, make sure you have completed all of the steps to [create an active configuration](#configuration-flow) in Home Assistant and have the webhook URL.
+#### Step 1: Get the webhook URL from Home Assistant
 
-The webhooks configuration is broken down into several steps:
+1. Go to _Settings_ &rarr; _Devices & Services_ &rarr; _Smartcar_.
+1. Click **Configure** on the integration entry.
+1. Make sure **Use webhooks** is on and paste the **Application Management Token** (Configuration &rarr; _API credentials_, bottom of the page in the Smartcar dashboard) into the token field.
+1. Press **Submit**.
+1. The screen shows the line **"Use the following URL:"** followed by the URL in a code block. Copy it exactly, including the scheme and any trailing characters.
 
-1. [Create Webhook](#create-webhook)
-1. [Subscribe Vehicle](#subscribe-vehicle)
-1. [Validate Webhook](#validate-webhook)
+What that URL looks like:
 
-#### Create Webhook
+| Setup | URL shape | Notes |
+| --- | --- | --- |
+| Home Assistant Cloud (Nabu Casa) | `https://hooks.nabu.casa/<opaque id>` | A cloudhook. Long, base64-looking, and frequently ends in `=`. Copy the whole thing. |
+| Your own remote access | `https://<your external URL>/api/webhook/<webhook id>` | Requires _Settings_ &rarr; _System_ &rarr; _Network_ &rarr; **Internet URL** to be set, or you get a "No URL available" error instead. |
 
-1. From the [Smartcar dashboard][smartcar-dashboard], go to _Integrations_ & click on _Create integration_
-1. Select _Webhook_
-1. Choose which triggers to enable, i.e. use _Only show signals included in my plan_ then expand all signals and enable all of them
-1. Click _Next_
-1. Choose what data to include, i.e. use _Only show signals included in my plan_ then expand all signals and enable all of them
-1. Click _Next_
-1. Name the webhook, i.e. _Home Assistant_
-1. Enter the callback URI (which is the URL that is displayed during setup)
-1. Choose a setting for _Vehicle subscription_ that works for your plan (i.e. with the free plan, you'll want to add a vehicle in a later step)
-1. Click _Next_
-1. Review your settings and press _Next_
-1. Press _Add webhook only_ (because verification will fail without a vehicle subscription)
+If the screen says webhooks are not enabled rather than showing a URL, finish the rest of setup and come back to this Configure screen; the URL appears once the webhook is registered.
 
-#### Subscribe Vehicle
+#### Step 2: Create or edit the webhook in the Smartcar dashboard
 
-1. From the [Smartcar dashboard][smartcar-dashboard], go to _Vehicles_
-1. Navigate to your vehicle
-1. Choose _Webhooks_ at the top of the page
-1. Press _Subscribe to webhook_
-1. Select your webhook and press _Subscribe_
+From the [Smartcar dashboard][smartcar-dashboard], open **Integrations**. If a webhook already exists, click its name and edit it. Otherwise click **Create integration** and choose **Webhook**.
 
-#### Validate Webhook
+Set these fields:
 
-1. From the [Smartcar dashboard][smartcar-dashboard], go to _Integrations_
-1. Navigate to your webhook by clicking on the name of it in the list view
-1. In the ellipsis menu in the top right choose _Verify_
-1. Press _Verify this webhook_
-1. Ensure a popup appears indicating that the webhook was successfully verified
+| Field | Value |
+| --- | --- |
+| Name | Anything recognizable, for example `Home Assistant` |
+| **Vehicle data callback URI** | The URL copied in step 1, pasted verbatim |
+| **Vehicle error callback URI** | The **same** URL. The integration handles both event types on one endpoint. |
+| **Vehicle subscription** | **Automatically subscribe all vehicles** |
+| Units | Metric or Imperial, your preference. The integration converts either way. |
+
+Use **Automatically subscribe all vehicles** unless you have a reason not to. It removes the separate per-vehicle subscription step, and an unsubscribed vehicle produces a verified webhook that never delivers anything, which is a confusing place to end up.
+
+**Triggers.** A trigger is the event that causes a delivery. Tick _Only show signals included in my plan_, then enable every trigger offered. The three that earn their place on almost any vehicle are:
+
+- `tractionbattery-stateofcharge`
+- `closure-islocked`
+- `odometer-traveleddistance`
+
+Avoid weighting the trigger list toward signals your vehicle does not implement. Triggers such as `connectivitystatus-isonline`, `connectivitystatus-isasleep`, `vehicleidentification-nickname`, `vehicleuseraccount-role` and `vehicleuseraccount-permissions` simply never fire on many cars, which produces a verified but very quiet webhook.
+
+**Data signals.** A data signal is what gets included in the delivery. Again use _Only show signals included in my plan_ and enable all of them. Every delivery carries **all** configured data signals, not just the one that triggered it, so there is no cost to enabling them all.
+
+Save the webhook.
+
+#### Step 3: Verify
+
+1. From **Integrations**, open your webhook.
+1. In the ellipsis menu at the top right, choose **Verify**.
+1. Press **Verify this webhook**.
+
+Smartcar posts a one-time challenge to the callback URI, the integration answers it with an HMAC of the Application Management Token, and the status flips from **Unverified** to **Verified**. If it does not, nothing further in this document will work; go to [the three wrong callback values](#the-three-wrong-callback-values) below.
+
+#### Step 4: Test webhook
+
+With the status showing Verified, use **Test webhook** from the same menu. This sends a synthetic event. See [Verify Communication](#verify-communication) for exactly what should come back.
+
+#### The three wrong callback values
+
+Three values get pasted into the callback URI fields by mistake. Each fails differently, and none of them produce an obvious message in Home Assistant:
+
+| What was pasted | What comes back | Why |
+| --- | --- | --- |
+| `https://my.home-assistant.io/redirect/oauth`, the OAuth redirect | A Netlify **"Page not found"** 404 | That host is a static redirector run by the Home Assistant project. It has no webhook endpoint, and the request never reaches your instance at all. This value is correct for Redirect URIs and **only** for Redirect URIs. |
+| A Home Assistant **page** URL, such as `https://<external>/config/integrations` | The raw **HTML** of the Home Assistant frontend, and verification fails because the response is not the expected JSON challenge | The frontend serves a web page on that path. Webhooks live under `/api/webhook/<id>` only. |
+| The right URL, but with a **stale Application Management Token** in Home Assistant | **401**, reported as an **invalid signature** | The token is the HMAC key on both ends. Regenerating it in the dashboard, or a typo on paste, makes every signature comparison fail. Re-paste the current token into the Configure screen and verify again. |
+
+### Verify Communication
+
+Work through these in order. Each step proves a different link in the chain, so the first one that fails tells you where the problem is.
+
+#### 1. Verify says Verified
+
+The dashboard's **Verify** action should report success and the webhook's status should read **Verified**. This proves that the callback URL reaches your instance and that the Application Management Token in Home Assistant matches the one in the dashboard.
+
+#### 2. Test webhook returns 202
+
+Trigger **Test webhook**. The integration accepts it, validates the signature, recognizes it as a test and deliberately does nothing further. The dashboard gets a **202** back, and the Home Assistant log records that no action was taken, quoting `mode=TEST`.
+
+This response is the useful part: it is generated by the integration itself and it sits **after** the signature check. A 202 here proves the URL, the token, the signature verification and the payload parser all work. It does not prove anything about your vehicle, because the test payload describes a synthetic one.
+
+#### 3. The first LIVE delivery arrives within minutes
+
+Once the vehicle is subscribed, Smartcar sends a first real delivery with the trigger `FIRST_DELIVERY` and `mode` set to `LIVE`. On a Volkswagen this landed within a few minutes of subscribing. It carries the VIN and the data signals the vehicle can answer.
+
+It is normal for that same delivery to be accompanied by a `VEHICLE_ERROR` event listing signals your car does not implement, with the code `VEHICLE_NOT_CAPABLE`. The integration logs those and ignores them. Five such signals on a single car is an ordinary result, not a fault.
+
+#### 4. `sensor.<make_model>_last_webhook_received` moves
+
+This sensor exists precisely for this check. It updates on **every** inbound webhook, including ones that are rejected, and its attributes carry `response_status` and `response_data`. If it never moves, nothing is arriving and the problem is upstream of Home Assistant. If it moves but shows a 401, the token is wrong.
+
+#### 5. Entities populate
+
+Within a delivery or two, expect values on:
+
+- **Battery Level** (`sensor.<make_model>_battery`), a percentage
+- **Door Lock** (`lock.<make_model>_door_lock`)
+- **Odometer** (`sensor.<make_model>_odometer`), which you have to enable first as it is off by default
+
+If the webhook is delivering but these stay empty, check that the matching permissions were granted and that your vehicle supports those signals.
+
+#### 6. Read the debug log
+
+Turn on debug logging from the integration's own page: _Settings_ &rarr; _Devices & Services_ &rarr; _Smartcar_ &rarr; **Enable debug logging**. Reproduce, then download the log. These are the lines that matter, in the order they should appear.
+
+Registration, once per start:
+
+```text
+[custom_components.smartcar] Registering webhook at url: https://hooks.nabu.casa/...
+```
+
+The verification challenge:
+
+```text
+[custom_components.smartcar.webhooks] Received JSON from Smartcar: '{"eventId":"...","eventType":"VERIFY","data":{"challenge":"challenge_..."},...}'
+```
+
+A test delivery, acknowledged and deliberately dropped:
+
+```text
+[custom_components.smartcar.webhooks] Validating signature
+[custom_components.smartcar.webhooks] mode=TEST; no action taken for vehicle with id: ...
+```
+
+The first live delivery, carrying `"triggers":[{"type":"FIRST_DELIVERY"}]` and `"mode":"LIVE"`, followed by a signature check with no complaint after it:
+
+```text
+[custom_components.smartcar.webhooks] Received JSON from Smartcar: '{"eventId":"...","eventType":"VEHICLE_STATE",...,"mode":"LIVE","sequence":...,"signalCount":9}'
+[custom_components.smartcar.webhooks] Validating signature
+```
+
+Signals a vehicle cannot answer, logged and ignored:
+
+```text
+[custom_components.smartcar.webhooks] ignoring error in webhook: {'type': 'COMPATIBILITY', 'code': 'VEHICLE_NOT_CAPABLE', ...}
+```
+
+And the line that shows the store filling up. Before the webhook is delivering, a poll reports zero:
+
+```text
+[custom_components.smartcar.coordinator] Coordinator smartcar_...: vehicle cannot answer 0 of 0 signals
+```
+
+After deliveries have started, the same poll reports real numbers, and the total is usually **larger than the number of data signals on the webhook**:
+
+```text
+[custom_components.smartcar.coordinator] Coordinator smartcar_...: vehicle cannot answer 6 of 25 signals
+```
+
+#### Symptom to fix
+
+| Symptom | Most likely cause | Fix |
+| --- | --- | --- |
+| Webhook status stays **Unverified** | Callback URI is not the URL Home Assistant printed | Re-copy from the Configure screen, paste into **both** callback fields, verify again |
+| Verify returns a Netlify **"Page not found"** 404 | The OAuth redirect was pasted into the callback URI | Use the Home Assistant webhook URL. `my.home-assistant.io/redirect/oauth` belongs in Redirect URIs only |
+| Verify returns **HTML** | A Home Assistant frontend page URL was used | Use the printed `/api/webhook/<id>` URL or the cloudhook |
+| Verify or deliveries return **401 invalid signature** | Application Management Token mismatch | Re-copy the token from the bottom of _API credentials_ into Configure, Submit, verify again |
+| Configure screen shows **"No URL available"** | No external URL | Set _Settings_ &rarr; _System_ &rarr; _Network_ &rarr; **Internet URL**, or enable Home Assistant Cloud |
+| **Verified**, but no deliveries ever | Vehicle is not subscribed, or every trigger is a signal the car cannot report | Set **Automatically subscribe all vehicles**, and add `odometer-traveleddistance` and `closure-islocked` as triggers |
+| Authorization fails with a redirect mismatch | The Redirect URIs list does not contain the exact value | Add `https://my.home-assistant.io/redirect/oauth` verbatim |
+| The entry behaves like the old API | Client ID has no `client_` prefix | Re-add Application Credentials with the **API credentials** pair, see [Upgrading from Legacy `v2` API to `v3`](#upgrading-from-legacy-v2-api-to-v3) |
+| A request fails with `missing userId` | The Smartcar user ID was never captured | Re-run Smartcar Connect |
+| Entities created but permanently unavailable | Scope not granted, plan-locked, or the vehicle does not implement the signal | Reconfigure to see the granted scopes, then check the plan and your vehicle's compatibility |
+| A newly enabled signal group changes nothing | Vehicle Access changes apply to **new connections only** | Disconnect the vehicle and re-run Connect |
+
+### Plan Notes
+
+The Free tier is workable, but it is worth knowing exactly where its edges are:
+
+- **500 API calls per vehicle per month.** Commands count against the same allowance, so every reading you take is a lock or a charge stop you cannot send later. Webhook deliveries are **not** billed against it.
+- **One vehicle.**
+- **A webhook can carry at most 9 signals**, plus a small number of attributes, and the richer signal groups (Charge, Location, Climate, Diagnostics, HVAC, Motion, Service, Surveillance, Transmission, Wheel, LowVoltageBattery) are locked behind Upgrade in Vehicle Access.
+
+There is one very useful consequence of how the store works, and it is not obvious from the plan page: **once a vehicle is subscribed, Smartcar collects every signal your grant covers into the store, not only the ones on the webhook's data list.** So charge state and location, which the Free plan cannot push through a webhook, still arrive through a normal polled read of the signals endpoint. In a live check, a webhook configured with 9 data signals produced a store holding 25.
+
+That makes "granted scope" and "configurable webhook signal" two different sets. The webhook decides what gets pushed and how often the store refreshes; the grant decides what the store is allowed to contain.
 
 ## FAQ's and Troubleshooting
 
