@@ -26,6 +26,7 @@ from homeassistant.util import dt as dt_util
 from . import util
 from .auth import AbstractAuth
 from .budget import DEFAULT_MONTHLY_BUDGET, DEFAULT_RESERVE, ApiBudget
+from .cache import SignalCache
 from .const import (
     CONF_APPLICATION_MANAGEMENT_TOKEN,
     CONF_BUDGET_RESERVE,
@@ -582,6 +583,7 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
         entry: ConfigEntry,
         version: APIVersion,
         budget: ApiBudget | None = None,
+        cache: SignalCache | None = None,
     ) -> None:
         """Initialize coordinator."""
         self.auth = auth
@@ -595,6 +597,7 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
         # empty means unknown, which is treated as capable.
         self.incapable_codes: frozenset[str] = frozenset()
         self.budget = budget
+        self.cache = cache
         self.settings = resolve_settings(dict(entry.options))
         self._event_polls_today = 0
         self._event_poll_day: dt.date | None = None
@@ -821,6 +824,24 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
             )
             return False
 
+        # a restart is not a reason to ask the car anything. the response
+        # from a few minutes ago describes the same vehicle, and this request
+        # is billed: without this, every restart, reload and reconfigure spent
+        # a call out of five hundred a month.
+        if (
+            self.cache is not None
+            and (cached := self.cache.fresh(self.vehicle_id)) is not None
+        ):
+            _LOGGER.debug(
+                "Coordinator %s: using the stored signal response rather than "
+                "spending a call on setup",
+                self.name,
+            )
+            self.incapable_codes = _incapable_codes(cached)
+            self.async_set_updated_data(self._merge_signal_data(cached))
+
+            return True
+
         try:
             response = await util.async_request_with_retry(
                 lambda: self.auth.request_v3(
@@ -840,6 +861,9 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
             return False
 
         await self.async_record_call()
+
+        if self.cache is not None:
+            await self.cache.async_store(self.vehicle_id, signal_data)
 
         self.incapable_codes = _incapable_codes(signal_data)
 

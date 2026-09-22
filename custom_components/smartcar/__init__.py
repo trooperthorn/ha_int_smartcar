@@ -26,6 +26,7 @@ from . import util
 from .auth import AbstractAuth
 from .auth_impl import AccessTokenAuthImpl, AsyncConfigEntryAuth
 from .budget import ApiBudget
+from .cache import SignalCache
 from .const import (
     API_ENDPOINTS,
     CONF_AUTO_SUBSCRIBE,
@@ -45,7 +46,7 @@ from .errors import (
 from .management import ManagementApi, webhook_id_matching_url
 from .polling import PollProfile, presence_transition_wants_poll, resolve_settings
 from .services import async_setup_services
-from .types import SmartcarConfigEntry, SmartcarData
+from .types import APIVersion, SmartcarConfigEntry, SmartcarData
 from .util import api_version_for_client_id
 from .webhooks import handle_webhook, webhook_url_from_id
 
@@ -66,40 +67,21 @@ async def async_setup(  # noqa: RUF029
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: SmartcarConfigEntry) -> bool:
-    """Set up Smartcar from a config entry.
-
-    Returns:
-        If the setup was successful.
+def _register_vehicles(
+    hass: HomeAssistant,
+    entry: SmartcarConfigEntry,
+    *,
+    auth: AbstractAuth,
+    version: APIVersion,
+    budget: ApiBudget,
+    cache: SignalCache,
+    coordinators: dict[str, SmartcarVehicleCoordinator],
+) -> None:
+    """Register a device and build a coordinator for each configured vehicle.
 
     Raises:
-        ConfigEntryError: For overlapping VIN in config entries.
+        ConfigEntryError: For a VIN already used by another config entry.
     """
-    implementation = cast(
-        "LocalOAuth2Implementation",
-        await async_get_config_entry_implementation(hass, entry),
-    )
-    version = api_version_for_client_id(implementation.client_id)
-    auth = AsyncConfigEntryAuth(
-        async_get_clientsession(hass),
-        implementation,
-        OAuth2Session(hass, entry, implementation),
-        API_ENDPOINTS,
-        user_id=entry.data.get("user_id"),
-    )
-    budget = await ApiBudget(hass, entry.entry_id).async_load()
-    coordinators: dict[str, SmartcarVehicleCoordinator] = {}
-    meta_coordinator = DataUpdateCoordinator(
-        hass, _LOGGER, name=f"{DOMAIN}_meta", config_entry=entry
-    )
-    meta_coordinator.async_set_updated_data({})
-    entry.runtime_data = SmartcarData(
-        auth=auth,
-        coordinators=coordinators,
-        meta_coordinator=meta_coordinator,
-        budget=budget,
-        management=ManagementApi(auth, async_get_clientsession(hass)),
-    )
     device_registry = dr.async_get(hass)
     other_vins = vehicle_vins_in_use(hass, entry)
 
@@ -139,12 +121,56 @@ async def async_setup_entry(hass: HomeAssistant, entry: SmartcarConfigEntry) -> 
             entry=entry,
             version=version,
             budget=budget,
+            cache=cache,
         )
         _LOGGER.debug(
             "Coordinator created and initial data fetched for %s (VIN: %s)",
             vehicle_id,
             vin,
         )
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: SmartcarConfigEntry) -> bool:
+    """Set up Smartcar from a config entry.
+
+    Returns:
+        If the setup was successful.
+    """
+    implementation = cast(
+        "LocalOAuth2Implementation",
+        await async_get_config_entry_implementation(hass, entry),
+    )
+    version = api_version_for_client_id(implementation.client_id)
+    auth = AsyncConfigEntryAuth(
+        async_get_clientsession(hass),
+        implementation,
+        OAuth2Session(hass, entry, implementation),
+        API_ENDPOINTS,
+        user_id=entry.data.get("user_id"),
+    )
+    budget = await ApiBudget(hass, entry.entry_id).async_load()
+    cache = await SignalCache(hass, entry.entry_id).async_load()
+    coordinators: dict[str, SmartcarVehicleCoordinator] = {}
+    meta_coordinator = DataUpdateCoordinator(
+        hass, _LOGGER, name=f"{DOMAIN}_meta", config_entry=entry
+    )
+    meta_coordinator.async_set_updated_data({})
+    entry.runtime_data = SmartcarData(
+        auth=auth,
+        coordinators=coordinators,
+        meta_coordinator=meta_coordinator,
+        budget=budget,
+        management=ManagementApi(auth, async_get_clientsession(hass)),
+    )
+    _register_vehicles(
+        hass,
+        entry,
+        auth=auth,
+        version=version,
+        budget=budget,
+        cache=cache,
+        coordinators=coordinators,
+    )
 
     # capabilities have to be known before the platforms run, because the
     # platforms decide which entities to create and a vehicle that cannot answer

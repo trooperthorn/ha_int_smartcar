@@ -111,3 +111,23 @@ Smartcar answers `430` for the rest of the billing period, for reads and
 commands alike. Options, in order: subscribe the vehicle to a webhook, lower
 the profile, or contact Smartcar, who state the per-vehicle limit can be
 raised.
+
+## Restarts
+
+Setup reads every signal once. That single request learns what the vehicle can
+answer and gives the entities their first values, and it is billed like any
+other: one call out of five hundred, every restart, every reload, every
+reconfigure.
+
+Home Assistant restarts often. An evening of updates and configuration changes
+was observed spending fifty calls, a tenth of the month, without the vehicle
+being asked anything new.
+
+The last signal response is now kept, and a setup within thirty minutes of the
+previous read reuses it instead of making the request. Nothing has changed in
+the car between a restart at one minute past and the same restart a minute
+later. Past that window the stored copy is ignored and the vehicle is read as
+before, so a restart after a real gap is still accurate.
+
+The window is deliberately much shorter than any polling interval. It exists to
+make restarts free, not to replace polling.
