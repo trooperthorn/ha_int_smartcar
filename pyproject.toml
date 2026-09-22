@@ -49,6 +49,14 @@ warn_unreachable = true
 [tool.ruff]
 required-version = ">=0.11.0"
 
+# scripts/ holds the shared release tooling that every one of these Home
+# Assistant repositories carries byte for byte. It is formatted and linted at
+# its source, and a local reformat here would make the copies diverge, so this
+# project lints its own code and leaves those three files alone. force-exclude
+# makes the exclusion hold when pre-commit passes the paths explicitly.
+extend-exclude = ["scripts"]
+force-exclude = true
+
 [tool.ruff.lint]
 preview = true
 select = [

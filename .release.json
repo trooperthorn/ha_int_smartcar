@@ -1,0 +1,9 @@
+{
+  "tag_prefix": "",
+  "timezone": "America/Chicago",
+  "archive": {"source": "custom_components/smartcar", "name": "smartcar.zip"},
+  "release_paths": ["custom_components/smartcar"],
+  "version_fields": [
+    {"path": "custom_components/smartcar/manifest.json", "kind": "json", "key": "version"}
+  ]
+}

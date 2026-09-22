@@ -1,0 +1,5 @@
+# Security-sensitive runtime and delivery surfaces require owner review.
+/custom_components/smartcar/ @trooperthorn
+/.github/workflows/ @trooperthorn
+/scripts/ @trooperthorn
+/SECURITY.md @trooperthorn

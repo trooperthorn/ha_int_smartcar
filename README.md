@@ -49,6 +49,10 @@ Installation through [HACS][hacs] is the preferred installation method.
    directory of your Home Assistant configuration: `/config/custom_components/`.
 1. Restart Home Assistant then continue to [the setup section](#setup).
 
+Each release carries an SPDX SBOM, a `SHA256SUMS` file, and build provenance
+attestations. See [docs/releasing.md](docs/releasing.md) for how releases are
+produced and how to verify a download.
+
 ## Setup
 
 Setup has three parts, and they must be done in this order:

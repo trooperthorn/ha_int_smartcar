@@ -32,3 +32,8 @@ troubleshooting live in the repository [README](../README.md) and
   `smartcar_webhook_received`, `smartcar_issue_raised`, and
   `smartcar_issue_cleared` bus events, field by field, with an example
   automation.
+- [releasing.md](releasing.md): how a merge to `main` becomes a published
+  release, the version invariant the pipeline enforces, the GitHub App the
+  automatic version bump needs, and how to verify a downloaded release.
+- [decisions.md](decisions.md): dated decisions, each with the alternative
+  that was rejected and why.
