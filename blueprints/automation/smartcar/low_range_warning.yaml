@@ -177,6 +177,13 @@ actions:
               message: clear_notification
               data:
                 tag: !input notification_tag
+      - if:
+          - condition: template
+            value_template: "{{ also_persistent }}"
+        then:
+          - action: persistent_notification.dismiss
+            data:
+              notification_id: !input notification_tag
     else:
       - if:
           - condition: numeric_state
@@ -256,12 +263,28 @@ actions:
                 data:
                   title: Range is low
                   message: "{{ range_message }}"
+                  data:
+                    notification_id: !input notification_tag
           - if:
               - condition: template
                 value_template: "{{ announce_tts }}"
             then:
-              - action: !input notify_target
-                data:
-                  message: TTS
-                  data:
-                    tts_text: "{{ range_message }}"
+              - repeat:
+                  for_each: "{{ notify_devices }}"
+                  sequence:
+                    - action: >-
+                        notify.mobile_app_{{
+                          device_attr(repeat.item, 'name') | slugify }}
+                      data:
+                        message: TTS
+                        data:
+                          tts_text: "{{ range_message }}"
+              - if:
+                  - condition: template
+                    value_template: "{{ notify_target | trim != '' }}"
+                then:
+                  - action: !input notify_target
+                    data:
+                      message: TTS
+                      data:
+                        tts_text: "{{ range_message }}"

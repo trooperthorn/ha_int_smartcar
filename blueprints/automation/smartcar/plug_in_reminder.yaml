@@ -187,6 +187,13 @@ actions:
                   message: clear_notification
                   data:
                     tag: !input notification_tag
+          - if:
+              - condition: template
+                value_template: "{{ also_persistent }}"
+            then:
+              - action: persistent_notification.dismiss
+                data:
+                  notification_id: !input notification_tag
       - conditions:
           - condition: trigger
             id: unplugged_settled
@@ -247,3 +254,5 @@ actions:
                 data:
                   title: "{{ notify_title }}"
                   message: "{{ notify_message }}"
+                  data:
+                    notification_id: !input notification_tag

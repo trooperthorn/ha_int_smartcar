@@ -424,6 +424,8 @@ actions:
             data:
               title: Trip may not fit on current range
               message: "{{ trip_message }}"
+              data:
+                notification_id: !input notification_tag
       - if:
           - condition: template
             value_template: "{{ auto_start_enabled }}"
@@ -442,11 +444,25 @@ actions:
           - condition: template
             value_template: "{{ announce_tts }}"
         then:
-          - action: !input notify_target
-            data:
-              message: TTS
-              data:
-                tts_text: "{{ trip_message }}"
+          - repeat:
+              for_each: "{{ notify_devices }}"
+              sequence:
+                - action: >-
+                    notify.mobile_app_{{
+                      device_attr(repeat.item, 'name') | slugify }}
+                  data:
+                    message: TTS
+                    data:
+                      tts_text: "{{ trip_message }}"
+          - if:
+              - condition: template
+                value_template: "{{ notify_target | trim != '' }}"
+            then:
+              - action: !input notify_target
+                data:
+                  message: TTS
+                  data:
+                    tts_text: "{{ trip_message }}"
     else:
       - repeat:
           for_each: "{{ notify_devices }}"
@@ -467,3 +483,10 @@ actions:
               message: clear_notification
               data:
                 tag: !input notification_tag
+      - if:
+          - condition: template
+            value_template: "{{ also_persistent }}"
+        then:
+          - action: persistent_notification.dismiss
+            data:
+              notification_id: !input notification_tag
