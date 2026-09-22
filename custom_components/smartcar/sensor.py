@@ -506,6 +506,9 @@ async def async_setup_entry(  # noqa: RUF029
         for coordinator in coordinators.values()
         for description in BUDGET_SENSOR_TYPES
     ]
+    entities += [
+        SmartcarNextPollSensor(coordinator) for coordinator in coordinators.values()
+    ]
     _LOGGER.info("Adding %s Smartcar sensor entities", len(entities))
     async_add_entities(entities)
 
@@ -643,4 +646,71 @@ class SmartcarBudgetSensor(CoordinatorEntity[SmartcarVehicleCoordinator], Sensor
             "reserved_for_commands": coordinator.budget_reserve,
             "poll_profile": settings.profile.value,
             "scheduled_calls_per_month": settings.monthly_estimate(),
+        }
+
+
+class SmartcarNextPollSensor(
+    CoordinatorEntity[SmartcarVehicleCoordinator], SensorEntity
+):
+    """When this vehicle will next be read, and what that read costs.
+
+    Every scheduled read is one call out of five hundred a month, so "when is
+    the next one" is the question an automation needs before it decides to
+    force one of its own. A profile that schedules nothing (webhooks only, on
+    demand) has no answer, and says why in `paused_reason` rather than by
+    inventing a time.
+    """
+
+    _attr_has_entity_name = True
+    _attr_should_poll = False
+    entity_description: SensorEntityDescription = SensorEntityDescription(
+        key=EntityDescriptionKey.NEXT_SCHEDULED_POLL,
+        name="Next Scheduled Poll",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:calendar-clock",
+    )
+
+    def __init__(self, coordinator: SmartcarVehicleCoordinator) -> None:
+        """Initialize."""
+        super().__init__(coordinator)
+        device_id = coordinator.vehicle_id
+
+        if coordinator.version == "v2" and coordinator.vin:
+            device_id = coordinator.vin
+
+        self._attr_unique_id = f"{device_id}_{self.entity_description.key}"
+        self._attr_device_info = {"identifiers": {(DOMAIN, device_id)}}
+
+    @property
+    def native_value(self) -> dt.datetime | None:
+        """The moment of the next scheduled read.
+
+        Returns:
+            The scheduled time, or None when nothing is scheduled.
+        """
+        return self.coordinator.next_scheduled_poll_at
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Everything an automation needs to decide whether to force a poll.
+
+        Returns:
+            The profile, cadence, last read, reserve and pause reason.
+        """
+        coordinator = self.coordinator
+        interval = coordinator.update_interval
+        last_poll_at = coordinator.last_poll_at
+
+        return {
+            "poll_profile": coordinator.settings.profile.value,
+            "interval_seconds": (
+                int(interval.total_seconds()) if interval is not None else None
+            ),
+            "last_poll_at": (
+                last_poll_at.isoformat() if last_poll_at is not None else None
+            ),
+            "calls_reserved": coordinator.budget_reserve,
+            "paused_reason": coordinator.poll_paused_reason,
+            "next_poll_billed": True,
         }

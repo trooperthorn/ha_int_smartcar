@@ -424,9 +424,22 @@ All entities have the following attributes:
 
 Links to relevant API documentation are provided for each entity described below as well as the [permissions each entity requires](https://smartcar.com/docs/api-reference/permissions). When the required permissions are [not requested during setup](#authorization-data-entry), those entities will not be created.
 
-In addition to the above, there is a sensor to aid in setting up the integration:
+Which entities arrive switched on is decided by your vehicle, not by a fixed
+list. Setup reads the vehicle's signal store once, and every signal it answered
+gets an enabled entity, including the charge signals that answer
+`NOT_CHARGING`: those are readings, and they fill in the moment the car is
+plugged in. A signal the store did not mention still gets an entity, switched
+off, and that entity switches itself on if the signal ever starts arriving. A
+signal the vehicle reported it is incapable of gets no entity at all. An entity
+**you** switch off stays off. If the capability read cannot happen, because the
+entry is a legacy v2 one or polling is disabled, the old static default list is
+used instead.
+
+In addition to the above, there are sensors to aid in setting up the
+integration and in watching what setup costs:
 
 - [`sensor.<make_model>_last_webhook_received`](#sensormake_model_last_webhook_received)
+- [`sensor.<make_model>_next_scheduled_poll`](#sensormake_model_next_scheduled_poll)
 
 ### `device_tracker.<make_model>_location`
 
@@ -838,6 +851,27 @@ Enabled by default: :white_check_mark:
 
 - `response_status`: The status code used to respond to the webhook.
 - `response_data`: The data sent in the response (when available).
+
+### `sensor.<make_model>_next_scheduled_poll`
+
+When the next scheduled read of this vehicle is due. That read is one call from
+the 500 per vehicle monthly allowance, so this is the sensor an automation asks
+before deciding to force a poll of its own with
+`smartcar.refresh_vehicle`. It is `unknown` when
+nothing is scheduled, and `paused_reason` says why.
+
+Enabled by default: :white_check_mark:
+
+#### Attributes
+
+- `poll_profile`: The configured polling profile.
+- `interval_seconds`: The scheduled cadence, or `None` when there is none.
+- `last_poll_at`: When this vehicle was last read.
+- `calls_reserved`: Calls kept back from polling so commands can still be sent.
+- `paused_reason`: `webhook_only`, `no_interval`, `reserve_reached` or `None`.
+- `next_poll_billed`: Always true. A scheduled read costs a call.
+
+See [docs/polling.md](docs/polling.md) for an example automation.
 
 ## Actions
 

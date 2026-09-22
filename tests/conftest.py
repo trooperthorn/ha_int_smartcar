@@ -361,12 +361,14 @@ def mock_enable_specified_entities(
 def mock_entity_registry_enabled_default(
     enabled_entities: list[str],
 ) -> Generator[AsyncMock]:
+    # the entity, not the description, now decides: the description's static
+    # list is only the fallback for a vehicle that has said nothing yet.
     with patch(
-        "custom_components.smartcar.entity.SmartcarEntityDescription.entity_registry_enabled_default",
+        "custom_components.smartcar.entity.SmartcarEntity.entity_registry_enabled_default",
         new_callable=AdvancedPropertyMock,
     ) as mock:
-        mock.side_effect = lambda entity_description, _=None: (
-            entity_description.key in enabled_entities if entity_description else ...
+        mock.side_effect = lambda entity, _=None: (
+            entity.entity_description.key in enabled_entities if entity else ...
         )
         yield mock
 

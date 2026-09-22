@@ -106,6 +106,40 @@
         None,
       ]),
       'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': <SensorDeviceClass.TIMESTAMP: 'timestamp'>,
+      'original_icon': 'mdi:calendar-clock',
+      'original_name': 'Next Scheduled Poll',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': None,
+      'unique_id': 'VIWP1AB29P15LA85784N_next_scheduled_poll',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
       'capabilities': dict({
         <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
       }),
@@ -257,7 +291,7 @@
       <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
       <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
       'monthly_budget': 500,
-      'period': '2026-09',
+      'period': '2026-02',
       'poll_profile': 'interval',
       'reserved_for_commands': 50,
       'scheduled_calls_per_month': 120,
@@ -276,7 +310,7 @@
       <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
       <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
       'monthly_budget': 500,
-      'period': '2026-09',
+      'period': '2026-02',
       'poll_profile': 'interval',
       'reserved_for_commands': 50,
       'scheduled_calls_per_month': 120,
@@ -339,6 +373,27 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unknown',
+  })
+# ---
+# name: test_limited_scopes[enabled_entities0-enabled_scopes0-vw_id_4][sensor.vw_id_4_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': 21600,
+      'last_poll_at': '2026-02-17T16:21:32.003842+00:00',
+      'next_poll_billed': True,
+      'paused_reason': None,
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '2026-02-17T22:21:32+00:00',
   })
 # ---
 # name: test_limited_scopes[enabled_entities0-enabled_scopes0-vw_id_4][sensor.vw_id_4_range]
@@ -652,6 +707,40 @@
       'supported_features': 0,
       'translation_key': <EntityDescriptionKey.API_CALLS_USED: 'api_calls_used'>,
       'unique_id': 'VIWP1AB29P15LA85784N_api_calls_used',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.smartcar_784n_next_scheduled_poll',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': <SensorDeviceClass.TIMESTAMP: 'timestamp'>,
+      'original_icon': 'mdi:calendar-clock',
+      'original_name': 'Next Scheduled Poll',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': None,
+      'unique_id': 'VIWP1AB29P15LA85784N_next_scheduled_poll',
       'unit_of_measurement': None,
     }),
     EntityRegistryEntrySnapshot({
@@ -1454,7 +1543,7 @@
       <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Smartcar 784N API Calls Remaining',
       <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
       'monthly_budget': 500,
-      'period': '2026-09',
+      'period': '2026-02',
       'poll_profile': 'interval',
       'reserved_for_commands': 50,
       'scheduled_calls_per_month': 120,
@@ -1473,7 +1562,7 @@
       <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Smartcar 784N API Calls Used',
       <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
       'monthly_budget': 500,
-      'period': '2026-09',
+      'period': '2026-02',
       'poll_profile': 'interval',
       'reserved_for_commands': 50,
       'scheduled_calls_per_month': 120,
@@ -1617,6 +1706,27 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_standard_setup[unknown_make][sensor.smartcar_784n_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Smartcar 784N Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': 21600,
+      'last_poll_at': '2026-02-17T16:21:32.003842+00:00',
+      'next_poll_billed': True,
+      'paused_reason': None,
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.smartcar_784n_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '2026-02-17T22:21:32+00:00',
   })
 # ---
 # name: test_standard_setup[unknown_make][sensor.smartcar_784n_range]
@@ -1892,6 +2002,40 @@
       'supported_features': 0,
       'translation_key': <EntityDescriptionKey.API_CALLS_USED: 'api_calls_used'>,
       'unique_id': 'VIWP1AB29P15LA85784N_api_calls_used',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': <SensorDeviceClass.TIMESTAMP: 'timestamp'>,
+      'original_icon': 'mdi:calendar-clock',
+      'original_name': 'Next Scheduled Poll',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': None,
+      'unique_id': 'VIWP1AB29P15LA85784N_next_scheduled_poll',
       'unit_of_measurement': None,
     }),
     EntityRegistryEntrySnapshot({
@@ -2694,7 +2838,7 @@
       <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
       <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
       'monthly_budget': 500,
-      'period': '2026-09',
+      'period': '2026-02',
       'poll_profile': 'interval',
       'reserved_for_commands': 50,
       'scheduled_calls_per_month': 120,
@@ -2713,7 +2857,7 @@
       <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
       <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
       'monthly_budget': 500,
-      'period': '2026-09',
+      'period': '2026-02',
       'poll_profile': 'interval',
       'reserved_for_commands': 50,
       'scheduled_calls_per_month': 120,
@@ -2861,6 +3005,27 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_standard_setup[vw_id_4][sensor.vw_id_4_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': 21600,
+      'last_poll_at': '2026-02-17T16:21:32.003842+00:00',
+      'next_poll_billed': True,
+      'paused_reason': None,
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '2026-02-17T22:21:32+00:00',
   })
 # ---
 # name: test_standard_setup[vw_id_4][sensor.vw_id_4_range]
@@ -3476,6 +3641,40 @@
       'supported_features': 0,
       'translation_key': <EntityDescriptionKey.API_CALLS_USED: 'api_calls_used'>,
       'unique_id': 'VIWP1AB29P15LA85784N_api_calls_used',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.smartcar_784n_next_scheduled_poll',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': <SensorDeviceClass.TIMESTAMP: 'timestamp'>,
+      'original_icon': 'mdi:calendar-clock',
+      'original_name': 'Next Scheduled Poll',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': None,
+      'unique_id': 'VIWP1AB29P15LA85784N_next_scheduled_poll',
       'unit_of_measurement': None,
     }),
     EntityRegistryEntrySnapshot({
@@ -5949,7 +6148,7 @@
       <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Smartcar 784N API Calls Remaining',
       <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
       'monthly_budget': 500,
-      'period': '2026-09',
+      'period': '2026-02',
       'poll_profile': 'interval',
       'reserved_for_commands': 50,
       'scheduled_calls_per_month': 120,
@@ -5968,7 +6167,7 @@
       <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Smartcar 784N API Calls Used',
       <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
       'monthly_budget': 500,
-      'period': '2026-09',
+      'period': '2026-02',
       'poll_profile': 'interval',
       'reserved_for_commands': 50,
       'scheduled_calls_per_month': 120,
@@ -6351,6 +6550,27 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_standard_setup_with_all_entities[unknown_make-v2][sensor.smartcar_784n_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Smartcar 784N Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': 21600,
+      'last_poll_at': '2026-02-17T16:21:32.003842+00:00',
+      'next_poll_billed': True,
+      'paused_reason': None,
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.smartcar_784n_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '2026-02-17T22:21:32+00:00',
   })
 # ---
 # name: test_standard_setup_with_all_entities[unknown_make-v2][sensor.smartcar_784n_odometer]
@@ -7083,6 +7303,40 @@
       'supported_features': 0,
       'translation_key': <EntityDescriptionKey.API_CALLS_USED: 'api_calls_used'>,
       'unique_id': 'a1d50709-3502-4faa-ba43-a5c7565e6a09_api_calls_used',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.smartcar_784n_next_scheduled_poll',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': <SensorDeviceClass.TIMESTAMP: 'timestamp'>,
+      'original_icon': 'mdi:calendar-clock',
+      'original_name': 'Next Scheduled Poll',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': None,
+      'unique_id': 'a1d50709-3502-4faa-ba43-a5c7565e6a09_next_scheduled_poll',
       'unit_of_measurement': None,
     }),
     EntityRegistryEntrySnapshot({
@@ -9492,7 +9746,7 @@
       <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Smartcar 784N API Calls Remaining',
       <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
       'monthly_budget': 500,
-      'period': '2026-09',
+      'period': '2026-02',
       'poll_profile': 'interval',
       'reserved_for_commands': 50,
       'scheduled_calls_per_month': 120,
@@ -9511,7 +9765,7 @@
       <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Smartcar 784N API Calls Used',
       <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
       'monthly_budget': 500,
-      'period': '2026-09',
+      'period': '2026-02',
       'poll_profile': 'interval',
       'reserved_for_commands': 50,
       'scheduled_calls_per_month': 120,
@@ -9902,6 +10156,27 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_standard_setup_with_all_entities[unknown_make-v3][sensor.smartcar_784n_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Smartcar 784N Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': 21600,
+      'last_poll_at': '2026-02-17T16:21:32.003842+00:00',
+      'next_poll_billed': True,
+      'paused_reason': None,
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.smartcar_784n_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '2026-02-17T22:21:32+00:00',
   })
 # ---
 # name: test_standard_setup_with_all_entities[unknown_make-v3][sensor.smartcar_784n_odometer]
@@ -10603,6 +10878,40 @@
       'supported_features': 0,
       'translation_key': <EntityDescriptionKey.API_CALLS_USED: 'api_calls_used'>,
       'unique_id': 'VIWP1AB29P15LA85784N_api_calls_used',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': <SensorDeviceClass.TIMESTAMP: 'timestamp'>,
+      'original_icon': 'mdi:calendar-clock',
+      'original_name': 'Next Scheduled Poll',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': None,
+      'unique_id': 'VIWP1AB29P15LA85784N_next_scheduled_poll',
       'unit_of_measurement': None,
     }),
     EntityRegistryEntrySnapshot({
@@ -13078,7 +13387,7 @@
       <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
       <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
       'monthly_budget': 500,
-      'period': '2026-09',
+      'period': '2026-02',
       'poll_profile': 'interval',
       'reserved_for_commands': 50,
       'scheduled_calls_per_month': 120,
@@ -13097,7 +13406,7 @@
       <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
       <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
       'monthly_budget': 500,
-      'period': '2026-09',
+      'period': '2026-02',
       'poll_profile': 'interval',
       'reserved_for_commands': 50,
       'scheduled_calls_per_month': 120,
@@ -13486,6 +13795,27 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_standard_setup_with_all_entities[vw_id_4-v2][sensor.vw_id_4_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': 21600,
+      'last_poll_at': '2026-02-17T16:21:32.003842+00:00',
+      'next_poll_billed': True,
+      'paused_reason': None,
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '2026-02-17T22:21:32+00:00',
   })
 # ---
 # name: test_standard_setup_with_all_entities[vw_id_4-v2][sensor.vw_id_4_odometer]
@@ -14180,6 +14510,40 @@
       'supported_features': 0,
       'translation_key': <EntityDescriptionKey.API_CALLS_USED: 'api_calls_used'>,
       'unique_id': 'a1d50709-3502-4faa-ba43-a5c7565e6a09_api_calls_used',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': <SensorDeviceClass.TIMESTAMP: 'timestamp'>,
+      'original_icon': 'mdi:calendar-clock',
+      'original_name': 'Next Scheduled Poll',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': None,
+      'unique_id': 'a1d50709-3502-4faa-ba43-a5c7565e6a09_next_scheduled_poll',
       'unit_of_measurement': None,
     }),
     EntityRegistryEntrySnapshot({
@@ -16381,7 +16745,7 @@
       <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Remaining',
       <EntityStateAttribute.ICON: 'icon'>: 'mdi:gauge',
       'monthly_budget': 500,
-      'period': '2026-09',
+      'period': '2026-02',
       'poll_profile': 'interval',
       'reserved_for_commands': 50,
       'scheduled_calls_per_month': 120,
@@ -16400,7 +16764,7 @@
       <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 API Calls Used',
       <EntityStateAttribute.ICON: 'icon'>: 'mdi:counter',
       'monthly_budget': 500,
-      'period': '2026-09',
+      'period': '2026-02',
       'poll_profile': 'interval',
       'reserved_for_commands': 50,
       'scheduled_calls_per_month': 120,
@@ -16741,6 +17105,27 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_standard_setup_with_all_entities[vw_id_4-v3][sensor.vw_id_4_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': 21600,
+      'last_poll_at': '2026-02-17T16:21:32.003842+00:00',
+      'next_poll_billed': True,
+      'paused_reason': None,
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '2026-02-17T22:21:32+00:00',
   })
 # ---
 # name: test_standard_setup_with_all_entities[vw_id_4-v3][sensor.vw_id_4_odometer]
@@ -17434,6 +17819,40 @@
       'supported_features': 0,
       'translation_key': <EntityDescriptionKey.API_CALLS_USED: 'api_calls_used'>,
       'unique_id': 'VIWP1AB29P15LA85784N_api_calls_used',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': <SensorDeviceClass.TIMESTAMP: 'timestamp'>,
+      'original_icon': 'mdi:calendar-clock',
+      'original_name': 'Next Scheduled Poll',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': None,
+      'unique_id': 'VIWP1AB29P15LA85784N_next_scheduled_poll',
       'unit_of_measurement': None,
     }),
     EntityRegistryEntrySnapshot({
@@ -20301,6 +20720,21 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_update_errors[network_error-vw_id_4][sensor.vw_id_4_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unavailable',
+  })
+# ---
 # name: test_update_errors[network_error-vw_id_4][sensor.vw_id_4_odometer]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -21000,6 +21434,40 @@
       'supported_features': 0,
       'translation_key': <EntityDescriptionKey.API_CALLS_USED: 'api_calls_used'>,
       'unique_id': 'VIWP1AB29P15LA85784N_api_calls_used',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': <SensorDeviceClass.TIMESTAMP: 'timestamp'>,
+      'original_icon': 'mdi:calendar-clock',
+      'original_name': 'Next Scheduled Poll',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': None,
+      'unique_id': 'VIWP1AB29P15LA85784N_next_scheduled_poll',
       'unit_of_measurement': None,
     }),
     EntityRegistryEntrySnapshot({
@@ -23867,6 +24335,21 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_update_errors[network_proxy_response-vw_id_4][sensor.vw_id_4_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unavailable',
+  })
+# ---
 # name: test_update_errors[network_proxy_response-vw_id_4][sensor.vw_id_4_odometer]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -24566,6 +25049,40 @@
       'supported_features': 0,
       'translation_key': <EntityDescriptionKey.API_CALLS_USED: 'api_calls_used'>,
       'unique_id': 'VIWP1AB29P15LA85784N_api_calls_used',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': <SensorDeviceClass.TIMESTAMP: 'timestamp'>,
+      'original_icon': 'mdi:calendar-clock',
+      'original_name': 'Next Scheduled Poll',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': None,
+      'unique_id': 'VIWP1AB29P15LA85784N_next_scheduled_poll',
       'unit_of_measurement': None,
     }),
     EntityRegistryEntrySnapshot({
@@ -27433,6 +27950,21 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_update_errors[server_error-vw_id_4][sensor.vw_id_4_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unavailable',
+  })
+# ---
 # name: test_update_errors[server_error-vw_id_4][sensor.vw_id_4_odometer]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -28132,6 +28664,40 @@
       'supported_features': 0,
       'translation_key': <EntityDescriptionKey.API_CALLS_USED: 'api_calls_used'>,
       'unique_id': 'VIWP1AB29P15LA85784N_api_calls_used',
+      'unit_of_measurement': None,
+    }),
+    EntityRegistryEntrySnapshot({
+      'aliases': list([
+        None,
+      ]),
+      'area_id': None,
+      'capabilities': None,
+      'config_entry_id': <ANY>,
+      'config_subentry_id': <ANY>,
+      'device_class': None,
+      'device_id': <ANY>,
+      'disabled_by': None,
+      'domain': 'sensor',
+      'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+      'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+      'has_entity_name': True,
+      'hidden_by': None,
+      'icon': None,
+      'id': <ANY>,
+      'labels': set({
+      }),
+      'name': None,
+      'options': dict({
+      }),
+      'original_device_class': <SensorDeviceClass.TIMESTAMP: 'timestamp'>,
+      'original_icon': 'mdi:calendar-clock',
+      'original_name': 'Next Scheduled Poll',
+      'platform': 'smartcar',
+      'previous_unique_id': None,
+      'suggested_object_id': None,
+      'supported_features': 0,
+      'translation_key': None,
+      'unique_id': 'VIWP1AB29P15LA85784N_next_scheduled_poll',
       'unit_of_measurement': None,
     }),
     EntityRegistryEntrySnapshot({
@@ -30993,6 +31559,21 @@
     }),
     'context': <ANY>,
     'entity_id': 'sensor.vw_id_4_malfunction_indicator_lamp',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unavailable',
+  })
+# ---
+# name: test_update_errors[unauthorized-vw_id_4][sensor.vw_id_4_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
     'last_changed': <ANY>,
     'last_reported': <ANY>,
     'last_updated': <ANY>,

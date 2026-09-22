@@ -13,6 +13,7 @@ from typing import Any, cast
 from unittest.mock import AsyncMock, patch
 
 from aiohttp import ClientError, ClientResponseError, ClientSession, RequestInfo
+from freezegun.api import FrozenDateTimeFactory
 from homeassistant.const import (
     CONF_WEBHOOK_ID,
     STATE_HOME,
@@ -35,6 +36,7 @@ from custom_components.smartcar.budget import (
 )
 from custom_components.smartcar.const import (
     CONF_APPLICATION_ID,
+    CONF_APPLICATION_MANAGEMENT_TOKEN,
     CONF_AUTO_SUBSCRIBE,
     CONF_BUDGET_RESERVE,
     CONF_MONTHLY_BUDGET,
@@ -56,7 +58,7 @@ from custom_components.smartcar.polling import (
 )
 from custom_components.smartcar.webhooks import webhook_url_from_id
 
-from . import setup_integration
+from . import setup_added_integration, setup_integration
 
 # ---------------------------------------------------------------- budget ----
 
@@ -1142,3 +1144,167 @@ async def test_options_flow_does_not_reload_when_nothing_changed(
         await _run_flow(webhooks=False)
 
     assert not reload.called
+
+
+@pytest.mark.parametrize("vehicle_fixture", ["vw_id_4"])
+@pytest.mark.parametrize("client_id_version", ["v3"])
+@pytest.mark.parametrize(
+    ("options", "expected_hours"),
+    [
+        ({CONF_POLL_PROFILE: PollProfile.DAILY.value}, 24),
+        ({CONF_POLL_PROFILE: PollProfile.TWICE_DAILY.value}, 12),
+        (
+            {
+                CONF_POLL_PROFILE: PollProfile.INTERVAL.value,
+                CONF_POLL_INTERVAL_HOURS: 4,
+            },
+            4,
+        ),
+    ],
+    ids=["daily", "twice_daily", "interval"],
+)
+async def test_next_poll_sensor_reports_the_schedule(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    vehicle: dict,
+    options: dict[str, Any],
+    expected_hours: int,
+) -> None:
+    """Every scheduled profile can say when the next billed read is due."""
+    mock_config_entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(mock_config_entry, options=options)
+
+    await setup_added_integration(hass, mock_config_entry)
+
+    state = hass.states.get("sensor.vw_id_4_next_scheduled_poll")
+    coordinator = next(iter(mock_config_entry.runtime_data.coordinators.values()))
+
+    assert state is not None
+    assert coordinator.next_scheduled_poll_at is not None
+    # the state machine stores a timestamp to the second
+    assert (
+        state.state
+        == coordinator.next_scheduled_poll_at.replace(microsecond=0).isoformat()
+    )
+    assert state.attributes["interval_seconds"] == expected_hours * 3600
+    assert state.attributes["poll_profile"] == options[CONF_POLL_PROFILE]
+    assert state.attributes["paused_reason"] is None
+    assert state.attributes["next_poll_billed"] is True
+    assert state.attributes["calls_reserved"] == DEFAULT_RESERVE
+    assert coordinator.last_poll_at is not None
+    assert state.attributes["last_poll_at"] == coordinator.last_poll_at.isoformat()
+
+
+@pytest.mark.parametrize("vehicle_fixture", ["vw_id_4"])
+@pytest.mark.parametrize("client_id_version", ["v3"])
+@pytest.mark.parametrize(
+    ("profile", "expected_reason"),
+    [
+        (PollProfile.WEBHOOK_ONLY, "webhook_only"),
+        (PollProfile.ON_DEMAND, "no_interval"),
+    ],
+    ids=["webhook_only", "on_demand"],
+)
+async def test_next_poll_sensor_is_unknown_without_a_schedule(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    vehicle: dict,
+    profile: PollProfile,
+    expected_reason: str,
+) -> None:
+    """A profile that schedules nothing says so rather than inventing a time."""
+    mock_config_entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(
+        mock_config_entry, options={CONF_POLL_PROFILE: profile.value}
+    )
+
+    await setup_added_integration(hass, mock_config_entry)
+
+    state = hass.states.get("sensor.vw_id_4_next_scheduled_poll")
+
+    assert state is not None
+    assert state.state == STATE_UNKNOWN
+    assert state.attributes["interval_seconds"] is None
+    assert state.attributes["paused_reason"] == expected_reason
+
+
+@pytest.mark.parametrize("vehicle_fixture", ["vw_id_4"])
+@pytest.mark.parametrize("client_id_version", ["v3"])
+async def test_next_poll_sensor_moves_when_a_refresh_reschedules(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    vehicle: dict,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """A forced poll resets the clock, so the sensor has to follow it.
+
+    "Last update plus the interval" would not: the point of the sensor is that
+    an automation can call `smartcar.refresh_vehicle` and then see the schedule
+    it just moved.
+    """
+    await setup_integration(hass, mock_config_entry)
+
+    before = hass.states.get("sensor.vw_id_4_next_scheduled_poll")
+    assert before is not None
+
+    freezer.tick(timedelta(hours=1))
+
+    await hass.services.async_call(
+        DOMAIN,
+        "refresh_vehicle",
+        {"config_entry": mock_config_entry.entry_id},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    after = hass.states.get("sensor.vw_id_4_next_scheduled_poll")
+
+    assert after is not None
+    assert after.state > before.state
+
+
+@pytest.mark.parametrize("vehicle_fixture", ["vw_id_4"])
+@pytest.mark.parametrize("client_id_version", ["v3"])
+async def test_next_poll_sensor_reports_a_spent_allowance(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    vehicle: dict,
+) -> None:
+    """A schedule that will be skipped for lack of budget says why."""
+    mock_config_entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(
+        mock_config_entry, options={CONF_MONTHLY_BUDGET: 10, CONF_BUDGET_RESERVE: 10}
+    )
+
+    await setup_added_integration(hass, mock_config_entry)
+
+    state = hass.states.get("sensor.vw_id_4_next_scheduled_poll")
+
+    assert state is not None
+    assert state.attributes["paused_reason"] == "reserve_reached"
+
+
+@pytest.mark.parametrize("vehicle_fixture", ["vw_id_4"])
+@pytest.mark.parametrize("client_id_version", ["v3"])
+async def test_next_poll_sensor_is_quiet_for_a_webhook_fed_vehicle(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    vehicle: dict,
+) -> None:
+    """A management token means webhooks feed the vehicle, so nothing is due."""
+    mock_config_entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(
+        mock_config_entry,
+        data={
+            **mock_config_entry.data,
+            CONF_APPLICATION_MANAGEMENT_TOKEN: "mock-management-token",
+        },
+    )
+
+    await setup_added_integration(hass, mock_config_entry)
+
+    state = hass.states.get("sensor.vw_id_4_next_scheduled_poll")
+
+    assert state is not None
+    assert state.state == STATE_UNKNOWN
+    assert state.attributes["paused_reason"] == "webhook_only"

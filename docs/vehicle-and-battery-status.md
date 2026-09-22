@@ -210,22 +210,34 @@ data-signal list, so it will arrive, and a parser reading only `body.value` drop
 
 ## What ships enabled by default
 
-`DEFAULT_ENABLED_ENTITY_DESCRIPTION_KEYS` in `const.py` holds 21 keys `C-code`:
+The vehicle decides, not a list `C-code`. When the signals response is read, an
+entity is enabled if this vehicle's store answered for the signal behind it:
 
-`battery_level`, `charging_state`, `charging`, `door_lock`, `location`,
-`plug_status`, `range`, `diag_abs`, `diag_mil`, `diag_dtc_count`, `diag_dtc_list`,
-`diag_ev_battery_conditioning`, `diag_ev_charging`, `diag_ev_drive_unit`,
-`diag_ev_hv_battery`, `cabin_target_temperature`, `is_cabin_hvac_active`,
-`is_front_defroster_active`, `is_rear_defroster_active`,
-`is_steering_heater_active`, `climate`.
+| What the store said about the signal | Result |
+| --- | --- |
+| A value | Entity created, enabled |
+| A `VEHICLE_STATE` error (`NOT_CHARGING`) | Entity created, enabled |
+| A `PERMISSION` error | Entity created, enabled |
+| A `COMPATIBILITY` error | No entity at all |
+| Nothing, the code was absent | Entity created, disabled |
+| Its scope was not granted | No entity at all |
 
-Everything else is created disabled and must be enabled by hand.
+`NOT_CHARGING` is a reading rather than a defect: charge rate, wattage and time
+to complete work perfectly well the moment the car is plugged in, so switching
+those entities off would hide the answer at the only moment anyone wants it.
 
-Entities are now gated on the vehicle's own `COMPATIBILITY` errors in the v3
-signals response rather than on the requested scopes alone, so on a vehicle that
-answers, the unsupported ones do not appear. `VEHICLE_STATE` and `PERMISSION`
-errors deliberately do not count as incapacity `C-code`. That gating depends on the
-signals response carrying errors to read, which an empty store does not.
+A signal that only starts answering later, because the car was asleep or
+because the webhook's data list grew, switches its own entity on at the next
+poll or delivery. An entity **you** switched off is never switched back on.
+
+`DEFAULT_ENABLED_ENTITY_DESCRIPTION_KEYS` in `const.py` survives as the answer
+for the cases where the vehicle has said nothing: a v2 entry, an entry with
+polling disabled, or a capability read that failed. A transient failure must
+not decide what a user sees.
+
+On this ID. Buzz the store holds 25 signals, and that yields 31 enabled
+entities plus the four meta entities, in place of the 21 the static list gave
+`L-log`.
 
 ## What the ID. Buzz can never populate
 

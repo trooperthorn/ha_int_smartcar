@@ -40,6 +40,9 @@ async def test_async_setup(hass: HomeAssistant):
 async def test_standard_setup(
     hass: HomeAssistant,
     mock_config_entry: MockConfigEntry,
+    # the Next Scheduled Poll sensor reports real times, so the clock is
+    # frozen to keep the snapshot stable.
+    mock_now: None,
     snapshot: SnapshotAssertion,
     vehicle: AsyncMock,
     client_id_version: APIVersion,
@@ -78,6 +81,9 @@ async def test_standard_setup(
 async def test_standard_setup_with_all_entities(
     hass: HomeAssistant,
     mock_config_entry: MockConfigEntry,
+    # the Next Scheduled Poll sensor reports real times, so the clock is
+    # frozen to keep the snapshot stable.
+    mock_now: None,
     snapshot: SnapshotAssertion,
     vehicle: AsyncMock,
     client_id_version: APIVersion,
@@ -155,6 +161,9 @@ async def test_duplicate_vins_disallowed(
 async def test_limited_scopes(
     hass: HomeAssistant,
     mock_config_entry: MockConfigEntry,
+    # the Next Scheduled Poll sensor reports real times, so the clock is
+    # frozen to keep the snapshot stable.
+    mock_now: None,
     snapshot: SnapshotAssertion,
     vehicle: AsyncMock,
     client_id_version: APIVersion,
@@ -551,6 +560,7 @@ _SNAPSHOT_ORDER = {
         [
             "api_calls_remaining",
             "api_calls_used",
+            "next_scheduled_poll",
             "battery_capacity",
             "battery_level",
             "charging_state",

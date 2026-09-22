@@ -67,6 +67,22 @@ class SmartcarEntity[ValueT, RawValueT](
         return cast("SmartcarEntityDescription", self.entity_description)
 
     @property
+    def entity_registry_enabled_default(self) -> bool:
+        """Whether this entity arrives switched on.
+
+        Home Assistant asks once, when the entity is first written to the
+        registry, so this is the only chance to answer from what the vehicle
+        has already said rather than from a list written for an average car.
+
+        Returns:
+            True when this vehicle answers the signal behind the entity.
+        """
+        return self.coordinator.is_entity_enabled_by_default(
+            self.entity_description.key,
+            static_default=bool(self._description.entity_registry_enabled_default),
+        )
+
+    @property
     def available(self) -> bool:
         return (
             super().available

@@ -105,6 +105,47 @@ the calendar month in your local timezone. Smartcar does not publish its
 billing period boundary, so a period that does not start on the 1st will drift
 from this by a few days.
 
+## Knowing when the next call is coming
+
+A third diagnostic sensor per vehicle, **Next Scheduled Poll**, is the
+timestamp of the next scheduled read. Its attributes are `poll_profile`,
+`interval_seconds`, `last_poll_at`, `calls_reserved`, `paused_reason` and
+`next_poll_billed`, which is always true: a scheduled read is one call out of
+the 500 per vehicle monthly allowance.
+
+It is `unknown` when nothing is scheduled, and `paused_reason` says why:
+
+| `paused_reason` | Meaning |
+| --- | --- |
+| `webhook_only` | The Webhooks only profile, or a management token is configured, so pushes feed this vehicle |
+| `no_interval` | The On demand profile, or polling is disabled for the entry |
+| `reserve_reached` | A poll is scheduled but the allowance is down to the reserve, so it will be skipped |
+
+The value follows the timer rather than the interval, so a
+`smartcar.refresh_vehicle` call moves it: that is what makes it usable as the
+input to a decision about whether to force one.
+
+```yaml
+automation:
+  - alias: Refresh the car when we leave and the next poll is hours away
+    triggers:
+      - trigger: state
+        entity_id: person.sean
+        from: home
+    conditions:
+      - condition: template
+        value_template: >-
+          {{ as_timestamp(states('sensor.vw_id_buzz_next_scheduled_poll'),
+                          default=0) - as_timestamp(now()) > 4 * 3600 }}
+    actions:
+      - action: smartcar.refresh_vehicle
+        data:
+          config_entry: !input config_entry
+```
+
+The condition is the whole point. Without it the automation spends a call every
+time somebody leaves, including the times the scheduled poll was a minute away.
+
 ## If the allowance runs out anyway
 
 Smartcar answers `430` for the rest of the billing period, for reads and

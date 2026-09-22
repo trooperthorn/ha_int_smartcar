@@ -13,7 +13,7 @@ from typing import Any, Literal
 
 from aiohttp import ClientError, ClientResponseError
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import entity_registry as er, issue_registry as ir
 from homeassistant.helpers.update_coordinator import (
@@ -34,7 +34,7 @@ from .const import (
     DOMAIN,
     EntityDescriptionKey,
 )
-from .polling import resolve_settings
+from .polling import PollProfile, resolve_settings
 from .types import APIVersion
 from .util import key_path_get, key_path_update
 
@@ -560,6 +560,14 @@ DATAPOINT_STORAGE_KEY_V2_MAP = {
     }
 }
 
+# the signal code behind each entity key, by the key's string value, which is
+# the suffix of every entity's unique id. keys with no v3 signal are absent.
+DATAPOINT_CODE_BY_ENTITY_KEY = {
+    key.value: datapoint.code
+    for key, datapoint in DATAPOINT_ENTITY_KEY_MAP.items()
+    if datapoint.code is not None
+}
+
 DATAPOINT_CODE_MAP = {
     code: tuple(
         datapoint
@@ -606,6 +614,12 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
         # actually held, and which codes it returned that map to no entity.
         self.last_poll_total_count: int | None = None
         self.last_poll_unmapped_codes: list[str] = []
+        # when the last billed read of this vehicle happened, and when the next
+        # scheduled one is due. both are surfaced by the "Next Scheduled Poll"
+        # sensor so an automation can decide whether forcing a poll is worth a
+        # call out of the monthly allowance.
+        self.last_poll_at: dt.datetime | None = None
+        self._next_scheduled_poll_at: dt.datetime | None = None
 
         super().__init__(
             hass,
@@ -614,6 +628,60 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
             name=f"{DOMAIN}_{vehicle_id}",
             update_interval=self._resolve_update_interval(),
         )
+
+    def _schedule_refresh(self) -> None:
+        """Record when the next scheduled poll is due.
+
+        `DataUpdateCoordinator` keeps the timer but not the wall clock time it
+        will fire at, and "last update plus the interval" is wrong the moment
+        anything reschedules: a manual `smartcar.refresh_vehicle`, an event
+        driven poll, or a retry all move the timer without moving the interval.
+        This is the one place the schedule is ever set, so it is the one place
+        that can answer the question honestly.
+        """
+        super()._schedule_refresh()
+
+        self._next_scheduled_poll_at = (
+            dt_util.utcnow() + self.update_interval
+            if self._unsub_refresh is not None and self.update_interval is not None
+            else None
+        )
+
+    @callback
+    def _async_unsub_refresh(self) -> None:
+        """Forget the schedule along with the timer it described."""
+        super()._async_unsub_refresh()
+        self._next_scheduled_poll_at = None
+
+    @property
+    def next_scheduled_poll_at(self) -> dt.datetime | None:
+        """When the next scheduled, billed read of this vehicle is due.
+
+        Returns:
+            The moment the timer will fire, or None when nothing is scheduled.
+        """
+        return self._next_scheduled_poll_at
+
+    @property
+    def poll_paused_reason(self) -> str | None:
+        """Why no scheduled poll is coming, if none is.
+
+        Returns:
+            One of `webhook_only`, `no_interval` or `reserve_reached`, or None
+            when the schedule is running normally.
+        """
+        if self.settings.profile is PollProfile.WEBHOOK_ONLY or (
+            CONF_APPLICATION_MANAGEMENT_TOKEN in self.entry.data
+        ):
+            return "webhook_only"
+
+        if self.update_interval is None or self._next_scheduled_poll_at is None:
+            return "no_interval"
+
+        if not self.budget_allows_poll():
+            return "reserve_reached"
+
+        return None
 
     def _resolve_update_interval(self) -> timedelta | None:
         """Decide the scheduled cadence for this vehicle.
@@ -798,6 +866,92 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
 
         return False
 
+    def is_entity_enabled_by_default(
+        self, sensor_key: EntityDescriptionKey | str, *, static_default: bool
+    ) -> bool:
+        """Whether an entity should arrive switched on.
+
+        The old answer was a hand written list, which is why a vehicle that can
+        answer thirty signals still showed up with most of them disabled: the
+        list was written for an average car, not for this one. The vehicle has
+        already said what it can do, so ask it instead.
+
+        A signal that came back with a value, or with a VEHICLE_STATE error
+        (`charge-chargerate` while the car is not charging is a reading, not a
+        defect), is one this vehicle answers. A COMPATIBILITY error, or a scope
+        the user did not grant, means it never will.
+
+        The static list survives as the answer for "nothing has been read yet":
+        a v2 entry, or a v3 entry whose capability read failed. A transient
+        failure must not decide what a user sees.
+
+        Returns:
+            True when the entity should be enabled on creation.
+        """
+        sensor_key = EntityDescriptionKey(sensor_key)
+
+        if not self.is_scope_enabled(sensor_key):
+            return False
+
+        code = DATAPOINT_ENTITY_KEY_MAP[sensor_key].code
+
+        # v2 stores data under its own endpoint keys and has no signal codes,
+        # and an empty store means the read has not happened or did not answer.
+        if code is None or self.version != "v3" or not self.data:
+            return static_default
+
+        return code in self.data and code not in self.incapable_codes
+
+    @callback
+    def async_update_listeners(self) -> None:
+        """Enable entities the vehicle has started answering, then update.
+
+        This runs on every data update, from a poll or from a webhook, which is
+        exactly when a signal can appear for the first time. A vehicle that was
+        asleep, or a webhook whose data list grew, should not need a reload
+        before its entity works.
+        """
+        self._async_enable_newly_answered_entities()
+        super().async_update_listeners()
+
+    @callback
+    def _async_enable_newly_answered_entities(self) -> None:
+        """Switch on integration disabled entities whose signal now has data.
+
+        Only entities this integration disabled are touched. A user who turned
+        an entity off meant it, and silently turning it back on would be the
+        integration overruling them.
+        """
+        if self.version != "v3" or not self.data:
+            return
+
+        registry = er.async_get(self.hass)
+        prefix = f"{self.vehicle_id}_"
+
+        for registry_entry in er.async_entries_for_config_entry(
+            registry, self.entry.entry_id
+        ):
+            if registry_entry.disabled_by is not er.RegistryEntryDisabler.INTEGRATION:
+                continue
+
+            if not registry_entry.unique_id.startswith(prefix):
+                continue
+
+            code = DATAPOINT_CODE_BY_ENTITY_KEY.get(
+                registry_entry.unique_id[len(prefix) :]
+            )
+
+            if code is None or code in self.incapable_codes or code not in self.data:
+                continue
+
+            _LOGGER.info(
+                "Coordinator %s: enabling %s, the vehicle now answers `%s`",
+                self.name,
+                registry_entry.entity_id,
+                code,
+            )
+            registry.async_update_entity(registry_entry.entity_id, disabled_by=None)
+
     async def async_load_capabilities(self) -> bool:
         """Ask the vehicle which signals it can answer, before entities exist.
 
@@ -866,6 +1020,7 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
             return False
 
         await self.async_record_call()
+        self.last_poll_at = dt_util.utcnow()
 
         if self.cache is not None:
             await self.cache.async_store(self.vehicle_id, signal_data)
@@ -1080,6 +1235,7 @@ class SmartcarVehicleCoordinator(DataUpdateCoordinator):
         response_data = await response.json()
 
         await self.async_record_call()
+        self.last_poll_at = dt_util.utcnow()
 
         return self._merge_response_data(response_data)
 

@@ -881,6 +881,27 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_webhook_scenarios[broad_auth_error-vw_id_4-sensor][sensor.vw_id_4_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': None,
+      'last_poll_at': None,
+      'next_poll_billed': True,
+      'paused_reason': 'webhook_only',
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---
 # name: test_webhook_scenarios[broad_auth_error-vw_id_4-sensor][sensor.vw_id_4_odometer]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -1448,6 +1469,27 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_webhook_scenarios[invalid_json-vw_id_4-sensor][sensor.vw_id_4_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': None,
+      'last_poll_at': None,
+      'next_poll_billed': True,
+      'paused_reason': 'webhook_only',
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
   })
 # ---
 # name: test_webhook_scenarios[invalid_json-vw_id_4-sensor][sensor.vw_id_4_odometer]
@@ -2019,6 +2061,27 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_webhook_scenarios[invalid_signature-vw_id_4-sensor][sensor.vw_id_4_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': None,
+      'last_poll_at': None,
+      'next_poll_billed': True,
+      'paused_reason': 'webhook_only',
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---
 # name: test_webhook_scenarios[invalid_signature-vw_id_4-sensor][sensor.vw_id_4_odometer]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -2585,6 +2648,27 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_webhook_scenarios[irrelevant_auth_error-vw_id_4-sensor][sensor.vw_id_4_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': None,
+      'last_poll_at': None,
+      'next_poll_billed': True,
+      'paused_reason': 'webhook_only',
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
   })
 # ---
 # name: test_webhook_scenarios[irrelevant_auth_error-vw_id_4-sensor][sensor.vw_id_4_odometer]
@@ -3156,6 +3240,27 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_webhook_scenarios[test_mode-vw_id_4-sensor][sensor.vw_id_4_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': None,
+      'last_poll_at': None,
+      'next_poll_billed': True,
+      'paused_reason': 'webhook_only',
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---
 # name: test_webhook_scenarios[test_mode-vw_id_4-sensor][sensor.vw_id_4_odometer]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -3722,6 +3827,27 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_webhook_scenarios[vehicle_error-vw_id_4-sensor][sensor.vw_id_4_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': None,
+      'last_poll_at': None,
+      'next_poll_billed': True,
+      'paused_reason': 'webhook_only',
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
   })
 # ---
 # name: test_webhook_scenarios[vehicle_error-vw_id_4-sensor][sensor.vw_id_4_odometer]
@@ -4293,6 +4419,27 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_webhook_scenarios[vehicle_mismatch-vw_id_4-sensor][sensor.vw_id_4_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': None,
+      'last_poll_at': None,
+      'next_poll_billed': True,
+      'paused_reason': 'webhook_only',
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---
 # name: test_webhook_scenarios[vehicle_mismatch-vw_id_4-sensor][sensor.vw_id_4_odometer]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -4861,6 +5008,27 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_webhook_scenarios[vehicle_state-vw_id_4-sensor][sensor.vw_id_4_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': None,
+      'last_poll_at': None,
+      'next_poll_billed': True,
+      'paused_reason': 'webhook_only',
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
   })
 # ---
 # name: test_webhook_scenarios[vehicle_state-vw_id_4-sensor][sensor.vw_id_4_odometer]
@@ -5437,6 +5605,27 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_webhook_scenarios[vehicle_state_fuel-vw_id_4-sensor][sensor.vw_id_4_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': None,
+      'last_poll_at': None,
+      'next_poll_billed': True,
+      'paused_reason': 'webhook_only',
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---
 # name: test_webhook_scenarios[vehicle_state_fuel-vw_id_4-sensor][sensor.vw_id_4_odometer]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -6004,6 +6193,27 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_webhook_scenarios[verify-vw_id_4-sensor][sensor.vw_id_4_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': None,
+      'last_poll_at': None,
+      'next_poll_billed': True,
+      'paused_reason': 'webhook_only',
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
   })
 # ---
 # name: test_webhook_scenarios[verify-vw_id_4-sensor][sensor.vw_id_4_odometer]
@@ -6574,6 +6784,27 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_webhook_update[vehicle_state_all-byd_seal-sensor][sensor.byd_seal_u_dm_i_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'BYD Seal U Dm-i Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': None,
+      'last_poll_at': None,
+      'next_poll_billed': True,
+      'paused_reason': 'webhook_only',
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.byd_seal_u_dm_i_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
   })
 # ---
 # name: test_webhook_update[vehicle_state_all-byd_seal-sensor][sensor.byd_seal_u_dm_i_odometer]
@@ -7152,6 +7383,27 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_webhook_update[vehicle_state_all-jaguar_ipace-sensor][sensor.jaguar_i_pace_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': None,
+      'last_poll_at': None,
+      'next_poll_billed': True,
+      'paused_reason': 'webhook_only',
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.jaguar_i_pace_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
   })
 # ---
 # name: test_webhook_update[vehicle_state_all-jaguar_ipace-sensor][sensor.jaguar_i_pace_odometer]
@@ -7740,6 +7992,27 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_webhook_update[vehicle_state_all-jaguar_ipace2-sensor][sensor.jaguar_i_pace_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'JAGUAR I-PACE Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': None,
+      'last_poll_at': None,
+      'next_poll_billed': True,
+      'paused_reason': 'webhook_only',
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.jaguar_i_pace_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
   })
 # ---
 # name: test_webhook_update[vehicle_state_all-jaguar_ipace2-sensor][sensor.jaguar_i_pace_odometer]
@@ -8340,6 +8613,27 @@
     'state': 'unavailable',
   })
 # ---
+# name: test_webhook_update[vehicle_state_all-polestar_2-sensor][sensor.polestar_polestar_2_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'POLESTAR Polestar 2 Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': None,
+      'last_poll_at': None,
+      'next_poll_billed': True,
+      'paused_reason': 'webhook_only',
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.polestar_polestar_2_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---
 # name: test_webhook_update[vehicle_state_all-polestar_2-sensor][sensor.polestar_polestar_2_odometer]
   StateSnapshot({
     'attributes': ReadOnlyDict({
@@ -8914,6 +9208,27 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'unavailable',
+  })
+# ---
+# name: test_webhook_update[vehicle_state_all-vw_id_4-sensor][sensor.vw_id_4_next_scheduled_poll]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      'calls_reserved': 50,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'VW ID.4 Next Scheduled Poll',
+      <EntityStateAttribute.ICON: 'icon'>: 'mdi:calendar-clock',
+      'interval_seconds': None,
+      'last_poll_at': None,
+      'next_poll_billed': True,
+      'paused_reason': 'webhook_only',
+      'poll_profile': 'interval',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.vw_id_4_next_scheduled_poll',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
   })
 # ---
 # name: test_webhook_update[vehicle_state_all-vw_id_4-sensor][sensor.vw_id_4_odometer]
