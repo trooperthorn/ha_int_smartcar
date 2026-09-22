@@ -129,9 +129,18 @@ integration already lists webhooks during auto-subscribe, so it has the answer
 in hand at setup and says nothing about it.
 
 **Action:** raise a repair issue when the webhook this instance subscribes to
-is disabled or has no triggers and no data signals, naming what to enable.
-Treat an empty signal collection as a condition of its own rather than creating
-a full set of permanently unavailable entities.
+is disabled, unverified, or has no triggers and no data signals, naming what to
+enable. Treat an empty signal collection as a condition of its own rather than
+creating a full set of permanently unavailable entities.
+
+The full model, including why a `200` with an empty array is the worst shape this
+failure could take and the dashboard checklist that clears it, is in
+[communication.md](communication.md). A 2026-09-22 look at the live account
+narrowed the cause further: the webhook's triggers and data signals are now
+populated, but its callback URI is the OAuth redirect URL rather than a webhook
+receiver, so it has never verified and has never delivered anything. A repair
+issue that only checks `isEnabled` and the two lists would miss that, so check
+the verification state and the callback URI too.
 
 ### 11. Auto-subscribe cannot create the webhook it needs
 
@@ -151,3 +160,18 @@ would need a form rather than a default.
 **Action:** at minimum, say so. Setup should report that no webhook points at
 this instance and that scheduled polling is therefore the only source of data,
 instead of leaving it silent.
+
+Two additions from the 2026-09-22 account review, both detailed in
+[communication.md](communication.md). First, `async_subscribe` matching on the
+callback URL is what makes a wrong URI break subscription as well as
+verification, so the no-match case should log the URL it expected alongside the
+`callbackUri` values it actually saw, rather than failing invisibly. Second, the
+signal selection this would have to offer is bounded by the plan, not by the
+vehicle: a Free plan enables only nine signals and locks the `Charge`, `Location`,
+`Climate`, `Diagnostics` and `HVAC` groups entirely. Granted scope and
+configurable signal are two different capability sets, and
+[vehicle-and-battery-status.md](vehicle-and-battery-status.md) lists which signals
+fall on which side. Note also that the sentence above is optimistic about the
+create endpoint: `management.yaml` declares no `POST /webhooks`, only the
+subscription endpoints, so webhook creation is a dashboard-only step and this
+item cannot be closed by calling an API.
