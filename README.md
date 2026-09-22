@@ -720,6 +720,15 @@ To upgrade from `v2` to `v3`, you need to use the _API credentials_ rather than 
 - **Single User:** Smartcar applications must be configured with only a single user connected to vehicles.
 - **FAQ:** In case ou haven't found the [FAQ](FAQ.md) yet, it is a great resource for troubleshooting and discovering if you're running up against an issue with this integration vs. a limitation in Smartcar's platform.
 
+## Reference Documentation
+
+If entities are created but never get a value, or a command never lands, start with the reference docs rather than the entity list above:
+
+- [docs/communication.md](docs/communication.md) - how this integration talks to Smartcar end to end: the v3 chain, the three credentials and which Smartcar dashboard tab each one lives in, the webhook model that actually feeds the signal store, the ways it fails silently, and a numbered dashboard checklist for fixing a live account.
+- [docs/vehicle-and-battery-status.md](docs/vehicle-and-battery-status.md) - every vehicle-status and battery-status signal field by field, with units, enum values, the entity key each one becomes, what ships enabled by default, and what a given vehicle can never populate.
+- [docs/api-reference.md](docs/api-reference.md) - the full Smartcar API surface and which parts this integration calls.
+- [docs/polling.md](docs/polling.md) - the polling profiles and the request allowance that shapes them.
+
 ## Support / Issues
 
 Please report any issues you find with this integration by opening an issue on the [GitHub Issues page](https://github.com/wbyoung/smartcar/issues).

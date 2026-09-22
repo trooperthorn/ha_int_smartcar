@@ -4,6 +4,13 @@ Reference material for working on this integration. User facing setup and
 troubleshooting live in the repository [README](../README.md) and
 [FAQ](../FAQ.md).
 
+- [communication.md](communication.md): how this integration talks to Smartcar.
+  The v3 chain end to end, the three credentials and which dashboard tab each
+  lives in, the webhook model that actually feeds the signal store, the ways it
+  all fails silently, and a dashboard checklist for fixing a live account.
+- [vehicle-and-battery-status.md](vehicle-and-battery-status.md): the vehicle and
+  battery signals field by field, with entity keys, what ships enabled by default,
+  and what a 2025 US ID. Buzz can never populate.
 - [polling.md](polling.md): webhooks, the polling profiles, and the 500 calls
   per vehicle per month allowance that shapes both.
 - [follow-ups.md](follow-ups.md): gaps found while building features, with what
