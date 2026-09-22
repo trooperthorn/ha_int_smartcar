@@ -123,6 +123,46 @@ blueprint:
       default: notify.persistent_notification
       selector:
         text: {}
+    notification_tag:
+      name: Notification tag
+      description: >-
+        A stable, per-vehicle tag so tomorrow's summary replaces today's
+        instead of stacking. Use a different value per vehicle if this
+        blueprint is used for more than one car.
+      default: smartcar_evening_summary
+      selector:
+        text: {}
+    notification_channel:
+      name: Notification channel
+      default: Smartcar
+      selector:
+        text: {}
+    notification_importance:
+      name: Notification importance
+      default: default
+      selector:
+        select:
+          options:
+            - min
+            - low
+            - default
+            - high
+            - max
+    notification_icon:
+      name: Notification icon
+      default: "mdi:car-electric"
+      selector:
+        text: {}
+    click_action:
+      name: Click action
+      description: >-
+        Where tapping the notification body opens. A Home Assistant path
+        such as "/config/devices/device/<id>" for the vehicle's device
+        page, or "entityId:sensor.xxx" for an entity's more-info dialog.
+        Leave blank for the default behavior.
+      default: ""
+      selector:
+        text: {}
     compute_script:
       name: "Compute round trip need script"
       description: >-
@@ -216,6 +256,14 @@ actions:
       message: >-
         Battery {{ battery_value | round(0) }}%, range
         {{ range_km_value | round(0) }} km.
-        {{ 'Plugged in' if is_state(plug_entity, 'on') else 'Not plugged in' }},
-        {{ 'charging' if is_state(charging_entity, 'on') else 'not charging' }}.
+        {{ 'Plugged in' if is_state(plug_entity, 'on') else
+           'Not plugged in' }},
+        {{ 'charging' if is_state(charging_entity, 'on') else
+           'not charging' }}.
         {{ trips_line }}
+      data:
+        tag: !input notification_tag
+        channel: !input notification_channel
+        importance: !input notification_importance
+        notification_icon: !input notification_icon
+        clickAction: !input click_action

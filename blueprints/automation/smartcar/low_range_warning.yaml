@@ -57,54 +57,142 @@ blueprint:
       default: notify.persistent_notification
       selector:
         text: {}
+    notification_tag:
+      name: Notification tag
+      description: >-
+        A stable, per-vehicle tag so a repeat of this notification replaces
+        the previous one instead of stacking. Use a different value per
+        vehicle if this blueprint is used for more than one car.
+      default: smartcar_low_range
+      selector:
+        text: {}
+    notification_channel:
+      name: Notification channel
+      default: Smartcar
+      selector:
+        text: {}
+    notification_importance:
+      name: Notification importance
+      default: high
+      selector:
+        select:
+          options:
+            - min
+            - low
+            - default
+            - high
+            - max
+    notification_icon:
+      name: Notification icon
+      default: "mdi:car-electric"
+      selector:
+        text: {}
+    click_action:
+      name: Click action
+      description: >-
+        Where tapping the notification body opens. A Home Assistant path
+        such as "/config/devices/device/<id>" for the vehicle's device
+        page, or "entityId:sensor.xxx" for an entity's more-info dialog.
+        Leave blank for the default behavior.
+      default: ""
+      selector:
+        text: {}
+    announce_tts:
+      name: Also announce with text-to-speech
+      description: >-
+        When on, also sends the notification text to the same notify
+        action as a spoken TTS command, in addition to the normal
+        notification.
+      default: false
+      selector:
+        boolean: {}
 
 mode: single
 max_exceptions: 0
 
 triggers:
   - trigger: time
+    id: check
     at: !input evening_time
   - trigger: state
+    id: check
     entity_id: !input vehicle_tracker
     from: home
-
-conditions:
-  - condition: numeric_state
+  - trigger: numeric_state
+    id: recovered
     entity_id: !input range_sensor
-    below: !input threshold
+    above: !input threshold
+
+conditions: []
 
 actions:
-  - variables:
-      range_entity: !input range_sensor
-      calendar_entity: !input calendar
-  - choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ calendar_entity not in ['', none] }}"
-        sequence:
-          - action: calendar.get_events
-            target:
-              entity_id: "{{ calendar_entity }}"
+  - if:
+      - condition: trigger
+        id: recovered
+    then:
+      - action: !input notify_target
+        data:
+          message: clear_notification
+          data:
+            tag: !input notification_tag
+    else:
+      - if:
+          - condition: numeric_state
+            entity_id: !input range_sensor
+            below: !input threshold
+        then:
+          - variables:
+              range_entity: !input range_sensor
+              calendar_entity: !input calendar
+              announce_tts: !input announce_tts
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ calendar_entity not in ['', none] }}"
+                sequence:
+                  - action: calendar.get_events
+                    target:
+                      entity_id: "{{ calendar_entity }}"
+                    data:
+                      duration:
+                        hours: 72
+                    response_variable: upcoming
+            default:
+              - variables:
+                  upcoming:
+                    "{{ calendar_entity }}":
+                      events: []
+          - variables:
+              next_event: >-
+                {{ (upcoming[calendar_entity].events | default([]))[0]
+                   if calendar_entity not in ['', none]
+                      and (upcoming[calendar_entity].events
+                           | default([]) | count) > 0
+                   else none }}
+              range_message: >-
+                {{ states(range_entity) }}
+                {{ state_attr(range_entity, 'unit_of_measurement') }} of
+                range left.
+                {{ ('Next trip: ' ~ next_event.summary ~ ' to '
+                    ~ next_event.location)
+                   if next_event is not none and next_event.location
+                   else '' }}
+          - action: !input notify_target
             data:
-              duration:
-                hours: 72
-            response_variable: upcoming
-    default:
-      - variables:
-          upcoming:
-            "{{ calendar_entity }}":
-              events: []
-  - variables:
-      next_event: >-
-        {{ (upcoming[calendar_entity].events | default([]))[0]
-           if calendar_entity not in ['', none]
-              and (upcoming[calendar_entity].events | default([]) | count) > 0
-           else none }}
-  - action: !input notify_target
-    data:
-      title: Range is low
-      message: >-
-        {{ states(range_entity) }}
-        {{ state_attr(range_entity, 'unit_of_measurement') }} of range left.
-        {{ ('Next trip: ' ~ next_event.summary ~ ' to ' ~ next_event.location)
-           if next_event is not none and next_event.location else '' }}
+              title: Range is low
+              message: "{{ range_message }}"
+              data:
+                tag: !input notification_tag
+                channel: !input notification_channel
+                importance: !input notification_importance
+                notification_icon: !input notification_icon
+                clickAction: !input click_action
+          - if:
+              - condition: template
+                value_template: "{{ announce_tts }}"
+            then:
+              - action: !input notify_target
+                data:
+                  message: TTS
+                  data:
+                    tts_text: "{{ range_message }}"

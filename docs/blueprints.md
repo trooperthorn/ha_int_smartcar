@@ -15,6 +15,60 @@ Click a badge to import that blueprint directly into your Home Assistant
 instance. Each one points at the file on `main`, so it always imports the
 latest released version.
 
+## Android notification options
+
+Every blueprint that sends a notification (all of them under Automations
+except "Charge for a round trip now" and "Refresh the vehicle when someone
+leaves home", which do not notify) shares the same set of Android Companion
+app inputs, following the
+[basic notifications](https://companion.home-assistant.io/docs/notifications/notifications-basic/),
+[actionable notifications](https://companion.home-assistant.io/docs/notifications/actionable-notifications/)
+and [notification commands](https://companion.home-assistant.io/docs/notifications/notification-commands/)
+Companion app docs. These fields are ignored by iOS, so the same blueprint
+still works there.
+
+- **Notification tag** (`notification_tag`): a stable, per-purpose tag such
+  as `smartcar_trip_check`. A repeat of the same notification replaces the
+  previous one on the phone instead of stacking. If you use a blueprint for
+  more than one vehicle, give each instance its own tag.
+- **Notification channel** (`notification_channel`, default `Smartcar`):
+  the Android channel the notification is posted to. Set sound, vibration
+  and default importance for that channel from the phone's own
+  notification settings, once, instead of per blueprint.
+- **Notification importance** (`notification_importance`, default
+  `default`, `high` on "Left unlocked away from home" and "Low range
+  warning"): how intrusive the notification is (`min`, `low`, `default`,
+  `high`, `max`).
+- **Notification icon** (`notification_icon`): the status bar icon, an MDI
+  name such as `mdi:car-electric` (the default everywhere), `mdi:lock-open
+  -variant` on "Left unlocked away from home", or `mdi:solar-power` on
+  "Charge from solar surplus".
+- **Click action** (`click_action`): where tapping the notification body
+  opens. Leave it blank for the default behavior, or set a Home Assistant
+  path such as `/config/devices/device/<id>` to open the vehicle's device
+  page, or `entityId:sensor.xxx` to open a specific entity's more-info
+  dialog directly.
+- **Clear on resolution**: where the blueprint already knows the condition
+  that raised the notification has cleared (the car got plugged in, a lock
+  action succeeded, charging resumed, range recovered, or the API budget
+  recovered), it sends a second notification with `message:
+  clear_notification` and the same tag, which removes the earlier one
+  instead of leaving it stale on the phone.
+- **Action ID inputs** (for example `lock_action_id`, `start_charging_action_id`,
+  `set_limit_action_id`, `refresh_action_id`): the `mobile_app_notification_action`
+  event trigger matches on a fixed action string. Two vehicles using the
+  same blueprint with the default action ID would both react to a tap on
+  either notification. Give each vehicle's instance its own action ID.
+  Android shows at most three action buttons per notification, and every
+  blueprint here stays at two or fewer.
+- **Announce with text-to-speech** (`announce_tts`, default off, on "Check
+  tomorrow's trips against range", "Low range warning" and "Left unlocked
+  away from home" only): when on, also sends the notification's message to
+  the same notify action as `message: TTS` with `data.tts_text` set to
+  that message, per the notification-commands page. This is a second
+  notify call, not a notification action, so it does not count against the
+  three-action limit.
+
 ## Automations
 
 ### Check tomorrow's trips against range
@@ -38,8 +92,10 @@ sensor (optional, display only), charging switch, charge limit number, home
 zone (default `zone.home`), travel-distance provider (Waze or Google, with
 region or config entry as needed), range sensor units (km or mi), overhead
 percent (default 20), lookahead (default 24h), evaluation time (default
-18:00), notify action, auto start charging (default off), and the entity ID
-of the "compute round trip need" script.
+18:00), notify action, auto start charging (default off), the entity ID of
+the "compute round trip need" script, the start-charging and set-limit
+action IDs, and the [Android notification options](#android-notification-options)
+(tag, channel, importance, icon, click action, announce with TTS).
 
 ### Charge for a round trip now
 
@@ -69,7 +125,9 @@ stays unplugged for a while.
 "Refresh status" action that costs one command if tapped.
 
 Inputs: vehicle location, battery level sensor, plug status, threshold
-(default 50%), unplugged-for duration (default 30 min), notify action.
+(default 50%), unplugged-for duration (default 30 min), notify action, the
+refresh-status action ID, and the
+[Android notification options](#android-notification-options).
 
 ### Charging finished or interrupted
 
@@ -83,7 +141,8 @@ reached the charge limit (finished) or stopped short of it (interrupted).
 **Cost:** zero.
 
 Inputs: charging switch, battery level sensor, range sensor, charge limit
-number, notify action.
+number, notify action, and the
+[Android notification options](#android-notification-options).
 
 ### Left unlocked away from home
 
@@ -101,7 +160,10 @@ is tapped.
 
 Inputs: vehicle location, door lock, Smartcar account (config entry), API
 calls remaining sensor, reserve (default 50), unlocked-for duration (default
-15 min), notify action.
+15 min), notify action, the lock action ID (also the ID this blueprint
+listens for), and the
+[Android notification options](#android-notification-options), which here
+default to `high` importance and the `mdi:lock-open-variant` icon.
 
 ### Low range warning
 
@@ -116,7 +178,9 @@ one.
 **Cost:** zero.
 
 Inputs: range sensor, threshold (default 40 km), vehicle location, evening
-check time (default 18:00), calendar (optional), notify action.
+check time (default 18:00), calendar (optional), notify action, and the
+[Android notification options](#android-notification-options), which here
+default to `high` importance.
 
 ### Evening summary
 
@@ -134,8 +198,9 @@ always agree with the trip-check blueprint.
 Inputs: battery level sensor, range sensor, plug status, charging switch,
 charge limit number, calendar (optional), home zone, travel-distance
 provider, range sensor units, overhead percent, lookahead, summary time
-(default 21:00), notify action, and the entity ID of the "compute round trip
-need" script.
+(default 21:00), notify action, the entity ID of the "compute round trip
+need" script, and the
+[Android notification options](#android-notification-options).
 
 ### Charge from solar surplus
 
@@ -158,7 +223,10 @@ negative-is-export), surplus threshold (default 1500 W), stop threshold
 (default 500 W), start/stop persistence durations (default 10 min each),
 battery level sensor, charge limit number, plug status, vehicle location,
 charging switch, mode (remind or auto), daily command counter (optional),
-maximum commands per day (default 4), notify action.
+maximum commands per day (default 4), notify action, the start-charging
+action ID, and the
+[Android notification options](#android-notification-options), which here
+default to the `mdi:solar-power` icon.
 
 ### Refresh the vehicle when someone leaves home
 
@@ -187,7 +255,8 @@ month.
 **Cost:** zero.
 
 Inputs: API calls remaining sensor, warn-below threshold (default 100),
-notify action.
+notify action, and the
+[Android notification options](#android-notification-options).
 
 ### Charge to a target only while power is cheap
 

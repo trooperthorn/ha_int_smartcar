@@ -34,21 +34,86 @@ blueprint:
       default: notify.persistent_notification
       selector:
         text: {}
+    notification_tag:
+      name: Notification tag
+      description: >-
+        A stable, per-vehicle tag so a repeat of this notification replaces
+        the previous one instead of stacking. Use a different value per
+        vehicle if this blueprint is used for more than one car.
+      default: smartcar_api_budget
+      selector:
+        text: {}
+    notification_channel:
+      name: Notification channel
+      default: Smartcar
+      selector:
+        text: {}
+    notification_importance:
+      name: Notification importance
+      default: default
+      selector:
+        select:
+          options:
+            - min
+            - low
+            - default
+            - high
+            - max
+    notification_icon:
+      name: Notification icon
+      default: "mdi:car-electric"
+      selector:
+        text: {}
+    click_action:
+      name: Click action
+      description: >-
+        Where tapping the notification body opens. A Home Assistant path
+        such as "/config/devices/device/<id>" for the vehicle's device
+        page, or "entityId:sensor.xxx" for an entity's more-info dialog.
+        Leave blank for the default behavior.
+      default: ""
+      selector:
+        text: {}
 
 mode: single
 
 triggers:
   - trigger: numeric_state
+    id: low
     entity_id: !input remaining
     below: !input threshold
+  - trigger: numeric_state
+    id: recovered
+    entity_id: !input remaining
+    above: !input threshold
+
+conditions: []
 
 actions:
-  - action: !input notify_target
-    data:
-      title: Smartcar API allowance is running low
-      message: >-
-        {{ trigger.to_state.name }} is down to {{ trigger.to_state.state }}
-        calls for {{ trigger.to_state.attributes.get('period', 'this period') }}.
-        {{ trigger.to_state.attributes.get('reserved_for_commands', 0) }} are
-        reserved for commands. Subscribing the vehicle to a Smartcar webhook
-        gives updates that do not spend the allowance at all.
+  - if:
+      - condition: trigger
+        id: recovered
+    then:
+      - action: !input notify_target
+        data:
+          message: clear_notification
+          data:
+            tag: !input notification_tag
+    else:
+      - action: !input notify_target
+        data:
+          title: Smartcar API allowance is running low
+          message: >-
+            {{ trigger.to_state.name }} is down to
+            {{ trigger.to_state.state }} calls for
+            {{ trigger.to_state.attributes.get('period', 'this period') }}.
+            {{ trigger.to_state.attributes.get('reserved_for_commands', 0) }}
+            are reserved for commands. Subscribing the vehicle to a
+            Smartcar webhook gives updates that do not spend the allowance
+            at all.
+          data:
+            tag: !input notification_tag
+            channel: !input notification_channel
+            importance: !input notification_importance
+            notification_icon: !input notification_icon
+            clickAction: !input click_action
