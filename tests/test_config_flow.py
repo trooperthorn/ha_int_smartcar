@@ -22,22 +22,34 @@ from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 from syrupy.assertion import SnapshotAssertion
 
 from custom_components.smartcar.const import (
+    ALL_SCOPES,
     CONF_APPLICATION_ID,
     CONF_APPLICATION_MANAGEMENT_TOKEN,
     CONF_CLOUDHOOK,
     CONF_POLL_PROFILE,
-    CONFIGURABLE_SCOPES,
     DEFAULT_NAME,
     DOMAIN,
     OAUTH2_AUTHORIZE,
     OAUTH2_TOKEN,
     OAUTH2_TOKEN_LEGACY,
-    REQUIRED_SCOPES,
 )
 from custom_components.smartcar.polling import PollProfile
 from custom_components.smartcar.types import APIVersion
 
 from . import MOCK_API_ENDPOINT, MOCK_API_ENDPOINT_LEGACY, setup_integration
+
+# what the /connections fixture reports Smartcar granted, which is the list the
+# integration now stores: never the list anybody asked for.
+GRANTED_PERMISSIONS = [
+    "control_charge",
+    "read_battery",
+    "read_charge",
+    "read_location",
+    "read_odometer",
+    "read_security",
+    "read_vehicle_info",
+    "read_vin",
+]
 
 REDIRECT_URL = "https://example.com/auth/external/callback"
 
@@ -221,11 +233,26 @@ async def test_full_flow(
                 "errors": {},
             },
         ),
+        (
+            {"missing_required_permissions"},
+            {},
+            {
+                CONF_APPLICATION_ID: "my-app-id",
+                "use_webhooks": False,
+            },
+            {
+                "form_type": FlowResultType.ABORT,
+                "abort_reason": "missing_required_permissions",
+                "errors": {},
+                "description_placeholders": {"permissions": "read_vin"},
+            },
+        ),
     ],
     ids=[
         "missing_application_id",
         "invalid_user_configuration",
         "empty_connections",
+        "missing_required_permissions",
     ],
 )
 async def test_full_flow_v3_only(
@@ -300,20 +327,6 @@ async def _test_full_flow(
         continue_steps = continue_steps and final_step != "webhooks"
 
     if continue_steps:
-        assert result["type"] is FlowResultType.FORM
-        assert result["step_id"] == "scopes"
-        assert not result["last_step"]
-
-        selected_scopes = ["read_odometer"]
-        requested_scopes = REQUIRED_SCOPES + selected_scopes
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            {k: k in selected_scopes for k in CONFIGURABLE_SCOPES},
-        )
-
-        continue_steps = continue_steps and final_step != "scopes"
-
-    if continue_steps:
         state = config_entry_oauth2_flow._encode_jwt(
             hass,
             {
@@ -335,7 +348,9 @@ async def _test_full_flow(
             f"&redirect_uri={REDIRECT_URL}"
             f"&state={state}"
             "&mode=live"
-            f"&scope={'+'.join(requested_scopes)}"
+            # v3 sends no scope: the dashboard's Vehicle Access configuration
+            # decides, and a scope here would override it.
+            + ("" if client_id_version == "v3" else f"&scope={'+'.join(ALL_SCOPES)}")
         )
 
         client = await hass_client_no_auth()
@@ -352,7 +367,7 @@ async def _test_full_flow(
                 "access_token": "server-access-token",
                 "type": "Bearer",
                 "expires_in": 60,
-                "scope": " ".join(requested_scopes),
+                "scope": " ".join(ALL_SCOPES),
             }
             aioclient_mock.post(
                 OAUTH2_TOKEN_LEGACY,
@@ -393,6 +408,8 @@ async def _test_full_flow(
                 connections_fixture = "list_connections_with_multiple_users"
             elif "empty_connections" in setup:
                 connections_fixture = "list_connections_empty"
+            elif "missing_required_permissions" in setup:
+                connections_fixture = "list_connections_missing_required"
             aioclient_mock.get(
                 f"{MOCK_API_ENDPOINT}/connections",
                 json=load_json_object_fixture(
@@ -411,7 +428,12 @@ async def _test_full_flow(
                 3  # oauth token & 2 for connections/signals
                 - (
                     1  # the signals request is never made when the flow aborts
-                    if setup & {"multi_user_app", "empty_connections"}
+                    if setup
+                    & {
+                        "multi_user_app",
+                        "empty_connections",
+                        "missing_required_permissions",
+                    }
                     else 0
                 )
             )
@@ -474,7 +496,13 @@ async def _test_full_flow(
             "auth_implementation": "smartcar",
             "token": dict(
                 server_access_token,
-                scopes=requested_scopes,
+                # v3 stores what Smartcar granted; v2 has no /connections to
+                # ask, so it stores what it requested.
+                scopes=(
+                    GRANTED_PERMISSIONS
+                    if client_id_version == "v3"
+                    else list(ALL_SCOPES)
+                ),
             ),
             "vehicles": {vehicle_id: expected_attrs},
             **(
@@ -482,16 +510,7 @@ async def _test_full_flow(
                     "user_id": "218eda3b-0656-49a8-8f3d-360cdad07334",
                     # what Smartcar granted, as the connection reported it.
                     # not the same list as the scopes that were requested.
-                    "granted_permissions": [
-                        "control_charge",
-                        "read_battery",
-                        "read_charge",
-                        "read_location",
-                        "read_odometer",
-                        "read_security",
-                        "read_vehicle_info",
-                        "read_vin",
-                    ],
+                    "granted_permissions": GRANTED_PERMISSIONS,
                 }
                 if client_id_version == "v3"
                 else {}
@@ -551,15 +570,6 @@ async def test_duplicate_vins_disallowed(
         {"use_webhooks": False},
     )
 
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "scopes"
-
-    selected_scopes = ["read_odometer"]
-    requested_scopes = REQUIRED_SCOPES + selected_scopes
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {k: k in selected_scopes for k in CONFIGURABLE_SCOPES},
-    )
     state = config_entry_oauth2_flow._encode_jwt(
         hass,
         {
@@ -581,7 +591,7 @@ async def test_duplicate_vins_disallowed(
         "access_token": "server-access-token",
         "type": "Bearer",
         "expires_in": 60,
-        "scope": " ".join(requested_scopes),
+        "scope": " ".join(ALL_SCOPES),
     }
 
     aioclient_mock.post(
@@ -608,41 +618,6 @@ async def test_duplicate_vins_disallowed(
     # placeholders are substituted into a translated string, so they have to
     # be strings: a list rendered as a Python repr in the abort message.
     assert result["description_placeholders"] == {"vins": vehicle["vin"]}
-
-
-@pytest.mark.usefixtures("current_request_with_host")
-async def test_no_scopes_entered(
-    hass: HomeAssistant,
-    hass_client_no_auth: ClientSessionGenerator,
-    aioclient_mock: AiohttpClientMocker,
-    mock_smartcar_auth: AsyncMock,
-):
-    """Test showing the scopes form again because no scopes were chosen."""
-
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": config_entries.SOURCE_USER}
-    )
-
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "webhooks"
-    assert not result["last_step"]
-
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {"use_webhooks": False},
-    )
-
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "scopes"
-
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], dict.fromkeys(CONFIGURABLE_SCOPES, False)
-    )
-
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "scopes"
-    assert result["errors"] == {"base": "no_scopes"}
-    assert not result["last_step"]
 
 
 @pytest.mark.parametrize(
@@ -676,15 +651,6 @@ async def test_token_error(
         {"use_webhooks": False},
     )
 
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "scopes"
-
-    selected_scopes = ["read_odometer"]
-    requested_scopes = REQUIRED_SCOPES + selected_scopes
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {k: k in selected_scopes for k in CONFIGURABLE_SCOPES},
-    )
     state = config_entry_oauth2_flow._encode_jwt(
         hass,
         {
@@ -700,7 +666,7 @@ async def test_token_error(
         f"&redirect_uri={REDIRECT_URL}"
         f"&state={state}"
         "&mode=live"
-        f"&scope={'+'.join(requested_scopes)}"
+        f"&scope={'+'.join(ALL_SCOPES)}"
     )
 
     client = await hass_client_no_auth()
@@ -777,15 +743,6 @@ async def test_api_error(
         {"use_webhooks": False},
     )
 
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "scopes"
-
-    selected_scopes = ["read_odometer"]
-    requested_scopes = REQUIRED_SCOPES + selected_scopes
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {k: k in selected_scopes for k in CONFIGURABLE_SCOPES},
-    )
     state = config_entry_oauth2_flow._encode_jwt(
         hass,
         {
@@ -801,7 +758,7 @@ async def test_api_error(
         f"&redirect_uri={REDIRECT_URL}"
         f"&state={state}"
         "&mode=live"
-        f"&scope={'+'.join(requested_scopes)}"
+        f"&scope={'+'.join(ALL_SCOPES)}"
     )
 
     client = await hass_client_no_auth()
@@ -816,7 +773,7 @@ async def test_api_error(
         "access_token": "server-access-token",
         "type": "Bearer",
         "expires_in": 60,
-        "scope": " ".join(requested_scopes),
+        "scope": " ".join(ALL_SCOPES),
     }
 
     override_vehicles = target_endpoint == "/vehicles"
@@ -935,15 +892,6 @@ async def test_reauth(
 
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
 
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "scopes"
-
-    selected_scopes = ["read_odometer"]
-    requested_scopes = REQUIRED_SCOPES + selected_scopes
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {k: k in selected_scopes for k in CONFIGURABLE_SCOPES},
-    )
     state = config_entry_oauth2_flow._encode_jwt(
         hass,
         {
@@ -959,7 +907,7 @@ async def test_reauth(
         f"&redirect_uri={REDIRECT_URL}"
         f"&state={state}"
         "&mode=live"
-        f"&scope={'+'.join(requested_scopes)}"
+        f"&scope={'+'.join(ALL_SCOPES)}"
     )
 
     client = await hass_client_no_auth()
@@ -973,7 +921,7 @@ async def test_reauth(
         "access_token": "updated-access-token",
         "type": "Bearer",
         "expires_in": 60,
-        "scope": " ".join(requested_scopes),
+        "scope": " ".join(ALL_SCOPES),
     }
 
     aioclient_mock.post(
@@ -1019,6 +967,7 @@ async def test_reauth(
     compare_entry_data.pop("auth_implementation", None)
     compare_entry_data.pop("token", None)
     compare_entry_data.pop("vehicles", None)
+    compare_entry_data.pop("granted_permissions", None)
 
     # verify access token is refreshed
     assert token["access_token"] == expected_access_token
@@ -1134,15 +1083,6 @@ async def test_reconfigure(
         result["flow_id"], user_input
     )
 
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "scopes"
-
-    selected_scopes = ["read_odometer"]
-    requested_scopes = REQUIRED_SCOPES + selected_scopes
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {k: k in selected_scopes for k in CONFIGURABLE_SCOPES},
-    )
     state = config_entry_oauth2_flow._encode_jwt(
         hass,
         {
@@ -1165,7 +1105,7 @@ async def test_reconfigure(
         "access_token": "updated-access-token",
         "type": "Bearer",
         "expires_in": 60,
-        "scope": " ".join(requested_scopes),
+        "scope": " ".join(ALL_SCOPES),
     }
 
     aioclient_mock.post(
@@ -1216,6 +1156,7 @@ async def test_reconfigure(
     token = compare_entry_data.pop("token")
     compare_entry_data.pop("auth_implementation", None)
     compare_entry_data.pop("vehicles", None)
+    compare_entry_data.pop("granted_permissions", None)
 
     # verify access token is refreshed
     assert token["access_token"] == expected_access_token
@@ -1379,6 +1320,7 @@ async def test_options_flow(
         compare_entry_data.pop("auth_implementation", None)
         compare_entry_data.pop("token", None)
         compare_entry_data.pop("vehicles", None)
+        compare_entry_data.pop("granted_permissions", None)
 
         if expected_errors is not None:
             assert result["type"] is expected_form_type

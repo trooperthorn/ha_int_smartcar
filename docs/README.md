@@ -13,6 +13,9 @@ troubleshooting live in the repository [README](../README.md) and
   and what a 2025 US ID. Buzz can never populate.
 - [polling.md](polling.md): webhooks, the polling profiles, and the 500 calls
   per vehicle per month allowance that shapes both.
+- [troubleshooting.md](troubleshooting.md): how to turn on debug logging, what
+  the lines it produces mean, and a symptom to fix table for a setup that looks
+  correct and still shows nothing.
 - [follow-ups.md](follow-ups.md): gaps found while building features, with what
   each one blocks.
 - [../script/smartcar_doctor.py](../script/smartcar_doctor.py): a standalone

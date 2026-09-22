@@ -129,25 +129,32 @@ Or you can use the My Home Assistant Button below.
    - **Use webhooks**: turn this on. It is Smartcar's preferred delivery method and, on v3, the only thing that keeps the signal store filled.
    - **Application Management Token**: the token from the bottom of _API credentials_. Only provide it when _Use webhooks_ is on; the flow rejects it otherwise with "Do not provide application management token unless using webhooks". Leaving it out while webhooks are on fails with "Missing application management token".
 
-1. **Permission selection.** Tick the permissions Home Assistant should request. To enable every entity this integration offers, select all of them:
-   - Get total distance traveled
-   - Get the vehicle's location
-   - Get EV/PHEV battery level, capacity & current range
-   - Get details on whether the car is plugged in and charging
-   - Get details on whether doors, windows & more are enabled
-   - Get engine oil health
-   - Get tire pressure details
-   - Get fuel tank level
-   - Get diagnostic trouble codes and system health
-   - Get cabin temperature and climate control status
-   - Control charging (start/stop & target charge)
-   - Lock or unlock vehicle
+1. **Permissions.** There is no permission screen in Home Assistant. Smartcar asks for whatever the **Vehicle Access** tab of your application's Configuration page lists, its own consent screen is where you approve or trim that, and Home Assistant then reads back what you actually granted from `GET /connections` and stores that. The permissions the integration knows how to use are:
 
-   Two things to know about this screen:
-   - **Plan-locked scopes.** On the Free plan, groups such as Charge, Location, Climate, Diagnostics and Wheel are not available to your application at all. You can still tick the matching permission and Smartcar can still grant it, but no webhook will ever be able to carry those signals. Entities for them are created and stay unavailable. Untick them if you would rather not see unavailable entities.
-   - **Vehicle support.** A permission your car does not implement can also be granted and still return nothing.
+   | Permission | What it gives you |
+   | --- | --- |
+   | `read_vehicle_info` | Make, model and year. **Required.** |
+   | `read_vin` | The VIN, used to identify the vehicle. **Required.** |
+   | `read_odometer` | Total distance traveled |
+   | `read_location` | The vehicle's location |
+   | `read_battery` | EV/PHEV battery level, capacity and range |
+   | `read_charge` | Plugged in, charging, charge limit |
+   | `read_security` | Doors, windows, trunks, lock state |
+   | `read_engine_oil` | Engine oil health |
+   | `read_tires` | Tire pressures |
+   | `read_fuel` | Fuel tank level |
+   | `read_diagnostics` | Diagnostic trouble codes and system health |
+   | `read_climate` | Cabin temperature and climate control status |
+   | `control_charge` | Start and stop charging, set the target |
+   | `control_security` | Lock and unlock |
+   | `control_climate` | Start and stop climate control (v2 only) |
 
-   On a **reconfigure**, this screen starts from what Smartcar has actually granted rather than what was originally asked for, so it is a reliable way to see your real scope set.
+   Three things to know:
+   - **Required permissions.** Without `read_vehicle_info` and `read_vin` there is no way to name a vehicle or tell two apart, and setup stops with "Smartcar did not grant ...". Everything else is optional; a permission you leave off simply costs its own entities.
+   - **Plan-locked scopes.** On the Free plan, groups such as Charge, Location, Climate, Diagnostics and Wheel are not available to your application at all. Smartcar can still grant the matching permission, but no webhook will ever be able to carry those signals.
+   - **Vehicle support.** A permission your car does not implement can also be granted and still return nothing. Entities for signals your vehicle reports it cannot answer are not created at all.
+
+   To change your permissions later, edit **Vehicle Access** in the Smartcar dashboard and then **reconfigure** the integration, which re-runs Connect.
 
 1. Continue to the [next section](#authorization-via-smartcar-connect) which explains the steps to authorize your vehicle via [Smartcar Connect](https://smartcar.com/docs/connect/what-is-connect).
 
@@ -163,6 +170,8 @@ Connect runs once. The only value the integration keeps from it is the Smartcar 
 #### Setup Complete
 
 If successful, the integration will be added, and Home Assistant will create devices and entities for your connected vehicle(s). The final screen prints the **webhook URL**. Copy it now; the next section needs it.
+
+**What setup cost.** Reading your permissions and vehicle list uses `/connections`, which is not billed. Learning what each vehicle can answer uses one `/signals` read: 1 call from the 500 per vehicle monthly allowance. So setup spends one billed call per vehicle, or none at all when the same vehicle was read within the last 30 minutes, because that response is reused. See [docs/polling.md](docs/polling.md).
 
 From here:
 
@@ -355,7 +364,7 @@ That makes "granted scope" and "configurable webhook signal" two different sets.
 
 ## FAQ's and Troubleshooting
 
-See the [FAQ](FAQ.md) for more help with various topics.
+See the [FAQ](FAQ.md) and [docs/troubleshooting.md](docs/troubleshooting.md) for more help with various topics.
 
 ## Entities
 

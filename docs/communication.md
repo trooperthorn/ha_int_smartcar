@@ -48,14 +48,46 @@ GET https://connect.smartcar.com/oauth/authorize
     ?response_type=code
     &application_id={applicationId}
     &redirect_uri={a registered redirect URI}
-    &scope={space separated permissions}
     &mode=live
     &state={csrf}
 ```
 
 `S-spec` `D-docs`. `config_flow.py` builds exactly this, substituting the
-**Application ID** for `client_id` on a v3 entry and passing `mode` and `scope` as
-extra authorize data `C-code`.
+**Application ID** for `client_id` on a v3 entry and passing `mode` as extra
+authorize data `C-code`.
+
+**`scope` is deliberately absent on v3.** Smartcar documents the parameter as
+optional and states that without it Connect uses "the permissions configured in
+the 'Vehicle Access' tab of your application's Configuration page", while any
+scope sent here overrides that `D-docs`. Sending one from Home Assistant would
+therefore beat the one screen where the user can see and change what they are
+granting, and it would do so invisibly. So the dashboard and Smartcar's own
+consent screen decide, and the integration reads the result back from
+`/connections`.
+
+v2 Connect has no dashboard equivalent, so a v2 entry still sends `scope` and
+sends every permission the integration knows, leaving the consent screen to
+trim it `C-code`.
+
+### Configuration: what the flow asks, and what each answer costs
+
+The config flow has one form: Application ID, whether to use webhooks, and the
+Application Management Token. Permissions are not on it.
+
+| Step | Request | Billed |
+| --- | --- | --- |
+| Reading the granted permissions and the vehicle list | `GET /connections` | No. It is not addressed to a vehicle |
+| Learning what a vehicle can answer | `GET /vehicles/{id}/signals` | Yes. 1 call from the 500 per vehicle monthly allowance |
+| Webhook deliveries, afterwards | inbound | No |
+
+So setup spends one billed call per vehicle, or none when that vehicle was read
+within the last 30 minutes, because the stored response is reused (see
+`cache.py`).
+
+Only `read_vehicle_info` and `read_vin` are required. Without them there is no
+way to name a vehicle or tell two apart, and setup aborts with
+`missing_required_permissions`. Every other permission is optional and costs
+only its own entities.
 
 The redirect carries `user_id`, `state`, `code`, and `external_id` if one was
 sent. **Only `user_id` matters.** Under v3 the authorization code is never
@@ -303,10 +335,14 @@ still carry `read_location` and `read_charge` while the application can no longe
 put those signals into a webhook.
 
 **The consequence:** location and charge data can be granted, and still be
-undeliverable by webhook. `DEFAULT_SCOPES` currently asks for `read_location`,
-`read_charge`, `read_climate`, `control_climate` and `read_diagnostics` `C-code`,
-none of which a Free plan can configure. The plan-safe set is `read_vehicle_info`,
-`read_vin`, `read_battery`, `read_odometer` and `read_security`.
+undeliverable by webhook. The plan-safe set is `read_vehicle_info`, `read_vin`,
+`read_battery`, `read_odometer` and `read_security`.
+
+The integration no longer asks for a set of its own. `attributes.permissions`
+from `GET /connections` is stored as `granted_permissions` on the config entry
+and copied into `token.scopes`, which is what gates entities and what the skip
+logs name `C-code`. An entry created before that is migrated on its next setup
+by reading `/connections` once, which is free.
 
 Verify the real grant from `GET /connections`, not from any document, this one
 included.

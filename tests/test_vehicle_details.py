@@ -19,7 +19,6 @@ from custom_components.smartcar import (
     _fetch_vin,  # noqa: PLC2701
     _store_vehicle_details,  # noqa: PLC2701
 )
-from custom_components.smartcar.config_flow import SmartcarOAuth2FlowHandler
 
 VEHICLE_ID = "8e5a8dca-a62d-466b-96f7-d204ff1787a8"
 CONNECTION_DETAILS = {
@@ -205,43 +204,3 @@ async def test_a_failure_that_is_not_a_missing_signal_still_raises() -> None:
 
     with pytest.raises(ClientResponseError):
         await _fetch_vin(auth, VEHICLE_ID)  # type: ignore[arg-type]
-
-
-def test_the_scope_form_starts_from_what_smartcar_granted() -> None:
-    """The boxes start ticked from reality, not from a static default.
-
-    A scope can be asked for and refused, and a vehicle can lack the
-    capability behind one it was given, so the list the user requested is a
-    statement of intent and the connection's `permissions` is a fact. On a
-    reconfigure the fact is the better starting point.
-    """
-    handler = SmartcarOAuth2FlowHandler()
-    granted = ["read_battery", "read_charge"]
-
-    handler._initial_data = lambda: {  # type: ignore[method-assign]
-        "granted_permissions": granted,
-        "token": {"scopes": ["read_tires"]},
-    }
-
-    assert handler._suggested_scopes() == {
-        "read_battery": True,
-        "read_charge": True,
-    }
-
-
-def test_an_older_entry_falls_back_to_the_scopes_it_asked_for() -> None:
-    """An entry created before the granted list was kept still prefills."""
-    handler = SmartcarOAuth2FlowHandler()
-
-    handler._initial_data = lambda: {"token": {"scopes": ["read_tires"]}}  # type: ignore[method-assign]
-
-    assert handler._suggested_scopes() == {"read_tires": True}
-
-
-def test_a_first_time_setup_leaves_the_schema_defaults_alone() -> None:
-    """Nothing is known yet, so the schema's own defaults stand."""
-    handler = SmartcarOAuth2FlowHandler()
-
-    handler._initial_data = dict  # type: ignore[method-assign]
-
-    assert handler._suggested_scopes() == {}

@@ -24,14 +24,14 @@
       "reconfigure_successful": "Reconfiguration was successful",
       "unknown": "Unexpected error",
       "user_rejected_authorize": "Account linking rejected: {error}",
-      "wrong_vehicles": "The vehicles must match the original selections. Choose the vehicles with VIN(s): {vins}."
+      "wrong_vehicles": "The vehicles must match the original selections. Choose the vehicles with VIN(s): {vins}.",
+      "missing_required_permissions": "Smartcar did not grant {permissions}. The integration cannot identify a vehicle without them. Open the Vehicle Access tab of your Smartcar application's Configuration page, enable them, and set the integration up again."
     },
     "create_entry": {
-      "default": "To send events to Home Assistant, you will need to set up a [webhook with Smartcar]({smartcar_url}). Use the following URL:\n\n`{webhook_url}`\n\nSee [the documentation]({docs_url}) for further details."
+      "default": "Setup is complete and used one `/signals` read per vehicle: 1 call from the 500 per vehicle monthly allowance, or none if a read from the last 30 minutes was reused. Reading your permissions and vehicles via `/connections` is not billed.\n\nTo send events to Home Assistant, you will need to set up a [webhook with Smartcar]({smartcar_url}). Use the following URL:\n\n`{webhook_url}`\n\nA subscribed vehicle is pushed to Home Assistant for free, which is the only way to get fresh data without spending the allowance.\n\nSee [the documentation]({docs_url}) for further details."
     },
     "error": {
       "no_application_id": "Missing application ID",
-      "no_scopes": "At least one scope needs to be selected",
       "no_management_token": "Missing application management token",
       "extraneous_management_token": "Do not provide application management token unless using webhooks"
     },
@@ -54,26 +54,8 @@
           "application_management_token": "Only provide if using webhooks. This is the _Application Management Token_ from your [Smartcar account]({smartcar_url}) to use webhooks.\n\nSee [the documentation]({docs_url}) for further details.",
           "use_webhooks": "Webhooks are Smartcar's preferred data update delivery method."
         },
-        "description": "To configure Smartcar, provide an _Application ID_. An _Application Management Token_ is also required if enabling webhooks.",
+        "description": "To configure Smartcar, provide an _Application ID_. An _Application Management Token_ is also required if enabling webhooks.\n\nPermissions are not chosen here. The next step hands you to Smartcar, which asks for whatever the _Vehicle Access_ tab of your application's Configuration page lists, and Home Assistant then reads back what you actually granted.\n\n**What setup costs.** Reading the granted permissions and your vehicle list uses `/connections`, which is not billed. Learning what your vehicle can answer uses one `/signals` read: 1 call from the 500 per vehicle monthly allowance. So setup spends one billed call per vehicle, or none at all if the same vehicle was read within the last 30 minutes, because that response is reused.",
         "title": "Smartcar configuration"
-      },
-      "scopes": {
-        "data": {
-          "control_charge": "Control charging (start/stop & target charge)",
-          "control_security": "Lock or unlock vehicle",
-          "read_battery": "Get EV/PHEV battery level, capacity & current range",
-          "read_charge": "Get details on whether the car is plugged in and charging",
-          "read_engine_oil": "Get engine oil health",
-          "read_fuel": "Get fuel tank level",
-          "read_location": "Get the vehicle's location",
-          "read_odometer": "Get total distance traveled",
-          "read_security": "Get details on whether doors, windows & more are enabled",
-          "read_tires": "Get tire pressure details",
-          "read_diagnostics": "Get diagnostic trouble codes and system health",
-          "read_climate": "Get cabin temperature and climate control status"
-        },
-        "description": "Select the permissions you would like to grant.\n\nOn a reconfigure these start from what Smartcar has actually granted, which is not always what was asked for. Permissions your vehicle does not support can be granted and still return nothing, so entities for them stay unavailable until the vehicle reports a value. Check your vehicle on Smartcar's compatibility page if you are unsure.",
-        "title": "Permission selection"
       }
     }
   },
@@ -138,12 +120,12 @@
           "use_webhooks": "Use webhooks",
           "application_management_token": "Token: only provide if using webhooks"
         },
-        "description": "Provide your _Application Management Token_ from your [Smartcar account]({smartcar_url}) to use webhooks.\n\nTo send events to Home Assistant, you will need to set up a [webhook with Smartcar]({smartcar_url}). Use the following URL:\n\n`{webhook_url}`\n\nIf the above URL indicates that webhooks are not enabled, revisit this configuration screen after completing the setup to get the URL.\n\nSee [the documentation]({docs_url}) for further details.",
+        "description": "Provide your _Application Management Token_ from your [Smartcar account]({smartcar_url}) to use webhooks.\n\nTo send events to Home Assistant, you will need to set up a [webhook with Smartcar]({smartcar_url}). Use the following URL:\n\n`{webhook_url}`\n\nWebhook deliveries are not billed, and neither is `/connections`. Only a `/signals` read is: 1 call from the 500 per vehicle monthly allowance.\n\nIf the above URL indicates that webhooks are not enabled, revisit this configuration screen after completing the setup to get the URL.\n\nSee [the documentation]({docs_url}) for further details.",
         "title": "Smartcar configuration"
       },
       "polling": {
         "title": "Polling and API budget",
-        "description": "Smartcar allows 500 API calls per vehicle per month on the free tier, and a vehicle that is not subscribed to a webhook only refreshes its data about once a day. Polling harder costs calls without producing newer data. This profile currently schedules about {estimate} calls a month against an allowance of {budget}.",
+        "description": "Smartcar allows 500 API calls per vehicle per month on the free tier, and a vehicle that is not subscribed to a webhook only refreshes its data about once a day. Polling harder costs calls without producing newer data. Each scheduled refresh is one `/signals` read: 1 call from the 500 per vehicle monthly allowance. Commands are billed from the same allowance; webhook deliveries and `/connections` are not billed. This profile currently schedules about {estimate} calls a month against an allowance of {budget}.",
         "data": {
           "poll_profile": "Polling profile",
           "poll_interval_hours": "Interval in hours (used by the Custom interval profile)",

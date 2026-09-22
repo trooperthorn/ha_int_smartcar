@@ -325,6 +325,10 @@ def mock_config_entry(
             "vehicles": {
                 vehicle_id: vehicle,
             },
+            # what Smartcar reports it granted. present on every entry created
+            # since the permission list stopped being a set of checkboxes, so
+            # the 2.2 migration has nothing to read.
+            "granted_permissions": list(enabled_scopes),
         },
     )
 

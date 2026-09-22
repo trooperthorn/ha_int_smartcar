@@ -4,7 +4,7 @@ from http import HTTPStatus
 import logging
 from typing import cast
 
-from aiohttp import ClientResponseError
+from aiohttp import ClientError, ClientResponseError
 from homeassistant.components import cloud, webhook
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ACCESS_TOKEN, CONF_TOKEN, CONF_WEBHOOK_ID
@@ -32,6 +32,7 @@ from .auth_impl import AccessTokenAuthImpl, AsyncConfigEntryAuth
 from .budget import ApiBudget
 from .cache import SignalCache
 from .const import (
+    ALL_SCOPES,
     API_ENDPOINTS,
     CONF_AUTO_SUBSCRIBE,
     CONF_CLOUDHOOK,
@@ -39,12 +40,13 @@ from .const import (
     CONF_POLL_PROFILE,
     DOMAIN,
     PLATFORMS,
-    Scope,
+    REQUIRED_SCOPES,
 )
 from .coordinator import SmartcarVehicleCoordinator
 from .errors import (
     EmptyVehicleListError,
     InvalidAuthError,
+    MissingRequiredPermissionsError,
     UnsupportedUserConfigurationError,
 )
 from .management import ManagementApi, webhook_health, webhook_id_matching_url
@@ -582,6 +584,55 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
             minor_version=1,
         )
 
+    if config_entry.minor_version < 2:
+        # the stored permission list used to be the boxes the user ticked in
+        # the config flow, which was never more than a request. Smartcar's own
+        # answer is `attributes.permissions` on `GET /connections`, so that is
+        # what the entry carries from here on.
+        new_data = {**config_entry.data}
+        implementation = cast(
+            "LocalOAuth2Implementation",
+            await async_get_config_entry_implementation(hass, config_entry),
+        )
+        is_v3 = api_version_for_client_id(implementation.client_id) == "v3"
+
+        if is_v3 and "granted_permissions" not in new_data:
+            # an entry old enough to predate the granted list has to ask. the
+            # read is free: `/connections` is not addressed to a vehicle, so it
+            # does not touch the 500 per vehicle monthly allowance.
+            entry_auth = AsyncConfigEntryAuth(
+                async_get_clientsession(hass),
+                implementation,
+                OAuth2Session(hass, config_entry, implementation),
+                API_ENDPOINTS,
+                user_id=new_data.get("user_id"),
+            )
+
+            try:
+                new_data["granted_permissions"] = await _read_granted_permissions(
+                    entry_auth
+                )
+            except (ClientResponseError, ClientError):
+                # a migration that cannot reach Smartcar must not destroy the
+                # entry. Home Assistant retries the setup, and the requested
+                # list keeps working until one succeeds.
+                _LOGGER.warning(
+                    "Could not read the granted permissions for %s; keeping the "
+                    "previously requested list until the next setup",
+                    config_entry.title,
+                )
+                return False
+
+        if granted := new_data.get("granted_permissions"):
+            new_data["token"] = {**new_data.get("token", {}), "scopes": granted}
+
+        hass.config_entries.async_update_entry(
+            config_entry,
+            data=new_data,
+            version=2,
+            minor_version=2,
+        )
+
     _LOGGER.debug(
         "Migration to configuration version %s.%s successful",
         config_entry.version,
@@ -589,6 +640,34 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
     )
 
     return True
+
+
+async def _read_granted_permissions(auth: AbstractAuth) -> list[str]:
+    """What Smartcar reports it granted, across every connection.
+
+    `/connections` is an application level read, so it is not billed against
+    any vehicle's monthly allowance.
+
+    Returns:
+        The granted permissions, sorted.
+    """
+    return _granted_permissions(await _fetch_all_connections(auth))
+
+
+def _granted_permissions(connections: list[dict]) -> list[str]:
+    """Collect `attributes.permissions` from every connection.
+
+    Returns:
+        The granted permissions, sorted and deduplicated.
+    """
+    return sorted(
+        {
+            permission
+            for connection in connections
+            for permission in connection.get("attributes", {}).get("permissions", [])
+            if isinstance(permission, str)
+        }
+    )
 
 
 def vehicle_vins_in_use(
@@ -606,17 +685,25 @@ def vehicle_vins_in_use(
 async def populate_entry_data(
     data: dict,
     auth: AbstractAuth,
-    scopes: list[Scope],
+    scopes: list[str] | None = None,
 ) -> None:
-    """Populate config entry data during initial creation or migration."""
-    _inject_requested_scopes_into_entry_data(data, scopes)
+    """Populate config entry data during initial creation or migration.
+
+    The permission list is not something this integration picks any more. On v3
+    it comes from `GET /connections`, which reports what Smartcar actually
+    granted rather than what anybody asked for, and that read is free: it is
+    not addressed to a vehicle, so it does not touch the 500 per vehicle
+    monthly allowance.
+
+    v2 has no `/connections`, so there the requested list is the only list
+    there is and it stands.
+    """
+    data.setdefault("token", {})["scopes"] = list(scopes or ALL_SCOPES)
 
     await _store_all_vehicles(data, auth)
 
-
-def _inject_requested_scopes_into_entry_data(data: dict, scopes: list[Scope]) -> None:
-    """Inject selected scopes into stored token data."""
-    data.setdefault("token", {})["scopes"] = scopes
+    if granted := data.get("granted_permissions"):
+        data["token"]["scopes"] = granted
 
 
 CONNECTIONS_PAGE_SIZE = 100
@@ -677,6 +764,7 @@ async def _store_all_vehicles(
 
     Raises:
         EmptyVehicleListError: If no vehicles are found.
+        MissingRequiredPermissionsError: If a required permission is not granted.
         UnsupportedUserConfigurationError: If there is not exactly 1 user.
         InvalidAuthError: If the request cannot be authorized.
         ClientResponseError: If there is a request error.
@@ -732,16 +820,14 @@ async def _store_all_vehicles(
             # asked for: a scope can be requested and refused, and a vehicle
             # can lack the capability behind it. Kept so the reconfigure form
             # can start from reality instead of from a static default.
-            data["granted_permissions"] = sorted(
-                {
-                    permission
-                    for connection in connections
-                    for permission in connection.get("attributes", {}).get(
-                        "permissions", []
-                    )
-                    if isinstance(permission, str)
-                }
-            )
+            data["granted_permissions"] = granted = _granted_permissions(connections)
+
+            # without these two there is no way to name a vehicle or tell two
+            # of them apart, so there is nothing to set up. Everything else is
+            # optional: a permission that was not granted costs its own
+            # entities and nothing else.
+            if missing := [scope for scope in REQUIRED_SCOPES if scope not in granted]:
+                raise MissingRequiredPermissionsError(missing)
 
             # the connection already describes the car. taking make, model and
             # year from here rather than from a signal response means setup
