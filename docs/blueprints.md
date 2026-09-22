@@ -79,8 +79,13 @@ still works there.
   that raised the notification has cleared (the car got plugged in, a lock
   action succeeded, charging resumed, range recovered, or the API budget
   recovered), it sends a second notification with `message:
-  clear_notification` and the same tag, which removes the earlier one
-  instead of leaving it stale on the phone.
+  clear_notification` and the same tag to every Notify device and, if set,
+  the legacy Notify action, which removes the earlier one instead of
+  leaving it stale on the phone. If a persistent notification was also
+  raised, it is removed the same way, with `persistent_notification
+  .dismiss` and a `notification_id` equal to the tag (set on the
+  notification when it was created), rather than left behind in the
+  frontend.
 - **Persistent (Android)** on "Left unlocked away from home": sets
   `data.persistent: true` on that notification (it already has a tag), so
   it cannot be swiped away by accident, and it is cleared the same way as
@@ -109,12 +114,11 @@ still works there.
   directly.
 - **Announce with text-to-speech** (`announce_tts`, default off, on "Check
   tomorrow's trips against range", "Low range warning" and "Left unlocked
-  away from home" only): when on, also sends the notification's message to
-  the same notify action as `message: TTS` with `data.tts_text` set to
-  that message, per the notification-commands page. This is a second
-  notify call, not a notification action, so it does not count against the
-  three-action limit. This still goes through the legacy Notify action
-  input only, not the Notify devices fan-out.
+  away from home" only): when on, also sends the notification's message as
+  `message: TTS` with `data.tts_text` set to that message, per the
+  notification-commands page, to every Notify device and, if set, the
+  legacy Notify action. This is a second notify call, not a notification
+  action, so it does not count against the three-action limit.
 
 ## Android quick actions
 

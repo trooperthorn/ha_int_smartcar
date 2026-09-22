@@ -300,6 +300,13 @@ actions:
                   message: clear_notification
                   data:
                     tag: !input notification_tag
+          - if:
+              - condition: template
+                value_template: "{{ also_persistent }}"
+            then:
+              - action: persistent_notification.dismiss
+                data:
+                  notification_id: !input notification_tag
       # remind mode: surplus arrived, car home, below limit, not charging
       - conditions:
           - condition: trigger
@@ -365,6 +372,8 @@ actions:
                     data:
                       title: "{{ notify_title }}"
                       message: "{{ notify_message }}"
+                      data:
+                        notification_id: !input notification_tag
             else:
               - variables:
                   notify_title: Solar surplus available
@@ -414,6 +423,8 @@ actions:
                     data:
                       title: "{{ notify_title }}"
                       message: "{{ notify_message }}"
+                      data:
+                        notification_id: !input notification_tag
       # auto mode start: surplus arrived, home, plugged in, below limit,
       # not charging, budget ok
       - conditions:
